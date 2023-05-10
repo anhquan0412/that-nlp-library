@@ -16,7 +16,7 @@ from .utils import *
 from .text_main import TextDataMain
 
 # %% auto 0
-__all__ = ['finetune']
+__all__ = ['finetune', 'ModelController']
 
 # %% ../nbs/03_model_main.ipynb 5
 def finetune(lr, # Learning rate
@@ -152,3 +152,142 @@ def _forward_pass_for_predictions(batch,
         results[f'pred_{label_names[i]}']= pred_label_list[i].numpy()
         results[f'pred_prob_{label_names[i]}']= pred_prob_list[i].numpy()
     return results
+
+# %% ../nbs/03_model_main.ipynb 8
+class ModelController():
+    def __init__(self,
+                 model, # NLP model
+                 data_store:TextDataMain=None, # a TextDataMain object
+                 metric_funcs=[accuracy_score], # Metric function (can be from Sklearn)
+                 seed=42 # Random seed
+                ):
+        self.model = model
+        self.data_store = data_store
+        self.metric_funcs = metric_funcs
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.seed = seed
+        
+    def fit(self,
+            epochs, # Number of epochs
+            learning_rate, # Learning rate
+            ddict=None, # DatasetDict to fit (will override data_store)
+            batch_size=16, # Batch size
+            weight_decay=0.01, # Weight decay
+            lr_scheduler_type='cosine', # The scheduler type to use. Including: linear, cosine, cosine_with_restarts, polynomial, constant, constant_with_warmup
+            o_dir = './tmp_weights', # Directory to save weights
+            save_checkpoint=False, # Whether to save weights (checkpoints) to o_dir
+            hf_report_to='none', # The list of HuggingFace-allowed integrations to report the results and logs to
+            compute_metrics=None, # A function to compute metric, e.g. `compute_metrics_classification` that takes the given ```metric_funcs``` 
+            grad_accum_steps=2, # Gradient will be accumulated over gradient_accumulation_steps steps.
+            tokenizer=None, # Tokenizer (to override one in ```data_store```)
+            data_collator=None # Data Collator (to override one in ```data_store```)
+           ):
+        
+        if tokenizer is None: tokenizer=check_and_get_attribute(self.data_store,'tokenizer')
+        if data_collator is None: data_collator=getattr(self.data_store,'data_collator',None)
+        if ddict is None: ddict = check_and_get_attribute(self.data_store,'main_ddict')
+        
+        if len(set(ddict.keys()) & set(['train','training']))==0:
+            raise ValueError("Missing the following key for DatasetDict: train/training")
+        no_valid= len(set(ddict.keys()) & set(['validation','val']))==0
+
+        _compute_metrics = partial(compute_metrics,metric_funcs=self.metric_funcs)
+        
+
+        trainer = finetune(learning_rate,batch_size,weight_decay,epochs,
+                           ddict,tokenizer,o_dir,
+                           save_checkpoint=save_checkpoint,
+                           model=self.model,
+                           data_collator=data_collator,
+                           compute_metrics=_compute_metrics,
+                           grad_accum_steps=grad_accum_steps,
+                           lr_scheduler_type=lr_scheduler_type,
+                           no_valid=no_valid,
+                           seed=self.seed,
+                           report_to=hf_report_to)
+        self.trainer = trainer
+        
+    def predict_raw_text(self,
+                         content:dict|list|str, # Either a single sentence, list of sentence or a dictionary with keys are metadata, values are list
+                         batch_size=1, # Batch size. For a small amount of texts, you might want to keep this small
+                         use_softmax=True, # Use softmax or sigmoid as the last activation function
+                         topk=1 # Number of labels to return for each head
+                        ):
+        if not isinstance(self.data_store,TextDataMain) or not self.data_store._main_called:
+            raise ValueError('This functionality needs a TextDataMain object which has already processed some training data')
+        with HiddenPrints():
+            test_ddict = self.data_store.get_test_datasetdict_from_dict(content)
+            df_result =  self.predict_ddict(ddict=test_ddict,
+                                            ds_type='test',
+                                            batch_size=batch_size,
+                                            use_softmax=use_softmax,
+                                            topk=topk)
+        return df_result
+    
+    def predict_ddict(self,
+                      ddict=None, # DatasetDict to predict (will override ```data_store```)
+                      ds_type='test', # Keys of DatasetDict to predict
+                      batch_size=16, # Batch size
+                      use_softmax=True, # Use softmax or sigmoid as the last activation function
+                      topk=1, # Number of labels to return for each head
+                      tokenizer=None, # Tokenizer (to override one in ```data_store```)
+                      data_collator=None, # Data Collator (to override one in ```data_store```)
+                      label_names=None, # Names of the label (dependent variable) columns (to override one in ```data_store```)
+                      class_names_predefined=None, # List of names associated with the labels (same index order) (to override one in ```data_store```)
+                      is_dhc=False):
+        
+        label_lists = class_names_predefined
+        if tokenizer is None: tokenizer=check_and_get_attribute(self.data_store,'tokenizer')
+        if data_collator is None: data_collator=getattr(self.data_store,'data_collator',None)
+        if label_names is None: label_names=check_and_get_attribute(self.data_store,'label_names')
+        if label_lists is None: label_lists = check_and_get_attribute(self.data_store,'label_lists')
+        if not isinstance(label_names,list):
+            label_names=[label_names]
+        if not isinstance(label_lists[0],list):
+            label_lists=[label_lists]    
+            
+        label_sizes = [len(cs) for cs in label_lists]
+        if ddict is None: ddict = check_and_get_attribute(self.data_store,'main_ddict') 
+        if ds_type not in ddict.keys():
+            raise ValueError(f'{ds_type} is not in the given DatasetDict keys')
+        
+        ddict.set_format("torch",
+                        columns=["input_ids", "attention_mask"])
+        
+        print_msg('Start making predictions',20)
+        preserved_kws=['input_ids', 'token_type_ids', 'attention_mask','label'] # hard-coded
+        cols_to_remove = (set(ddict[ds_type].features.keys()) - set(preserved_kws)) | {'text'}
+        ddict[ds_type] = ddict[ds_type].map(
+            partial(_forward_pass_for_predictions,model=self.model,
+                    topk=topk,
+                    use_softmax=use_softmax,
+                    device=self.device,
+                    tokenizer=tokenizer,
+                    data_collator=data_collator,
+                    cols_to_remove=cols_to_remove,
+                   label_names=label_names,
+                    label_sizes=label_sizes,
+                    is_dhc = is_dhc
+                   ), 
+            batched=True, batch_size=batch_size)
+    
+        ddict.set_format("pandas")
+        
+        df_result = ddict[ds_type][:]
+        cols_to_keep = [c for c in df_result.columns.values if c not in preserved_kws[:-1]]
+        df_result = df_result.loc[:,cols_to_keep]
+        
+        # convert pred id to string label
+        for i in range(len(label_names)):        
+            if topk==1:
+                df_result[f'pred_{label_names[i]}'] = df_result[f'pred_{label_names[i]}'].apply(lambda x: label_lists[i][int(x)])
+            else:
+                df1 = pd.DataFrame(df_result[f'pred_{label_names[i]}'].to_list(),columns=[f'pred_{label_names[i]}_top{j}' for j in range(1,topk+1)])
+                df1_prob = pd.DataFrame(df_result[f'pred_prob_{label_names[i]}'].to_list(),columns=[f'pred_prob_{label_names[i]}_top{j}' for j in range(1,topk+1)])
+                
+                for j in range(1,topk+1):
+                    df1[f'pred_{label_names[i]}_top{j}'] =  df1[f'pred_{label_names[i]}_top{j}'].apply(lambda x: label_lists[i][int(x)])
+
+                df_result = pd.concat([df_result,df1,df1_prob],axis=1)
+                
+        return df_result

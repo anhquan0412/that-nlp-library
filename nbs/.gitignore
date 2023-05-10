@@ -9,3 +9,6 @@ pickle_files
 
 # Weights
 *_weights
+
+# Wandb
+wandb

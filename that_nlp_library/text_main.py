@@ -335,7 +335,7 @@ class TextDataMain():
     def save_train_data_after_processing(self,output_path,encoding='utf-8-sig'):
         if not self._main_called:
             print_msg('WARNING')
-            print('Please process training data (using to_df)')
+            print('Please process training data (using to_df or to_datasetdict)')
             return
         self.df.to_csv(Path(output_path),encoding=encoding,index=False)
     

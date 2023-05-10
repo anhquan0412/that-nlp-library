@@ -51,7 +51,7 @@ class RobertaHiddenStateConcatConditionalProbForSequenceClassification(RobertaPr
 
     def __init__(self, 
                  config, # HuggingFace model configuration
-                pretrained_roberta=None, # HuggingFace Roberta Body (useful for knowledge transfering task)
+                 pretrained_roberta=None, # HuggingFace Roberta Body (useful for knowledge transfering task)
                  concathead_class=RobertaConcatHeadSimple,
                  classifier_dropout=0.1, # Dropout ratio (for dropout layer right before the last nn.Linear)
                  last_hidden_size=768, # Last hidden size (before the last nn.Linear)
@@ -61,13 +61,18 @@ class RobertaHiddenStateConcatConditionalProbForSequenceClassification(RobertaPr
                 ):
         super().__init__(config)
         self.training_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.num_labels = config.num_labels
-        self.config = config
         self.size_l1 = size_l1
         self.size_l2 = size_l2
+        
+        # set num_labels for config
+        num_labels = size_l1+size_l2
+        config.num_labels = num_labels
+        
         self.roberta = RobertaModel(config, add_pooling_layer=False) if pretrained_roberta is None else pretrained_roberta
         self.standard_mask = standard_mask
-        self.classification_head = concathead_class(config,classifier_dropout,last_hidden_size) 
+        self.classification_head = concathead_class(config=config,classifier_dropout=classifier_dropout,
+                                                    last_hidden_size=last_hidden_size,
+                                                    n_output=num_labels) 
 
         if pretrained_roberta is None:
             self.init_weights()
@@ -96,7 +101,7 @@ class RobertaHiddenStateConcatConditionalProbForSequenceClassification(RobertaPr
             labels_l2 = labels[:,1].view(-1) #(bs,)
             l1_1hot = torch.nn.functional.one_hot(labels_l1, num_classes=self.size_l1)
             l2_1hot = torch.nn.functional.one_hot(labels_l2, num_classes=self.size_l2)
-            label_concat_1hot = torch.cat((l1_1hot,l2_1hot),1) # (bs,L3+L4)
+            label_concat_1hot = torch.cat((l1_1hot,l2_1hot),1) # (bs,L1+L2)
 
             # version 2: the original approach: positives and other children of same parents
             _mask = self.standard_mask[labels_l1].to(self.training_device)

@@ -16,7 +16,7 @@ __all__ = ['model_init_classification', 'compute_metrics_classification', 'loss_
            'RobertaHiddenStateConcatForSequenceClassification']
 
 # %% ../../nbs/04_models.classifiers.ipynb 4
-def model_init_classification(num_classes:int, # Number of labels to predict 
+def model_init_classification(
                               model_class, # Model's class object, e.g. RobertaHiddenStateConcatForSequenceClassification
                               cpoint_path, # Either model string name on HuggingFace, or the path to model checkpoint
                               output_hidden_states:bool, # To whether output the model hidden states or not. Useful when you try to build a custom classification head 
@@ -31,7 +31,6 @@ def model_init_classification(num_classes:int, # Number of labels to predict
     config = AutoConfig.from_pretrained(
         cpoint_path,
         output_hidden_states=output_hidden_states,
-        num_labels=num_classes,
     )
     seed_everything(seed)
     model = model_class.from_pretrained(cpoint_path,config=config,**model_kwargs).to(device)
@@ -124,7 +123,7 @@ class RobertaConcatHeadExtended(torch.nn.Module):
                  config, # HuggingFace model configuration
                  classifier_dropout=0.1, # Dropout ratio (for dropout layer right before the last nn.Linear)
                  last_hidden_size=768, # Last hidden size (before the last nn.Linear)
-                 n_output=None, # Number of label output (optional)
+                 n_output=None, # Number of label output 
                  **kwargs
                 ):
 
@@ -132,7 +131,7 @@ class RobertaConcatHeadExtended(torch.nn.Module):
         self.last_hidden_size=last_hidden_size
         self.dropout = torch.nn.Dropout(classifier_dropout)
         self.pre_classifier = torch.nn.Linear(4*config.hidden_size,last_hidden_size)
-        self.out_proj = torch.nn.Linear(last_hidden_size, config.num_labels if not n_output else n_output)
+        self.out_proj = torch.nn.Linear(last_hidden_size, n_output)
     
     def forward(self, inp, **kwargs):
         x = inp
@@ -154,14 +153,13 @@ class RobertaConcatHeadSimple(torch.nn.Module):
     def __init__(self,
                  config, # HuggingFace model configuration
                  classifier_dropout=0.1, # Dropout ratio (for dropout layer right before the last nn.Linear)
-                 n_output=None, # Number of label output (optional)
+                 n_output=None, # Number of label output
                  **kwargs
                 ):
 
         super().__init__()
         self.dropout = torch.nn.Dropout(classifier_dropout)
-        self.out_proj = torch.nn.Linear(4*config.hidden_size, config.num_labels if not n_output else n_output)
-    
+        self.out_proj = torch.nn.Linear(4*config.hidden_size, n_output)
     def forward(self, inp, **kwargs):
         x = inp
         x = self.dropout(x)
@@ -179,12 +177,12 @@ class RobertaClassificationHeadCustom(torch.nn.Module):
     def __init__(self, 
                  config, # HuggingFace model configuration
                  classifier_dropout=0.1, # Dropout ratio (for dropout layer right before the last nn.Linear)
-                 n_output=None # Number of label output (optional)
+                 n_output=None # Number of label output
                 ):
         super().__init__()
         self.dense = torch.nn.Linear(config.hidden_size, config.hidden_size)
         self.dropout = torch.nn.Dropout(classifier_dropout)
-        self.out_proj = torch.nn.Linear(config.hidden_size, config.num_labels if not n_output else n_output)
+        self.out_proj = torch.nn.Linear(config.hidden_size, n_output)
 
     def forward(self, features, **kwargs):
         x = features[:, 0, :]  # take <s> token (equiv. to [CLS])
@@ -213,15 +211,21 @@ class RobertaBaseForSequenceClassification(RobertaPreTrainedModel):
                  head_weights=[], # loss weight for each head. This will be multiplied to the loss of each head's output
                 ):
         super().__init__(config)
-        self.num_labels = config.num_labels
         self.is_multilabel = is_multilabel
         self.is_multihead = is_multihead
         self.head_class_sizes = val2iterable(head_class_sizes)
         self.head_weights = val2iterable(head_weights,lsize=len(self.head_class_sizes))
-        # add_pooling_layer to False to ensure all hidden states are returned  and not only the one associated with the [CLS] token.
+        
+        # set num_labels for config
+        num_labels = sum(self.head_class_sizes)
+        config.num_labels = num_labels
+        
+        # add_pooling_layer to False to ensure all hidden states are returned and not only the one associated with the [CLS] token.
         self.roberta = RobertaModel(config, add_pooling_layer=False) if pretrained_roberta is None else pretrained_roberta
         # Set up token classification head
-        self.classification_head = RobertaClassificationHeadCustom(config,classifier_dropout) 
+        self.classification_head = RobertaClassificationHeadCustom(config=config,
+                                                                   classifier_dropout=classifier_dropout,
+                                                                   n_output=num_labels) 
 
         # Load and initialize weights from RobertaPretrainedModel
         if pretrained_roberta is None:
@@ -236,13 +240,18 @@ class RobertaBaseForSequenceClassification(RobertaPreTrainedModel):
         
         sequence_output = outputs[0]
         logits = self.classification_head(sequence_output) # (bs,sum of all class sizes)
-    
+        
+        
         # Calculate losses
-        loss = loss_for_classification(logits, labels, 
+        if labels is None:
+            loss=None
+        else:
+            loss = loss_for_classification(logits, labels, 
                                        self.is_multilabel,
                                        self.is_multihead, 
-                                       self.head_sizes,
+                                       self.head_class_sizes,
                                        self.head_weights)
+            
 
         # Return model output object
         return SequenceClassifierOutput(loss=loss, logits=logits,
@@ -269,17 +278,24 @@ class RobertaHiddenStateConcatForSequenceClassification(RobertaPreTrainedModel):
                  head_weights=[], # loss weight for each head. This will be multiplied to the loss of each head's output
                 ):
         super().__init__(config)
-        self.num_labels = config.num_labels
         self.is_multilabel = is_multilabel
         self.is_multihead = is_multihead
         self.head_class_sizes = val2iterable(head_class_sizes)
         self.head_weights = val2iterable(head_weights,lsize=len(self.head_class_sizes))
+        
+        # set num_labels for config
+        num_labels = sum(self.head_class_sizes)
+        config.num_labels = num_labels
+        
         # Load model body
         # add_pooling_layer to False to ensure all hidden states are returned  and not only the one associated with the [CLS] token.
         self.roberta = RobertaModel(config, add_pooling_layer=False) if pretrained_roberta is None else pretrained_roberta
         
         # Set up token classification head
-        self.classification_head = concathead_class(config,classifier_dropout,last_hidden_size) 
+        self.classification_head = concathead_class(config=config,
+                                                    classifier_dropout=classifier_dropout,
+                                                    last_hidden_size=last_hidden_size,
+                                                   n_output=num_labels) 
 
         # Load and initialize weights from RobertaPretrainedModel
         if pretrained_roberta is None:
@@ -298,12 +314,15 @@ class RobertaHiddenStateConcatForSequenceClassification(RobertaPreTrainedModel):
         hidden_concat = torch.cat([hidden_states[i][:,0] for i in range(-1,-4-1,-1)],
                                   -1) 
         logits = self.classification_head(hidden_concat) # (bs,sum of all class sizes)
-    
         # Calculate losses
-        loss = loss_for_classification(logits, labels, 
+        
+        if labels is None:
+            loss=None
+        else:
+            loss = loss_for_classification(logits, labels, 
                                        self.is_multilabel,
                                        self.is_multihead, 
-                                       self.head_sizes,
+                                       self.head_class_sizes,
                                        self.head_weights)
 
             

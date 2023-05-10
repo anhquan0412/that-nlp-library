@@ -93,7 +93,6 @@ class RobertaHiddenStateConcatSimpleDHCForSequenceClassification(RobertaPreTrain
         
         super().__init__(config)
         self.training_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.config = config
         self.size_l1 = l1l2_matrix.shape[0]
         self.size_l2 = l1l2_matrix.shape[1]
         self.l1l2_matrix = l1l2_matrix.to(self.training_device)
@@ -103,7 +102,6 @@ class RobertaHiddenStateConcatSimpleDHCForSequenceClassification(RobertaPreTrain
         
         self.roberta = RobertaModel(config, add_pooling_layer=False) if pretrained_roberta is None else pretrained_roberta
         self.linear_L2 = torch.nn.Linear(4*config.hidden_size, self.size_l2-self.size_l1)
-        
         self.linear_L1_logit = torch.nn.Linear(4*config.hidden_size,self.size_l1)
         self.linear_L2_logit = torch.nn.Linear(self.size_l2,self.size_l2)
         
@@ -169,7 +167,6 @@ class RobertaHiddenStateConcatDHCForSequenceClassification(RobertaPreTrainedMode
         
         super().__init__(config)
         self.training_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.config = config
         self.size_l1 = l1l2_matrix.shape[0]
         self.size_l2 = l1l2_matrix.shape[1]
         
@@ -182,7 +179,9 @@ class RobertaHiddenStateConcatDHCForSequenceClassification(RobertaPreTrainedMode
         self.dloss_weight = dloss_weight
         
         self.roberta = RobertaModel(config, add_pooling_layer=False) if pretrained_roberta is None else pretrained_roberta
-        self.root_representation = RobertaConcatHeadDHCRoot(config,classifier_dropout,last_hidden_size)
+        self.root_representation = RobertaConcatHeadDHCRoot(config=config,
+                                                            classifier_dropout=classifier_dropout,
+                                                            last_hidden_size=last_hidden_size)
         
         self.linear_L1 = torch.nn.Linear(last_hidden_size, linear_l1_size)
         self.linear_L2 = torch.nn.Linear(last_hidden_size, linear_l2_size)
