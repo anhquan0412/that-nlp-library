@@ -14,7 +14,7 @@ from transformers.models.roberta.modeling_roberta import RobertaPreTrainedModel
 from .classifiers import loss_for_classification
 
 # %% auto 0
-__all__ = ['build_standard_condition_mask', 'RobertaHiddenStateConcatConditionalProbForSequenceClassification']
+__all__ = ['build_standard_condition_mask', 'RobertaHSCCProbSequenceClassification']
 
 # %% ../../nbs/06_models.conditional_prob_classifiers.ipynb 4
 def build_standard_condition_mask(df,label1_encoder,label2_encoder,label1,label2):
@@ -43,7 +43,7 @@ def build_standard_condition_mask(df,label1_encoder,label2_encoder,label1,label2
     return mask_final
 
 # %% ../../nbs/06_models.conditional_prob_classifiers.ipynb 5
-class RobertaHiddenStateConcatConditionalProbForSequenceClassification(RobertaPreTrainedModel):
+class RobertaHSCCProbSequenceClassification(RobertaPreTrainedModel):
     """
     Roberta Conditional Probability Architecture with Hidden-State-Concatenation for Sequence Classification task
     """

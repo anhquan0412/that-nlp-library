@@ -11,9 +11,9 @@ from transformers import AutoConfig
 from ..utils import *
 
 # %% auto 0
-__all__ = ['model_init_classification', 'compute_metrics_classification', 'loss_for_classification', 'RobertaConcatHeadExtended',
-           'RobertaConcatHeadSimple', 'RobertaClassificationHeadCustom', 'RobertaBaseForSequenceClassification',
-           'RobertaHiddenStateConcatForSequenceClassification']
+__all__ = ['model_init_classification', 'compute_metrics_multihead_classification', 'loss_for_classification',
+           'RobertaConcatHeadExtended', 'RobertaConcatHeadSimple', 'RobertaClassificationHeadCustom',
+           'RobertaBaseForSequenceClassification', 'RobertaHiddenStateConcatForSequenceClassification']
 
 # %% ../../nbs/04_models.classifiers.ipynb 4
 def model_init_classification(
@@ -37,25 +37,33 @@ def model_init_classification(
     return model
 
 # %% ../../nbs/04_models.classifiers.ipynb 6
-def compute_metrics_classification(pred, # An EvalPrediction object from HuggingFace (which is a named tuple with ```predictions``` and ```label_ids``` attributes)
-                                   metric_funcs=[] # A list of metrics to evaluate
-                                  ):
+def compute_metrics_multihead_classification(pred, # An EvalPrediction object from HuggingFace (which is a named tuple with ```predictions``` and ```label_ids``` attributes)
+                                             metric_funcs=[], # A list of metric functions to evaluate
+                                             head_sizes=[], # Class size for each head,
+                                             label_names=[] # Names of the label (dependent variable) columns
+                                            ):
     """
     Return a dictionary of metric name and its values    
     
     Reference: https://github.com/huggingface/transformers/blob/dbc12269ed5546b2da9236b9f1078b95b6a4d3d5/src/transformers/trainer_utils.py#LL100C22-L100C22
     """
-    labels = pred.label_ids
+    assert len(head_sizes)==len(label_names)
+    labels = pred.label_ids 
     if isinstance(pred.predictions,tuple):
-        preds = pred.predictions[0].argmax(-1)
+        preds = pred.predictions[0]
     else:
-        preds = pred.predictions.argmax(-1)
-    
+        preds = pred.predictions
     results={}
     metric_funcs = val2iterable(metric_funcs)
-    for m_func in metric_funcs:
-        m_name = callable_name(m_func)
-        results[m_name]=m_func(labels,preds)
+    
+    for i,(_size,_name) in enumerate(zip(head_sizes,label_names)):
+        start= 0 if i==0 else start+head_sizes[i-1]
+        end = start + _size
+        _pred = preds[:,start:end].argmax(-1)
+        _label = labels[:,i] if len(head_sizes)>1 else labels
+        for m_func in metric_funcs:
+            m_name = callable_name(m_func)
+            results[f'{m_name}_{_name}']=m_func(_label,_pred)
     return results
 
 # %% ../../nbs/04_models.classifiers.ipynb 8

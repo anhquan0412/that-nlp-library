@@ -9,8 +9,8 @@ from transformers.modeling_outputs import SequenceClassifierOutput
 from transformers.models.roberta.modeling_roberta import RobertaPreTrainedModel
 
 # %% auto 0
-__all__ = ['loss_for_DHC', 'RobertaConcatHeadDHCRoot', 'RobertaHiddenStateConcatSimpleDHCForSequenceClassification',
-           'RobertaHiddenStateConcatDHCForSequenceClassification']
+__all__ = ['loss_for_DHC', 'RobertaConcatHeadDHCRoot', 'RobertaHSCSimpleDHCSequenceClassification',
+           'RobertaHSCDHCSequenceClassification']
 
 # %% ../../nbs/05_models.deep_hierarchical_classifiers.ipynb 4
 def _check_hierarchy(l1_pred,l2_pred,l1l2_matrix,size_l2):
@@ -77,7 +77,7 @@ class RobertaConcatHeadDHCRoot(torch.nn.Module):
         return x
 
 # %% ../../nbs/05_models.deep_hierarchical_classifiers.ipynb 9
-class RobertaHiddenStateConcatSimpleDHCForSequenceClassification(RobertaPreTrainedModel):
+class RobertaHSCSimpleDHCSequenceClassification(RobertaPreTrainedModel):
     """
     Roberta Simple-DHC Architecture with Hidden-State-Concatenation for Sequence Classification task
     """
@@ -147,7 +147,7 @@ class RobertaHiddenStateConcatSimpleDHCForSequenceClassification(RobertaPreTrain
                                      attentions=outputs.attentions)
 
 # %% ../../nbs/05_models.deep_hierarchical_classifiers.ipynb 11
-class RobertaHiddenStateConcatDHCForSequenceClassification(RobertaPreTrainedModel):
+class RobertaHSCDHCSequenceClassification(RobertaPreTrainedModel):
     """
     Roberta DHC Architecture with Hidden-State-Concatenation for Sequence Classification task
     """    

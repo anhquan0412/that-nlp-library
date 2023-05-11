@@ -177,21 +177,30 @@ class ModelController():
             o_dir = './tmp_weights', # Directory to save weights
             save_checkpoint=False, # Whether to save weights (checkpoints) to o_dir
             hf_report_to='none', # The list of HuggingFace-allowed integrations to report the results and logs to
-            compute_metrics=None, # A function to compute metric, e.g. `compute_metrics_classification` that takes the given ```metric_funcs``` 
+            compute_metrics=None, # A function to compute metric, e.g. `compute_metrics_multihead_classification` which utilizes the given ```metric_funcs``` 
             grad_accum_steps=2, # Gradient will be accumulated over gradient_accumulation_steps steps.
             tokenizer=None, # Tokenizer (to override one in ```data_store```)
-            data_collator=None # Data Collator (to override one in ```data_store```)
+            data_collator=None, # Data Collator (to override one in ```data_store```)
+            label_names=None, # Names of the label (dependent variable) columns (to override one in ```data_store```)
+            head_sizes=None, # Class size for each head (to override one in ```model```)
            ):
         
         if tokenizer is None: tokenizer=check_and_get_attribute(self.data_store,'tokenizer')
         if data_collator is None: data_collator=getattr(self.data_store,'data_collator',None)
         if ddict is None: ddict = check_and_get_attribute(self.data_store,'main_ddict')
+        if label_names is None: label_names=check_and_get_attribute(self.data_store,'label_names')
+        label_names = val2iterable(label_names)
+        if head_sizes is None: head_sizes=check_and_get_attribute(self.model,'head_class_sizes')
         
         if len(set(ddict.keys()) & set(['train','training']))==0:
             raise ValueError("Missing the following key for DatasetDict: train/training")
-        no_valid= len(set(ddict.keys()) & set(['validation','val']))==0
+        no_valid = len(set(ddict.keys()) & set(['validation','val']))==0
 
-        _compute_metrics = partial(compute_metrics,metric_funcs=self.metric_funcs)
+        _compute_metrics = partial(compute_metrics,
+                                   metric_funcs=self.metric_funcs,
+                                   head_sizes=head_sizes,
+                                   label_names=label_names 
+                                  )
         
 
         trainer = finetune(learning_rate,batch_size,weight_decay,epochs,
