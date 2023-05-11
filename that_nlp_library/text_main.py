@@ -5,7 +5,7 @@ from __future__ import annotations
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder,MultiLabelBinarizer
 from datasets import DatasetDict,Dataset
 from pathlib import Path
 from tqdm import tqdm
@@ -120,6 +120,8 @@ class TextDataMain():
         self.cols_to_keep = cols_to_keep
         self.shuffle_trn=shuffle_trn  
         self._main_called=False
+        self.is_multilabel=False
+        self.is_multihead=False
         check_input_validation(self.df)
         
     @classmethod
@@ -193,7 +195,9 @@ class TextDataMain():
             return trn_idxs,val_idxs
         
         self.split_cols = val2iterable(self.split_cols)
-            
+        if self.is_multilabel and self.label_names[0] in self.split_cols:
+            raise ValueError('For MultiLabel classification, you cannot choose the label as your shuffle-split column')
+        
         if len(self.split_cols)>0:
             _y = self.df[self.split_cols[0]]
             if len(self.split_cols)>1:
@@ -209,26 +213,44 @@ class TextDataMain():
                          
     def _encode_labels(self):
         print_msg('Label Encoding')
-        if self.label_names is None: return
+        if self.label_names is None: 
+            raise ValueError('Missing label columns!')
         self.label_names = val2iterable(self.label_names)
-
+        if len(self.label_names)>1:
+            self.is_multihead=True
+        
         if self.label_lists is not None and not isinstance(self.label_lists[0],list):
             self.label_lists = [self.label_lists]
         
+        if isinstance(self.df[self.label_names[0]].iloc[0],list):
+            # This is multi-label. Ignore self.label_names[1:]
+            self.label_names = [self.label_names[0]]
+            self.is_multihead=False
+            self.is_multilabel=True
+            
         encoder_classes=[]
-    
-        for idx,l in enumerate(self.label_names):
+        if not self.is_multilabel:
+            for idx,l in enumerate(self.label_names):
+                if self.label_lists is None:
+                    train_label = self.df[l].values
+                    l_encoder = LabelEncoder()
+                    self.df[l] = l_encoder.fit_transform(train_label)
+                    encoder_classes.append(list(l_encoder.classes_))
+                else:
+                    l_classes = sorted(list(self.label_lists[idx]))
+                    label2idx = {v:i for i,v in enumerate(l_classes)}
+                    self.df[l] = self.df[l].map(label2idx).values
+                    encoder_classes.append(l_classes)
+        else:
+            # For MultiLabel, we only save the encoder classes without transforming the label itself to one-hot (or actually, few-hot)
             if self.label_lists is None:
-                train_label = self.df[l].values
-                l_encoder = LabelEncoder()
-                self.df[l] = l_encoder.fit_transform(train_label)
+                l_encoder = MultiLabelBinarizer()
+                _ = l_encoder.fit(self.df[self.label_names[0]])
                 encoder_classes.append(list(l_encoder.classes_))
             else:
-                l_classes = sorted(list(self.label_lists[idx]))
-                label2idx = {v:i for i,v in enumerate(l_classes)}
-                self.df[l] = self.df[l].map(label2idx).values
+                l_classes = sorted(list(self.label_lists[0]))
                 encoder_classes.append(l_classes)
-        
+                
         self.label_lists = encoder_classes
             
     def _process_metadatas(self,df,override_dict=True):
@@ -357,8 +379,14 @@ class TextDataMain():
             trn_idx = _idxs[:_cutoff]
             
         _label = self.df[self.label_names].values.tolist()
-        if len(self.label_names)==1:
-            _label = np.array(_label).flatten().tolist()
+        if not self.is_multilabel:
+            if len(self.label_names)==1:
+                _label = np.array(_label).flatten().tolist() # (n,)
+        else:
+            # For MultiLabel, this is where the actual label transformation happens
+            mlb = MultiLabelBinarizer(classes=self.label_lists[0])
+            _label = self.df[self.label_names[0]].values.tolist()
+            _label = mlb.fit_transform(_label).tolist() # few-hotted
         
         kv_pairs = {'text':self.df[self.main_content].tolist(),
                     'label':_label,

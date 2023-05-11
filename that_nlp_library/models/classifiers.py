@@ -11,9 +11,9 @@ from transformers import AutoConfig
 from ..utils import *
 
 # %% auto 0
-__all__ = ['model_init_classification', 'compute_metrics_multihead_classification', 'loss_for_classification',
-           'RobertaConcatHeadExtended', 'RobertaConcatHeadSimple', 'RobertaClassificationHeadCustom',
-           'RobertaBaseForSequenceClassification', 'RobertaHiddenStateConcatForSequenceClassification']
+__all__ = ['model_init_classification', 'compute_metrics_classification', 'loss_for_classification', 'RobertaConcatHeadExtended',
+           'RobertaConcatHeadSimple', 'RobertaClassificationHeadCustom', 'RobertaBaseForSequenceClassification',
+           'RobertaHiddenStateConcatForSequenceClassification']
 
 # %% ../../nbs/04_models.classifiers.ipynb 4
 def model_init_classification(
@@ -37,13 +37,15 @@ def model_init_classification(
     return model
 
 # %% ../../nbs/04_models.classifiers.ipynb 6
-def compute_metrics_multihead_classification(pred, # An EvalPrediction object from HuggingFace (which is a named tuple with ```predictions``` and ```label_ids``` attributes)
+def compute_metrics_classification(pred, # An EvalPrediction object from HuggingFace (which is a named tuple with ```predictions``` and ```label_ids``` attributes)
                                              metric_funcs=[], # A list of metric functions to evaluate
                                              head_sizes=[], # Class size for each head,
-                                             label_names=[] # Names of the label (dependent variable) columns
+                                             label_names=[], # Names of the label (dependent variable) columns
+                                             is_multilabel=False, # Whether this is a multilabel classification
+                                             multilabel_thres=0.5 # Threshold for multilabel (>= threshold is positive)
                                             ):
     """
-    Return a dictionary of metric name and its values    
+    Return a dictionary of metric name and its values. Can handle both multiclass and multilabel    
     
     Reference: https://github.com/huggingface/transformers/blob/dbc12269ed5546b2da9236b9f1078b95b6a4d3d5/src/transformers/trainer_utils.py#LL100C22-L100C22
     """
@@ -59,7 +61,12 @@ def compute_metrics_multihead_classification(pred, # An EvalPrediction object fr
     for i,(_size,_name) in enumerate(zip(head_sizes,label_names)):
         start= 0 if i==0 else start+head_sizes[i-1]
         end = start + _size
-        _pred = preds[:,start:end].argmax(-1)
+        _pred = preds[:,start:end]
+        if is_multilabel:
+            # sigmoid and threshold
+            _pred = (sigmoid(_pred)>=multilabel_thres).astype(int)
+        else:
+            _pred = _pred.argmax(-1)
         _label = labels[:,i] if len(head_sizes)>1 else labels
         for m_func in metric_funcs:
             m_name = callable_name(m_func)
@@ -84,7 +91,7 @@ def loss_for_classification(logits, # output of the last linear layer, before an
     
     - If is_multilabel is ```True``` and is_multihead is ```False```: One-Head Multi-Label Classification, e.g. You predict x out of n class (x>=1)
     
-    - If is_multilabel is ```True``` and is_multihead is ```True```: Multi-Head Multi-Label Classification.
+    - If is_multilabel is ```True``` and is_multihead is ```True```: Not supported!
     
     """
     if is_multilabel and is_multihead: raise ValueError('Multi-Label and Multi-Head problem is not supported')
@@ -105,18 +112,19 @@ def loss_for_classification(logits, # output of the last linear layer, before an
     else:
         if not is_multihead:
             loss_fct = torch.nn.BCEWithLogitsLoss()
-            label_1hot = torch.nn.functional.one_hot(labels.view(-1),num_classes=head_sizes[0])
+#             label_1hot = torch.nn.functional.one_hot(labels.view(-1),num_classes=head_sizes[0])
             loss = loss_fct(logits,
-                            label1hot.float())
+                            labels.float())
         else:
-            assert len(head_sizes)==len(head_weights),"For MultiHead, make sure len of head_sizes and head_weights equal"
-            for i,(_size,_weight) in enumerate(zip(head_sizes,head_weights)):
-                start= 0 if i==0 else start+head_sizes[i-1]
-                end = start + _size
-                loss_fct = torch.nn.BCEWithLogitsLoss()
-                loss = loss + _weight*loss_fct(logits[:,start:end].view(-1,_size),
-                                               torch.nn.functional.one_hot(labels[:,i].view(-1),num_classes=_size).float()
-                                              )
+            raise ValueError('Multi-Head with Multi-Label classification is not supported. Have you lost your mind?')
+#             assert len(head_sizes)==len(head_weights),"For MultiHead, make sure len of head_sizes and head_weights equal"
+#             for i,(_size,_weight) in enumerate(zip(head_sizes,head_weights)):
+#                 start= 0 if i==0 else start+head_sizes[i-1]
+#                 end = start + _size
+#                 loss_fct = torch.nn.BCEWithLogitsLoss()
+#                 loss = loss + _weight*loss_fct(logits[:,start:end].view(-1,_size),
+#                                                torch.nn.functional.one_hot(labels[:,i].view(-1),num_classes=_size).float()
+#                                               )
             
     return loss
 

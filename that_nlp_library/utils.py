@@ -15,7 +15,8 @@ from collections.abc import Iterable
 
 # %% auto 0
 __all__ = ['HiddenPrints', 'val2iterable', 'create_dir', 'check_and_get_attribute', 'callable_name', 'print_msg',
-           'seed_everything', 'save_to_pickle', 'load_pickle', 'check_input_validation', 'check_text_leaking']
+           'seed_everything', 'save_to_pickle', 'load_pickle', 'check_input_validation', 'check_text_leaking',
+           'sigmoid']
 
 # %% ../nbs/07_utils.ipynb 4
 class HiddenPrints:
@@ -101,7 +102,8 @@ def check_input_validation(df:pd.DataFrame):
         print(na_check)
 
     # Do a row duplication check
-    dup_check = df.value_counts(dropna=False)
+    _df = df.copy().astype(str)
+    dup_check = _df.value_counts(dropna=False)
     dup_check=dup_check[dup_check>1]
     if dup_check.shape[0]!=0:
         print("DataFrame contains duplicated values!")
@@ -118,3 +120,19 @@ def check_text_leaking(trn_series:pd.Series,
     print(f'- After leak check\nSize: {len_after}')
     print(f'- Number of rows leaked: {len_diff}, or {100*len_diff/len_before:.2f}% of the original validation (or test) data')
     return test_series_noleak
+
+# %% ../nbs/07_utils.ipynb 9
+def sigmoid(x):
+    """
+    A numerically stable version of the logistic sigmoid function.
+    
+    Source: assignment3 of cs231n
+    """
+    pos_mask = (x >= 0)
+    neg_mask = (x < 0)
+    z = np.zeros_like(x)
+    z[pos_mask] = np.exp(-x[pos_mask])
+    z[neg_mask] = np.exp(x[neg_mask])
+    top = np.ones_like(x)
+    top[neg_mask] = z[neg_mask]
+    return top / (1 + z)
