@@ -20,14 +20,16 @@ def model_init_classification(
                               model_class, # Model's class object, e.g. RobertaHiddenStateConcatForSequenceClassification
                               cpoint_path, # Either model string name on HuggingFace, or the path to model checkpoint
                               output_hidden_states:bool, # To whether output the model hidden states or not. Useful when you try to build a custom classification head 
+                              device=None, # Device to train on
                               seed=42, # Random seed
                               model_kwargs={} # Keyword arguments for model
                              ):
     """To initialize a classification model, either from an existing HuggingFace model or custom architecture
     
     Can be used for binary, multi-class single-head, multi-class "two-head", and multi-label clasisifcation
-    """    
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    """
+    if device is None: device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
     config = AutoConfig.from_pretrained(
         cpoint_path,
         output_hidden_states=output_hidden_states,
@@ -42,7 +44,7 @@ def compute_metrics_classification(pred, # An EvalPrediction object from Hugging
                                              head_sizes=[], # Class size for each head,
                                              label_names=[], # Names of the label (dependent variable) columns
                                              is_multilabel=False, # Whether this is a multilabel classification
-                                             multilabel_thres=0.5 # Threshold for multilabel (>= threshold is positive)
+                                             multilabel_threshold=0.5 # Threshold for multilabel (>= threshold is positive)
                                             ):
     """
     Return a dictionary of metric name and its values. Can handle both multiclass and multilabel    
@@ -64,7 +66,7 @@ def compute_metrics_classification(pred, # An EvalPrediction object from Hugging
         _pred = preds[:,start:end]
         if is_multilabel:
             # sigmoid and threshold
-            _pred = (sigmoid(_pred)>=multilabel_thres).astype(int)
+            _pred = (sigmoid(_pred)>=multilabel_threshold).astype(int)
         else:
             _pred = _pred.argmax(-1)
         _label = labels[:,i] if len(head_sizes)>1 else labels

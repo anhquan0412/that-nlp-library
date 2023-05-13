@@ -88,14 +88,15 @@ class RobertaHSCSimpleDHCSequenceClassification(RobertaPreTrainedModel):
                  l1l2_matrix, # A one-hot matrix between classes of head 1 and 2
                  pretrained_roberta=None, # HuggingFace Roberta Body (useful for knowledge transfering task)
                  lloss_weight=1.0, # Weight for Layer Loss (lloss)
-                 dloss_weight=0.8 # Weight for Dependence Loss (dloss)
+                 dloss_weight=0.8, # Weight for Dependence Loss (dloss)
+                 device=None # CPU or GPU
                 ):
         
         super().__init__(config)
-        self.training_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = device if device is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.size_l1 = l1l2_matrix.shape[0]
         self.size_l2 = l1l2_matrix.shape[1]
-        self.l1l2_matrix = l1l2_matrix.to(self.training_device)
+        self.l1l2_matrix = l1l2_matrix.to(self.device)
             
         self.lloss_weight = lloss_weight
         self.dloss_weight = dloss_weight
@@ -162,15 +163,16 @@ class RobertaHSCDHCSequenceClassification(RobertaPreTrainedModel):
                  linear_l1_size=None, # last hidden size for head 1
                  linear_l2_size=None, # last hidden size for head 2
                  lloss_weight=1.0, # Weight for Layer Loss (lloss)
-                 dloss_weight=0.8 # Weight for Dependence Loss (dloss)
+                 dloss_weight=0.8, # Weight for Dependence Loss (dloss)
+                 device=None # CPU or GPU
                 ):
         
         super().__init__(config)
-        self.training_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = device if device is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.size_l1 = l1l2_matrix.shape[0]
         self.size_l2 = l1l2_matrix.shape[1]
         
-        self.l1l2_matrix = l1l2_matrix.to(self.training_device)
+        self.l1l2_matrix = l1l2_matrix.to(self.device)
     
         if linear_l1_size is None: linear_l1_size = (last_hidden_size+self.size_l1)//2 # 389
         if linear_l2_size is None: linear_l2_size = (last_hidden_size+self.size_l2)//2 # 417

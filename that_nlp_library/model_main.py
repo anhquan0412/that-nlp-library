@@ -81,13 +81,14 @@ def finetune(lr, # Learning rate
 def _forward_pass_for_predictions(batch,
                                  model=None, # NLP model
                                  topk=1, # Number of labels to return for each head
-                                 use_softmax=True, # To whether use softmax or sigmoid at the last activation func
-                                 device=None, # CPU or GPU
+                                 is_multilabel=False, # Is this a multilabel classification?
+                                 multilabel_threshold=0.5, # The threshold for multilabel classification
                                  tokenizer=None, # HuggingFace tokenizer
                                  data_collator=None, # HuggingFace data collator
                                  cols_to_remove=[], # list of keys (columns) to remove from ```batch```
                                  label_names=[], # Names of the label columns
                                  label_sizes=[], # Size of each label
+                                 device = None, # device that the model is trained on
                                  is_dhc=False
                                  ):
     if data_collator is not None:
@@ -111,11 +112,11 @@ def _forward_pass_for_predictions(batch,
             collator_inp.append({k:v for k,v in zip(ks,pair)})
         
         batch = data_collator(collator_inp)
-        
+    
     inputs = {k:v.to(device) for k,v in batch.items()
               if k in tokenizer.model_input_names}
     
-    _f = partial(torch.nn.functional.softmax,dim=1) if use_softmax else torch.sigmoid
+    _f = partial(torch.nn.functional.softmax,dim=1) if not is_multilabel else torch.sigmoid
     
     with torch.no_grad():
         outputs = model(**inputs)
@@ -138,14 +139,21 @@ def _forward_pass_for_predictions(batch,
         # save prediction and probability
         pred_label_list=[]
         pred_prob_list=[]
-        for i in range(len(label_names)):
-            _p,_l = torch.topk(outputs_list[i],topk,dim=-1)
-            pred_label_list.append(_l)
-            pred_prob_list.append(_p)
-        if topk==1:
+        if is_multilabel:
             for i in range(len(label_names)):
-                pred_label_list[i]=pred_label_list[i][:,0]
-                pred_prob_list[i]=pred_prob_list[i][:,0]
+                pred_label_list.append(outputs_list[i]>=multilabel_threshold)
+                pred_prob_list.append(outputs_list[i])
+        else:
+            for i in range(len(label_names)):
+                _p,_l = torch.topk(outputs_list[i],topk,dim=-1)
+                if topk==1:
+                    _l,_p = _l[:,0],_p[:,0]
+                pred_label_list.append(_l)
+                pred_prob_list.append(_p)
+#             if topk==1:
+#                 for i in range(len(label_names)):
+#                     pred_label_list[i]=pred_label_list[i][:,0]
+#                     pred_prob_list[i]=pred_prob_list[i][:,0]
                 
     results={}
     for i in range(len(label_names)):
@@ -159,12 +167,11 @@ class ModelController():
                  model, # NLP model
                  data_store:TextDataMain=None, # a TextDataMain object
                  metric_funcs=[accuracy_score], # Metric function (can be from Sklearn)
-                 seed=42 # Random seed
+                 seed=42, # Random seed
                 ):
         self.model = model
         self.data_store = data_store
         self.metric_funcs = metric_funcs
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.seed = seed
         
     def fit(self,
@@ -220,7 +227,8 @@ class ModelController():
     def predict_raw_text(self,
                          content:dict|list|str, # Either a single sentence, list of sentence or a dictionary with keys are metadata, values are list
                          batch_size=1, # Batch size. For a small amount of texts, you might want to keep this small
-                         use_softmax=True, # Use softmax or sigmoid as the last activation function
+                         is_multilabel=None, # Is this a multilabel classification?
+                         multilabel_threshold=0.5, # Threshold for multilabel classification
                          topk=1 # Number of labels to return for each head
                         ):
         if not isinstance(self.data_store,TextDataMain) or not self.data_store._main_called:
@@ -230,7 +238,8 @@ class ModelController():
             df_result =  self.predict_ddict(ddict=test_ddict,
                                             ds_type='test',
                                             batch_size=batch_size,
-                                            use_softmax=use_softmax,
+                                            is_multilabel=is_multilabel,
+                                            multilabel_threshold=multilabel_threshold,
                                             topk=topk)
         return df_result
     
@@ -238,15 +247,21 @@ class ModelController():
                       ddict=None, # DatasetDict to predict (will override ```data_store```)
                       ds_type='test', # Keys of DatasetDict to predict
                       batch_size=16, # Batch size
-                      use_softmax=True, # Use softmax or sigmoid as the last activation function
+                      is_multilabel=None, # Is this a multilabel classification?
+                      multilabel_threshold=0.5, # Threshold for multilabel classification
                       topk=1, # Number of labels to return for each head
                       tokenizer=None, # Tokenizer (to override one in ```data_store```)
                       data_collator=None, # Data Collator (to override one in ```data_store```)
                       label_names=None, # Names of the label (dependent variable) columns (to override one in ```data_store```)
                       class_names_predefined=None, # List of names associated with the labels (same index order) (to override one in ```data_store```)
-                      is_dhc=False):
+                      device=None, # Device that the model is trained on
+                      is_dhc=False
+                     ):
+        if device is None: device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        if is_multilabel is None: is_multilabel=check_and_get_attribute(self.model,'is_multilabel')
         
         label_lists = class_names_predefined
+        
         if tokenizer is None: tokenizer=check_and_get_attribute(self.data_store,'tokenizer')
         if data_collator is None: data_collator=getattr(self.data_store,'data_collator',None)
         if label_names is None: label_names=check_and_get_attribute(self.data_store,'label_names')
@@ -270,14 +285,15 @@ class ModelController():
         ddict[ds_type] = ddict[ds_type].map(
             partial(_forward_pass_for_predictions,model=self.model,
                     topk=topk,
-                    use_softmax=use_softmax,
-                    device=self.device,
+                    is_multilabel=is_multilabel,
+                    multilabel_threshold=multilabel_threshold,
                     tokenizer=tokenizer,
                     data_collator=data_collator,
                     cols_to_remove=cols_to_remove,
                    label_names=label_names,
                     label_sizes=label_sizes,
-                    is_dhc = is_dhc
+                    is_dhc = is_dhc,
+                    device=device
                    ), 
             batched=True, batch_size=batch_size)
     
@@ -288,16 +304,25 @@ class ModelController():
         df_result = df_result.loc[:,cols_to_keep]
         
         # convert pred id to string label
-        for i in range(len(label_names)):        
-            if topk==1:
-                df_result[f'pred_{label_names[i]}'] = df_result[f'pred_{label_names[i]}'].apply(lambda x: label_lists[i][int(x)])
-            else:
-                df1 = pd.DataFrame(df_result[f'pred_{label_names[i]}'].to_list(),columns=[f'pred_{label_names[i]}_top{j}' for j in range(1,topk+1)])
-                df1_prob = pd.DataFrame(df_result[f'pred_prob_{label_names[i]}'].to_list(),columns=[f'pred_prob_{label_names[i]}_top{j}' for j in range(1,topk+1)])
-                
-                for j in range(1,topk+1):
-                    df1[f'pred_{label_names[i]}_top{j}'] =  df1[f'pred_{label_names[i]}_top{j}'].apply(lambda x: label_lists[i][int(x)])
+        for i in range(len(label_names)):  
+            if not is_multilabel:
+                if topk==1:
+                    df_result[f'pred_{label_names[i]}'] = df_result[f'pred_{label_names[i]}'].apply(lambda x: label_lists[i][int(x)])
+                else:
+                    df1 = pd.DataFrame(df_result[f'pred_{label_names[i]}'].to_list(),columns=[f'pred_{label_names[i]}_top{j}' for j in range(1,topk+1)])
+                    df1_prob = pd.DataFrame(df_result[f'pred_prob_{label_names[i]}'].to_list(),columns=[f'pred_prob_{label_names[i]}_top{j}' for j in range(1,topk+1)])
 
-                df_result = pd.concat([df_result,df1,df1_prob],axis=1)
-                
+                    for j in range(1,topk+1):
+                        df1[f'pred_{label_names[i]}_top{j}'] =  df1[f'pred_{label_names[i]}_top{j}'].apply(lambda x: label_lists[i][int(x)])
+
+                    df_result = pd.concat([df_result,df1,df1_prob],axis=1)
+            else:
+                get_label_str_multilabel = lambda row: ','.join([label_lists[i][int(j)] for j in np.where(row==True)[0]])
+                df_result[f'pred_{label_names[i]}'] = df_result[f'pred_{label_names[i]}'].apply(get_label_str_multilabel)
+#                 # Broadcasting the label list, then perform np.where on mask result from ddict
+#                 label_broadcast = np.tile(np.array(label_lists[i]),(df_result.shape[0],1))
+#                 _mask = np.vstack(df_result[f'pred_{label_names[i]}'].values)
+#                 label_pass_thres= np.where(_mask==True,label_broadcast,'')
+#                 _result = [','.join(row[row != '']) for row in label_pass_thres]
+#                 df_result[f'pred_{label_names[i]}'] = _result
         return df_result

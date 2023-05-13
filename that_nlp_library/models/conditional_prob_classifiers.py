@@ -57,10 +57,11 @@ class RobertaHSCCProbSequenceClassification(RobertaPreTrainedModel):
                  last_hidden_size=768, # Last hidden size (before the last nn.Linear)
                  size_l1=None, # Number of classes for head 1
                  size_l2=None, # Number of classes for head 2
-                 standard_mask=None # Mask for conditional probability
+                 standard_mask=None, # Mask for conditional probability
+                 device=None # CPU or GPU
                 ):
         super().__init__(config)
-        self.training_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = device if device is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.size_l1 = size_l1
         self.size_l2 = size_l2
         
@@ -104,7 +105,7 @@ class RobertaHSCCProbSequenceClassification(RobertaPreTrainedModel):
             label_concat_1hot = torch.cat((l1_1hot,l2_1hot),1) # (bs,L1+L2)
 
             # version 2: the original approach: positives and other children of same parents
-            _mask = self.standard_mask[labels_l1].to(self.training_device)
+            _mask = self.standard_mask[labels_l1].to(self.device)
             loss_func = torch.nn.BCEWithLogitsLoss(reduction='none')
 
             loss = loss_func(logits,label_concat_1hot.float())
