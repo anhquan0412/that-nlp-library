@@ -322,7 +322,7 @@ class ModelController():
                     df_result = pd.concat([df_result,df1,df1_prob],axis=1)
             else:
                 get_label_str_multilabel = lambda row: ','.join([label_lists[i][int(j)] for j in np.where(row==True)[0]])
-                df_result[f'pred_{label_names[i]}'] = df_result[f'pred_{label_names[i]}'].apply(get_label_str_multilabel)
+                df_result[f'pred_{label_names[i]}_string'] = df_result[f'pred_{label_names[i]}'].apply(get_label_str_multilabel)
 #                 # Broadcasting the label list, then perform np.where on mask result from ddict
 #                 label_broadcast = np.tile(np.array(label_lists[i]),(df_result.shape[0],1))
 #                 _mask = np.vstack(df_result[f'pred_{label_names[i]}'].values)
