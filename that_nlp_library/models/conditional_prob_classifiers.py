@@ -16,24 +16,17 @@ from .classifiers import loss_for_classification
 # %% auto 0
 __all__ = ['build_standard_condition_mask', 'RobertaHSCCProbSequenceClassification']
 
-# %% ../../nbs/06_models.conditional_prob_classifiers.ipynb 4
-def build_standard_condition_mask(df,label1_encoder,label2_encoder,label1,label2):
-    L2_SIZE = len(label2_encoder.classes_)
-    L1_SIZE = len(label1_encoder.classes_)
+# %% ../../nbs/06_models.conditional_prob_classifiers.ipynb 5
+def build_standard_condition_mask(df_labels,
+                                  label1,label2):
+    L1_SIZE = df_labels[label1].nunique()
+    L2_SIZE = df_labels[label2].nunique()
+
     
-    l12idx = {v:i for i,v in enumerate(label1_encoder.classes_)}
-    l22idx = {v:i for i,v in enumerate(label2_encoder.classes_)}
-    df_labels = df[[label1,label2]].drop_duplicates().sort_values([label1,label2])
-    df_labels = df_labels.groupby([label1])[label2].apply('|'.join).reset_index()
-    
-    _d = defaultdict(list)
-    for i,j in df_labels.values:
-        for k in j.split('|'):
-            k = k.strip()
-            _d[l12idx[i]].append(l22idx[k])
+    df_labels = df_labels.drop_duplicates().sort_values([label1,label2])
+    _d = df_labels.groupby([label1])[label2].apply(list).to_dict()
     
     mask_l1 = torch.eye(L1_SIZE) ==1
-    
     mlb = MultiLabelBinarizer()
     mlb.fit([np.arange(L2_SIZE)])
     mask_l2 = torch.tensor(mlb.transform(list(_d.values())) == 1)
@@ -42,7 +35,7 @@ def build_standard_condition_mask(df,label1_encoder,label2_encoder,label1,label2
     
     return mask_final
 
-# %% ../../nbs/06_models.conditional_prob_classifiers.ipynb 5
+# %% ../../nbs/06_models.conditional_prob_classifiers.ipynb 8
 class RobertaHSCCProbSequenceClassification(RobertaPreTrainedModel):
     """
     Roberta Conditional Probability Architecture with Hidden-State-Concatenation for Sequence Classification task
@@ -61,7 +54,7 @@ class RobertaHSCCProbSequenceClassification(RobertaPreTrainedModel):
                  device=None # CPU or GPU
                 ):
         super().__init__(config)
-        self.device = device if device is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.training_device = device if device is not None else torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.size_l1 = size_l1
         self.size_l2 = size_l2
         
@@ -70,7 +63,7 @@ class RobertaHSCCProbSequenceClassification(RobertaPreTrainedModel):
         config.num_labels = num_labels
         
         self.roberta = RobertaModel(config, add_pooling_layer=False) if pretrained_roberta is None else pretrained_roberta
-        self.standard_mask = standard_mask
+        self.standard_mask = standard_mask.to(self.training_device)
         self.classification_head = concathead_class(config=config,classifier_dropout=classifier_dropout,
                                                     last_hidden_size=last_hidden_size,
                                                     n_output=num_labels) 
@@ -97,15 +90,15 @@ class RobertaHSCCProbSequenceClassification(RobertaPreTrainedModel):
 
         loss = None
         if labels is not None:
-            # labels shape: (bs,2), first is L3, second is L4
+            # labels shape: (bs,2), first is L1, second is L2
             labels_l1 = labels[:,0].view(-1) #(bs,)
             labels_l2 = labels[:,1].view(-1) #(bs,)
             l1_1hot = torch.nn.functional.one_hot(labels_l1, num_classes=self.size_l1)
             l2_1hot = torch.nn.functional.one_hot(labels_l2, num_classes=self.size_l2)
             label_concat_1hot = torch.cat((l1_1hot,l2_1hot),1) # (bs,L1+L2)
 
-            # version 2: the original approach: positives and other children of same parents
-            _mask = self.standard_mask[labels_l1].to(self.device)
+            # the original approach: positives and other children of same parents
+            _mask = self.standard_mask[labels_l1]
             loss_func = torch.nn.BCEWithLogitsLoss(reduction='none')
 
             loss = loss_func(logits,label_concat_1hot.float())

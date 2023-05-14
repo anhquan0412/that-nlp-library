@@ -258,8 +258,7 @@ class ModelController():
                       is_dhc=False
                      ):
         if device is None: device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        if is_multilabel is None: is_multilabel=check_and_get_attribute(self.model,'is_multilabel')
-        
+        if is_multilabel is None: is_multilabel=getattr(self.model,'is_multilabel',False)
         label_lists = class_names_predefined
         
         if tokenizer is None: tokenizer=check_and_get_attribute(self.data_store,'tokenizer')
