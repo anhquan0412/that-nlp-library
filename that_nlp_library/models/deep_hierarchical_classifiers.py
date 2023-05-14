@@ -7,30 +7,45 @@ from transformers.models.roberta.configuration_roberta import RobertaConfig
 from transformers.models.roberta.modeling_roberta import RobertaModel
 from transformers.modeling_outputs import SequenceClassifierOutput
 from transformers.models.roberta.modeling_roberta import RobertaPreTrainedModel
+from sklearn.preprocessing import MultiLabelBinarizer
 
 # %% auto 0
-__all__ = ['loss_for_DHC', 'RobertaConcatHeadDHCRoot', 'RobertaHSCSimpleDHCSequenceClassification',
+__all__ = ['build_DHC_conditional_mask', 'loss_for_DHC', 'RobertaConcatHeadDHCRoot', 'RobertaHSCSimpleDHCSequenceClassification',
            'RobertaHSCDHCSequenceClassification']
 
-# %% ../../nbs/05_models.deep_hierarchical_classifiers.ipynb 4
-def _check_hierarchy(l1_pred,l2_pred,l1l2_matrix,size_l2):
+# %% ../../nbs/05_models.deep_hierarchical_classifiers.ipynb 5
+def build_DHC_conditional_mask(df_labels,
+                                  label1,label2):
+    """
+    This is really similar to `build_standard_condition_mask`, 
+    but we don't concatenate l1 1-hot matrix and l2 1-hot matrix
+    """
+    df_labels = df_labels.drop_duplicates().sort_values([label1,label2])
+    _d = df_labels.groupby([label1])[label2].apply(list).to_dict()
+    
+    mlb = MultiLabelBinarizer()
+    results = mlb.fit_transform([v for k,v in sorted(_d.items())])
+    return torch.from_numpy(results).float()
+
+# %% ../../nbs/05_models.deep_hierarchical_classifiers.ipynb 10
+def _check_hierarchy(l1_pred,l2_pred,dhc_mask,size_l2):
     # Check if the predicted class at L2 is a children of the class predicted at L1 for the entire batch
     # if is a children return 0, else 1
-    _l1_pred = l1l2_matrix[l1_pred] # bs,size_l2
+    _l1_pred = dhc_mask[l1_pred] # bs,size_l2
     _l2_pred = torch.nn.functional.one_hot(l2_pred, num_classes=size_l2) # bs, size_l2
     return (~torch.mul(_l1_pred,_l2_pred).sum(axis=1).bool()).float()
 
-# %% ../../nbs/05_models.deep_hierarchical_classifiers.ipynb 5
+# %% ../../nbs/05_models.deep_hierarchical_classifiers.ipynb 11
 def loss_for_DHC(l1_repr_logits, # Head 1's logit output
                  l2_repr_logits, # Head 2's logit output
                  labels_l1, # True label for head 1
                  labels_l2, # True label for head 2
-                 l1l2_matrix, # A one-hot matrix between classes of head 1 and 2
+                 dhc_mask, # A one-hot matrix between classes of head 1 and 2
                  lloss_weight=1.0, # Weight for Layer Loss (lloss)
                  dloss_weight=0.8 # Weight for Dependence Loss (dloss)
                 ):
     "Reference: https://github.com/Ugenteraan/Deep_Hierarchical_Classification/blob/main/model/hierarchical_loss.py"
-    size_l2 = l1l2_matrix.shape[1]
+    size_l2 = dhc_mask.shape[1]
     
     # calculate lloss
     lloss = 0
@@ -42,17 +57,19 @@ def loss_for_DHC(l1_repr_logits, # Head 1's logit output
     # calculate dloss
     l1_pred = torch.argmax(l1_repr_logits, dim=1)
     l2_pred = torch.argmax(l2_repr_logits, dim=1)
-    D_l = _check_hierarchy(l1_pred,l2_pred,l1l2_matrix,size_l2)
+    D_l = _check_hierarchy(l1_pred,l2_pred,dhc_mask,size_l2)
     l1_not_match_true_label = (~(l1_pred == labels_l1)).float()
     l2_not_match_true_label = (~(l2_pred == labels_l2)).float()
     dloss_l1 = torch.nn.CrossEntropyLoss()(l1_repr_logits*D_l[:,None]*l1_not_match_true_label[:,None], labels_l1)
     dloss_l2 = torch.nn.CrossEntropyLoss()(l2_repr_logits*D_l[:,None]*l2_not_match_true_label[:,None], labels_l2)
     dloss = dloss_weight*(dloss_l1 + dloss_l2)  
+    
+    
     loss = lloss + dloss
     
     return loss
 
-# %% ../../nbs/05_models.deep_hierarchical_classifiers.ipynb 7
+# %% ../../nbs/05_models.deep_hierarchical_classifiers.ipynb 13
 class RobertaConcatHeadDHCRoot(torch.nn.Module):
     """
     Concatenated head for Roberta DHC Classification Model. 
@@ -76,7 +93,7 @@ class RobertaConcatHeadDHCRoot(torch.nn.Module):
 #         x = torch.relu(x)
         return x
 
-# %% ../../nbs/05_models.deep_hierarchical_classifiers.ipynb 9
+# %% ../../nbs/05_models.deep_hierarchical_classifiers.ipynb 15
 class RobertaHSCSimpleDHCSequenceClassification(RobertaPreTrainedModel):
     """
     Roberta Simple-DHC Architecture with Hidden-State-Concatenation for Sequence Classification task
@@ -85,7 +102,7 @@ class RobertaHSCSimpleDHCSequenceClassification(RobertaPreTrainedModel):
 
     def __init__(self, 
                  config, # HuggingFace model configuration
-                 l1l2_matrix, # A one-hot matrix between classes of head 1 and 2
+                 dhc_mask, # A one-hot matrix between classes of head 1 and 2
                  pretrained_roberta=None, # HuggingFace Roberta Body (useful for knowledge transfering task)
                  lloss_weight=1.0, # Weight for Layer Loss (lloss)
                  dloss_weight=0.8, # Weight for Dependence Loss (dloss)
@@ -93,17 +110,19 @@ class RobertaHSCSimpleDHCSequenceClassification(RobertaPreTrainedModel):
                 ):
         
         super().__init__(config)
-        self.device = device if device is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.size_l1 = l1l2_matrix.shape[0]
-        self.size_l2 = l1l2_matrix.shape[1]
-        self.l1l2_matrix = l1l2_matrix.to(self.device)
+        self.training_device = device if device is not None else torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.size_l1 = dhc_mask.shape[0]
+        self.size_l2 = dhc_mask.shape[1]
+        self.dhc_mask = dhc_mask.to(self.training_device)
             
         self.lloss_weight = lloss_weight
         self.dloss_weight = dloss_weight
         
         self.roberta = RobertaModel(config, add_pooling_layer=False) if pretrained_roberta is None else pretrained_roberta
-        self.linear_L2 = torch.nn.Linear(4*config.hidden_size, self.size_l2-self.size_l1)
+        
         self.linear_L1_logit = torch.nn.Linear(4*config.hidden_size,self.size_l1)
+
+        self.linear_L2 = torch.nn.Linear(4*config.hidden_size, abs(self.size_l2-self.size_l1))
         self.linear_L2_logit = torch.nn.Linear(self.size_l2,self.size_l2)
         
         if pretrained_roberta is None:
@@ -127,6 +146,7 @@ class RobertaHSCSimpleDHCSequenceClassification(RobertaPreTrainedModel):
         root_repr = hidden_concat # (bs,768*4) 
         
         l1_repr_logits = self.linear_L1_logit(root_repr) # (bs,size_l1)
+        
         l2_repr = self.linear_L2(root_repr) # (bs,size_l2-size_l1)
         l2_repr = torch.cat((l2_repr,l1_repr_logits),dim=1) # (bs, size_l2)
         l2_repr_logits = self.linear_L2_logit(l2_repr) # (bs, size_l2) 
@@ -138,16 +158,17 @@ class RobertaHSCSimpleDHCSequenceClassification(RobertaPreTrainedModel):
             labels_l1 = labels[:,0].view(-1) #(bs,)
             labels_l2 = labels[:,1].view(-1) #(bs,)
 
-            loss = loss_for_DHC(l1_repr_logits, l2_repr_logits, labels_l1, labels_l2, 
-                 self.l1l2_matrix,
-                 self.lloss_weight,self.dloss_weight)
+            loss = loss_for_DHC(l1_repr_logits, l2_repr_logits, 
+                                labels_l1, labels_l2, 
+                                self.dhc_mask,
+                                self.lloss_weight,self.dloss_weight)
             
         # Return model output object
         return SequenceClassifierOutput(loss=loss, logits=(l1_repr_logits,l2_repr_logits),
                                      hidden_states=None,
                                      attentions=outputs.attentions)
 
-# %% ../../nbs/05_models.deep_hierarchical_classifiers.ipynb 11
+# %% ../../nbs/05_models.deep_hierarchical_classifiers.ipynb 17
 class RobertaHSCDHCSequenceClassification(RobertaPreTrainedModel):
     """
     Roberta DHC Architecture with Hidden-State-Concatenation for Sequence Classification task
@@ -156,7 +177,7 @@ class RobertaHSCDHCSequenceClassification(RobertaPreTrainedModel):
 
     def __init__(self, 
                  config, # HuggingFace model configuration
-                 l1l2_matrix, # A one-hot matrix between classes of head 1 and 2
+                 dhc_mask, # A one-hot matrix between classes of head 1 and 2
                  pretrained_roberta=None, # HuggingFace Roberta Body (useful for knowledge transfering task)
                  classifier_dropout=0.1, # Dropout ratio (for dropout layer right before the last nn.Linear)
                  last_hidden_size=768, # Last hidden size (before the last nn.Linear)
@@ -168,11 +189,11 @@ class RobertaHSCDHCSequenceClassification(RobertaPreTrainedModel):
                 ):
         
         super().__init__(config)
-        self.device = device if device is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.size_l1 = l1l2_matrix.shape[0]
-        self.size_l2 = l1l2_matrix.shape[1]
+        self.training_device = device if device is not None else torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.size_l1 = dhc_mask.shape[0]
+        self.size_l2 = dhc_mask.shape[1]
         
-        self.l1l2_matrix = l1l2_matrix.to(self.device)
+        self.dhc_mask = dhc_mask.to(self.training_device)
     
         if linear_l1_size is None: linear_l1_size = (last_hidden_size+self.size_l1)//2 # 389
         if linear_l2_size is None: linear_l2_size = (last_hidden_size+self.size_l2)//2 # 417
@@ -226,9 +247,10 @@ class RobertaHSCDHCSequenceClassification(RobertaPreTrainedModel):
             labels_l1 = labels[:,0].view(-1) #(bs,)
             labels_l2 = labels[:,1].view(-1) #(bs,)
 
-            loss = loss_for_DHC(l1_repr_logits, l2_repr_logits, labels_l1, labels_l2, 
-                 self.l1l2_matrix,
-                 self.lloss_weight,self.dloss_weight)
+            loss = loss_for_DHC(l1_repr_logits, l2_repr_logits, 
+                                labels_l1, labels_l2, 
+                                self.dhc_mask,
+                                self.lloss_weight,self.dloss_weight)
             
         # Return model output object
         return SequenceClassifierOutput(loss=loss, logits=(l1_repr_logits,l2_repr_logits),

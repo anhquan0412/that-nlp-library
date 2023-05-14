@@ -195,8 +195,10 @@ class ModelController():
         if tokenizer is None: tokenizer=check_and_get_attribute(self.data_store,'tokenizer')
         if data_collator is None: data_collator=getattr(self.data_store,'data_collator',None)
         if ddict is None: ddict = check_and_get_attribute(self.data_store,'main_ddict')
+            
         if label_names is None: label_names=check_and_get_attribute(self.data_store,'label_names')
         label_names = val2iterable(label_names)
+        
         if head_sizes is None: head_sizes=check_and_get_attribute(self.model,'head_class_sizes')
         head_sizes = val2iterable(head_sizes)
         
@@ -229,7 +231,8 @@ class ModelController():
                          batch_size=1, # Batch size. For a small amount of texts, you might want to keep this small
                          is_multilabel=None, # Is this a multilabel classification?
                          multilabel_threshold=0.5, # Threshold for multilabel classification
-                         topk=1 # Number of labels to return for each head
+                         topk=1, # Number of labels to return for each head
+                         is_dhc=False # Are outpuf (of model) separate heads?
                         ):
         if not isinstance(self.data_store,TextDataMain) or not self.data_store._main_called:
             raise ValueError('This functionality needs a TextDataMain object which has already processed some training data')
@@ -240,7 +243,9 @@ class ModelController():
                                             batch_size=batch_size,
                                             is_multilabel=is_multilabel,
                                             multilabel_threshold=multilabel_threshold,
-                                            topk=topk)
+                                            topk=topk,
+                                            is_dhc=is_dhc
+                                           )
         return df_result
     
     def predict_ddict(self,
@@ -255,7 +260,7 @@ class ModelController():
                       label_names=None, # Names of the label (dependent variable) columns (to override one in ```data_store```)
                       class_names_predefined=None, # List of names associated with the labels (same index order) (to override one in ```data_store```)
                       device=None, # Device that the model is trained on
-                      is_dhc=False
+                      is_dhc=False # Are outpuf (of model) separate heads?
                      ):
         if device is None: device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         if is_multilabel is None: is_multilabel=getattr(self.model,'is_multilabel',False)

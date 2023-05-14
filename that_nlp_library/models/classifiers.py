@@ -11,8 +11,9 @@ from transformers import AutoConfig
 from ..utils import *
 
 # %% auto 0
-__all__ = ['model_init_classification', 'compute_metrics_classification', 'loss_for_classification', 'RobertaConcatHeadExtended',
-           'RobertaConcatHeadSimple', 'RobertaClassificationHeadCustom', 'RobertaBaseForSequenceClassification',
+__all__ = ['model_init_classification', 'compute_metrics_classification', 'compute_metrics_separate_singleheads',
+           'loss_for_classification', 'RobertaConcatHeadExtended', 'RobertaConcatHeadSimple',
+           'RobertaClassificationHeadCustom', 'RobertaBaseForSequenceClassification',
            'RobertaHiddenStateConcatForSequenceClassification']
 
 # %% ../../nbs/04_models.classifiers.ipynb 4
@@ -40,12 +41,12 @@ def model_init_classification(
 
 # %% ../../nbs/04_models.classifiers.ipynb 6
 def compute_metrics_classification(pred, # An EvalPrediction object from HuggingFace (which is a named tuple with ```predictions``` and ```label_ids``` attributes)
-                                             metric_funcs=[], # A list of metric functions to evaluate
-                                             head_sizes=[], # Class size for each head,
-                                             label_names=[], # Names of the label (dependent variable) columns
-                                             is_multilabel=False, # Whether this is a multilabel classification
-                                             multilabel_threshold=0.5 # Threshold for multilabel (>= threshold is positive)
-                                            ):
+                                   metric_funcs=[], # A list of metric functions to evaluate
+                                   head_sizes=[], # Class size for each head,
+                                   label_names=[], # Names of the label (dependent variable) columns
+                                   is_multilabel=False, # Whether this is a multilabel classification
+                                   multilabel_threshold=0.5 # Threshold for multilabel (>= threshold is positive)
+                                  ):
     """
     Return a dictionary of metric name and its values. Can handle both multiclass and multilabel    
     
@@ -76,6 +77,32 @@ def compute_metrics_classification(pred, # An EvalPrediction object from Hugging
     return results
 
 # %% ../../nbs/04_models.classifiers.ipynb 8
+def compute_metrics_separate_singleheads(pred, # An EvalPrediction object from HuggingFace (which is a named tuple with ```predictions``` and ```label_ids``` attributes)
+                              metric_funcs=[], # A list of metric functions to evaluate
+                              label_names=[], # Names of the label (dependent variable) columns
+                              **kwargs
+                             ):
+    """
+    Return a dictionary of metric name and its values. Can handle both multiclass and multilabel
+    """
+    # pred: EvalPrediction object 
+    # (which is a named tuple with predictions and label_ids attributes)
+    labels = pred.label_ids # (bs,number of head separately)
+    assert labels.shape[1]==len(label_names)
+    
+    results={}
+    metric_funcs = val2iterable(metric_funcs)
+    
+    for i in range(len(label_names)):
+        _label = labels[:,i]
+        _pred = pred.predictions[i].argmax(-1)
+        for m_func in metric_funcs:
+            m_name = callable_name(m_func)
+            results[f'{m_name}_{label_names[i]}']=m_func(_label,_pred)
+    
+    return results
+
+# %% ../../nbs/04_models.classifiers.ipynb 10
 def loss_for_classification(logits, # output of the last linear layer, before any softmax/sigmoid. Size: (bs,class_size)
                             labels, # determined by your datasetdict. Size: (bs,number_of_head)
                             is_multilabel=False, # Whether this is a multilabel classification
@@ -130,7 +157,7 @@ def loss_for_classification(logits, # output of the last linear layer, before an
             
     return loss
 
-# %% ../../nbs/04_models.classifiers.ipynb 11
+# %% ../../nbs/04_models.classifiers.ipynb 13
 class RobertaConcatHeadExtended(torch.nn.Module):
     """
     Concatenated head for Roberta Classification Model. 
@@ -161,7 +188,7 @@ class RobertaConcatHeadExtended(torch.nn.Module):
         x = self.out_proj(x)
         return x
 
-# %% ../../nbs/04_models.classifiers.ipynb 13
+# %% ../../nbs/04_models.classifiers.ipynb 15
 class RobertaConcatHeadSimple(torch.nn.Module):
     """
     Concatenated head for Roberta Classification Model, the simpler version (no hidden linear layer)
@@ -184,7 +211,7 @@ class RobertaConcatHeadSimple(torch.nn.Module):
         x = self.out_proj(x)
         return x
 
-# %% ../../nbs/04_models.classifiers.ipynb 15
+# %% ../../nbs/04_models.classifiers.ipynb 17
 class RobertaClassificationHeadCustom(torch.nn.Module):
     """
     Same as RobertaClassificationHead, but you can freely adjust dropout
@@ -211,7 +238,7 @@ class RobertaClassificationHeadCustom(torch.nn.Module):
         x = self.out_proj(x)
         return x
 
-# %% ../../nbs/04_models.classifiers.ipynb 18
+# %% ../../nbs/04_models.classifiers.ipynb 20
 class RobertaBaseForSequenceClassification(RobertaPreTrainedModel):
     """
     Base Roberta Architecture for Sequence Classification task
@@ -277,7 +304,7 @@ class RobertaBaseForSequenceClassification(RobertaPreTrainedModel):
                                         hidden_state=None,
                                      attentions=outputs.attentions)
 
-# %% ../../nbs/04_models.classifiers.ipynb 20
+# %% ../../nbs/04_models.classifiers.ipynb 22
 class RobertaHiddenStateConcatForSequenceClassification(RobertaPreTrainedModel):
     """
     Roberta Architecture with Hidden-State-Concatenation for Sequence Classification task
