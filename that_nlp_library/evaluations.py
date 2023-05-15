@@ -59,7 +59,7 @@ def show_top_n_predictions(df:pd.DataFrame, # The main dataframe containing the 
     df = df.sort_values(prob_name,ascending=ascending)[[text_name,label_name,pred_name,prob_name]].head(n_show).values
     for row in df:
         print(f'Text: {row[0]}')
-        print(f'True label: {row[1]}, {"but" if is_incorrect else ""} predict {row[2]}, with confidence {row[3]}')
+        print(f'True label: {row[1]}, {"but" if is_incorrect else ""} predict {row[2]}, with confidence {row[3]:.4f}')
         print('-'*60)
 
 # %% ../nbs/08_evaluations.ipynb 33
