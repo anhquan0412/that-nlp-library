@@ -370,7 +370,7 @@ class TextDataMain():
                       ):
         if not self._main_called:
             self._main_text_processing()
-        val_idx = self.df[self.df['is_valid']].index.values if self.val_ratio else None
+        val_idx = self.df[self.df['is_valid']].index.values if self.val_ratio is not None else None
         trn_idx = self.df[~self.df['is_valid']].index.values
         if trn_ratio<1. and trn_ratio>0.:
             rng = np.random.default_rng(self.seed)
