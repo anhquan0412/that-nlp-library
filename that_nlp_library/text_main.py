@@ -85,7 +85,10 @@ def datasetdictize_given_idxs(kv_pairs:dict, # Dictionary; keys can be content, 
         main_ddict['validation'] = all_dataset.select(val_idx)
     
     print_msg("Map Tokenize Function",20)
-    main_ddict_tokenized = main_ddict.map(partial(tokenize_function,tok=tokenizer,is_split_into_words=is_split_into_words,max_length=max_length))
+    main_ddict_tokenized = main_ddict.map(partial(tokenize_function,
+                                                  tok=tokenizer,
+                                                  is_split_into_words=is_split_into_words,
+                                                  max_length=max_length),batched=True)
     
     return main_ddict_tokenized
 
