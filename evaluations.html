@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.433">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="This module contains some functions to evaluate your model in-depth">
+
+<title>that-nlp-library - Model Evaluations</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+<script src="https://unpkg.com/@jupyter-widgets/html-manager@*/dist/embed-amd.js" crossorigin="anonymous"></script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="that-nlp-library - Model Evaluations">
+<meta property="og:description" content="This module contains some functions to evaluate your model in-depth">
+<meta property="og:image" content="https://anhquan0412.github.io/that-nlp-library/08_evaluations_files/figure-html/cell-25-output-3.png">
+<meta property="og:site-name" content="that-nlp-library">
+<meta property="og:image:height" content="773">
+<meta property="og:image:width" content="811">
+<meta name="twitter:title" content="that-nlp-library - Model Evaluations">
+<meta name="twitter:description" content="This module contains some functions to evaluate your model in-depth">
+<meta name="twitter:image" content="https://anhquan0412.github.io/that-nlp-library/08_evaluations_files/figure-html/cell-25-output-3.png">
+<meta name="twitter:image-height" content="773">
+<meta name="twitter:image-width" content="811">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-sidebar floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">that-nlp-library</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools ms-auto">
+</div>
+          <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./evaluations.html">Model Evaluation</a></li><li class="breadcrumb-item"><a href="./evaluations.html">Model Evaluations</a></li></ol></nav>
+      <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+      </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Welcome to that-nlp-library</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_main_envibert.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Controller Tutorial: EnviBert model</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true">
+ <span class="menu-text">Text</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="false">
+ <span class="menu-text">Text Process</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_augmentation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Augmentation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_transformation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Transformation</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="false">
+ <span class="menu-text">Text Controller</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_main.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Main</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="true">
+ <span class="menu-text">Model</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="false">
+ <span class="menu-text">Model Controller</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_main.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Main Functions and Controller</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="false">
+ <span class="menu-text">Roberta-based model definitions</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./models.roberta.classifiers.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta Classifiers</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./models.roberta.deep_hierarchical_classifiers.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Deep Hierarchical Classifiers</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./models.roberta.conditional_prob_classifiers.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Conditional Probability Classifiers</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" aria-expanded="true">
+ <span class="menu-text">Model Evaluation</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./evaluations.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Model Evaluations</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" aria-expanded="true">
+ <span class="menu-text">Utility</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./utils.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">utils</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" aria-expanded="true">
+ <span class="menu-text">All uses cases</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-9" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" aria-expanded="false">
+ <span class="menu-text">Roberta-based models</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-10" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_main_envibert_singlehead.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Controller Tutorial: EnviBert model (Single Head)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_main_envibert_multihead.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Controller Tutorial: EnviBert model (MultiHead)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_main_envibert_multilabel.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Controller Tutorial: EnviBert model (Multi Label)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_main_envibert_conditional_prob.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Controller Tutorial: EnviBert model with Conditional Probability</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_main_envibert_dhc.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Controller Tutorial: EnviBert model with Deep Hierarchical Classification</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#single-headmulti-head-classification" id="toc-single-headmulti-head-classification" class="nav-link active" data-scroll-target="#single-headmulti-head-classification">Single-head/Multi-head Classification</a></li>
+  <li><a href="#load-data" id="toc-load-data" class="nav-link" data-scroll-target="#load-data">Load data</a></li>
+  <li><a href="#define-and-train-model" id="toc-define-and-train-model" class="nav-link" data-scroll-target="#define-and-train-model">Define and train model</a></li>
+  <li><a href="#generate-predictions" id="toc-generate-predictions" class="nav-link" data-scroll-target="#generate-predictions">Generate predictions</a></li>
+  <li><a href="#start-the-model-evaluation" id="toc-start-the-model-evaluation" class="nav-link" data-scroll-target="#start-the-model-evaluation">Start the model evaluation</a>
+  <ul class="collapse">
+  <li><a href="#evaluate_classification_model_metadata" id="toc-evaluate_classification_model_metadata" class="nav-link" data-scroll-target="#evaluate_classification_model_metadata">evaluate_classification_model_metadata</a></li>
+  <li><a href="#show_top_n_predictions" id="toc-show_top_n_predictions" class="nav-link" data-scroll-target="#show_top_n_predictions">show_top_n_predictions</a></li>
+  <li><a href="#evaluate_classification_model" id="toc-evaluate_classification_model" class="nav-link" data-scroll-target="#evaluate_classification_model">evaluate_classification_model</a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><div><i class="bi bi-github"></i></div><div class="action-links"><p><a href="https://github.com/anhquan0412/that-nlp-library/issues/new" class="toc-action">Report an issue</a></p></div></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Model Evaluations</h1>
+</div>
+
+<div>
+  <div class="description">
+    This module contains some functions to evaluate your model in-depth
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> that_nlp_library.text_transformation <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> that_nlp_library.text_augmentation <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> that_nlp_library.text_main <span class="im">import</span> <span class="op">*</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> underthesea <span class="im">import</span> text_normalize</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> functools <span class="im">import</span> partial</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> importlib.machinery <span class="im">import</span> SourceFileLoader</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> transformers <span class="im">import</span> DataCollatorWithPadding</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="single-headmulti-head-classification" class="level2">
+<h2 class="anchored" data-anchor-id="single-headmulti-head-classification">Single-head/Multi-head Classification</h2>
+<p>First, we will fully train and evaluate our model on a train/validation set</p>
+</section>
+<section id="load-data" class="level2">
+<h2 class="anchored" data-anchor-id="load-data">Load data</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>txt_tfms<span class="op">=</span>[text_normalize]</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>over_nonown_tfm <span class="op">=</span> partial(sampling_with_condition,query<span class="op">=</span><span class="st">'Source=="non owned"'</span>,frac<span class="op">=</span><span class="fl">0.5</span>,seed<span class="op">=</span><span class="dv">42</span>,apply_to_all<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>over_nonown_tfm.<span class="va">__name__</span> <span class="op">=</span> <span class="st">'Oversampling Non Owned'</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>over_own_tfm <span class="op">=</span> partial(sampling_with_condition,query<span class="op">=</span><span class="st">'Source=="owned"'</span>,frac<span class="op">=</span><span class="dv">2</span>,seed<span class="op">=</span><span class="dv">42</span>,apply_to_all<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>over_own_tfm.<span class="va">__name__</span> <span class="op">=</span> <span class="st">'Oversampling Owned'</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>over_hc_tfm <span class="op">=</span> partial(sampling_with_condition,query<span class="op">=</span><span class="st">'Source=="hc search"'</span>,frac<span class="op">=</span><span class="fl">2.5</span>,seed<span class="op">=</span><span class="dv">42</span>,apply_to_all<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>over_hc_tfm.<span class="va">__name__</span> <span class="op">=</span> <span class="st">'Oversampling HC search'</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>remove_accent_tfm <span class="op">=</span> partial(remove_vnmese_accent,frac<span class="op">=</span><span class="dv">1</span>,seed<span class="op">=</span><span class="dv">42</span>,apply_to_all<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>remove_accent_tfm.<span class="va">__name__</span> <span class="op">=</span> <span class="st">'Add No-Accent Text'</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>aug_tfms <span class="op">=</span> [over_nonown_tfm,over_own_tfm,over_hc_tfm,remove_accent_tfm]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>DATA_PATH <span class="op">=</span> Path(<span class="st">'sample_data'</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>tdm <span class="op">=</span> TextDataMain.from_csv(DATA_PATH<span class="op">/</span><span class="st">'sample_large.csv'</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                            return_df<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                            main_content<span class="op">=</span><span class="st">'Content'</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                            metadatas<span class="op">=</span><span class="st">'Source'</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>                            label_names<span class="op">=</span><span class="st">'L1'</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>                            val_ratio<span class="op">=</span><span class="fl">0.2</span>,</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>                            split_cols<span class="op">=</span><span class="st">'L1'</span>,</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>                            content_tfms <span class="op">=</span> txt_tfms,</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>                            aug_tfms <span class="op">=</span> aug_tfms,</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>                            process_metadatas<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>                            seed<span class="op">=</span><span class="dv">42</span>,</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>                            shuffle_trn<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>cache_dir<span class="op">=</span>Path(<span class="st">'./envibert_tokenizer'</span>)</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>tokenizer <span class="op">=</span> SourceFileLoader(<span class="st">"envibert.tokenizer"</span>, </span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>                             <span class="bu">str</span>(cache_dir<span class="op">/</span><span class="st">'envibert_tokenizer.py'</span>)).load_module().RobertaTokenizer(cache_dir)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>----- Input Validation Precheck -----
+DataFrame contains duplicated values!
+-----&gt; Number of duplications: 16 rows</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>main_ddict<span class="op">=</span> tdm.to_datasetdict(tokenizer,</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>                                max_length<span class="op">=</span><span class="dv">512</span>,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                              )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>-------------------- Start Main Text Processing --------------------
+----- Metadata Simple Processing &amp; Concatenating to Main Content -----
+----- Label Encoding -----
+-------------------- Text Transformation --------------------
+----- text_normalize -----
+-------------------- Train Test Split --------------------
+Previous Validation Percentage: 20.009%
+- Before leak check
+Size: 454
+- After leak check
+Size: 447
+- Number of rows leaked: 7, or 1.54% of the original validation (or test) data
+Current Validation Percentage: 19.7%
+-------------------- Text Augmentation --------------------
+Train data size before augmentation: 1822
+----- Oversampling Non Owned -----
+Train data size after THIS augmentation: 2020
+----- Oversampling Owned -----
+Train data size after THIS augmentation: 2248
+----- Oversampling HC search -----
+Train data size after THIS augmentation: 2390
+----- Add No-Accent Text -----
+Train data size after THIS augmentation: 4780
+Train data size after ALL augmentation: 4780
+-------------------- Map Tokenize Function --------------------</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>100%|█████████████████████████████████████| 2269/2269 [00:00&lt;00:00, 3931.61it/s]
+100%|████████████████████████████████████| 2390/2390 [00:00&lt;00:00, 19307.67it/s]</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<script type="application/vnd.jupyter.widget-view+json">
+{"model_id":"","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
+</script>
+</div>
+<div class="cell-output cell-output-display">
+<script type="application/vnd.jupyter.widget-view+json">
+{"model_id":"","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
+</script>
+</div>
+</div>
+</section>
+<section id="define-and-train-model" class="level2">
+<h2 class="anchored" data-anchor-id="define-and-train-model">Define and train model</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> that_nlp_library.models.roberta.classifiers <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> that_nlp_library.model_main <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> f1_score, accuracy_score</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>os.environ[<span class="st">'CUDA_VISIBLE_DEVICES'</span>] <span class="op">=</span> <span class="st">'0'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> transformers.models.roberta.modeling_roberta <span class="im">import</span> RobertaModel</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>model_name<span class="op">=</span><span class="st">'nguyenvulebinh/envibert'</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>envibert_body <span class="op">=</span> RobertaModel.from_pretrained(model_name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Some weights of the model checkpoint at nguyenvulebinh/envibert were not used when initializing RobertaModel: ['lm_head.dense.weight', 'lm_head.dense.bias', 'lm_head.layer_norm.bias', 'lm_head.bias', 'lm_head.layer_norm.weight']
+- This IS expected if you are initializing RobertaModel from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing RobertaModel from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>num_classes <span class="op">=</span> <span class="bu">len</span>(tdm.label_lists[<span class="dv">0</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>_model_kwargs<span class="op">=</span>{</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># overall model hyperparams</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">'layer2concat'</span>:<span class="dv">4</span>,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">'is_multilabel'</span>:tdm.is_multilabel, <span class="co"># False</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">'is_multihead'</span>:tdm.is_multihead, <span class="co"># False</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">'head_class_sizes'</span>:num_classes,</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'head_class'</span>: ConcatHeadSimple,</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># classfication head hyperparams</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'classifier_dropout'</span>:<span class="fl">0.1</span> </span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> model_init_classification(model_class <span class="op">=</span> RobertaHiddenStateConcatForSequenceClassification,</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>                                  cpoint_path <span class="op">=</span> model_name, </span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>                                  output_hidden_states<span class="op">=</span><span class="va">True</span>, <span class="co"># since we are not using 'hidden layer contatenation' technique</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>                                  seed<span class="op">=</span><span class="dv">42</span>,</span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>                                  body_model<span class="op">=</span>envibert_body,</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>                                  model_kwargs <span class="op">=</span> _model_kwargs)</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>metric_funcs <span class="op">=</span> [partial(f1_score,average<span class="op">=</span><span class="st">'macro'</span>),accuracy_score] <span class="co"># we will use both f1_macro and accuracy score as metrics</span></span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>controller <span class="op">=</span> ModelController(model,tdm,metric_funcs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Loading body weights. This assumes the body is the very first first-layer block of your custom architecture</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>lr <span class="op">=</span> <span class="fl">8e-5</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>bs<span class="op">=</span><span class="dv">4</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>wd<span class="op">=</span><span class="fl">0.01</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>epochs<span class="op">=</span> <span class="dv">2</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>controller.fit(epochs,lr,</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>               batch_size<span class="op">=</span>bs,</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>               weight_decay<span class="op">=</span>wd,</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>               save_checkpoint<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>               compute_metrics<span class="op">=</span>compute_metrics_classification,</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>              )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+
+    <div>
+      
+      <progress value="1194" max="1194" style="width:300px; height:20px; vertical-align: middle;"></progress>
+      [1194/1194 01:05, Epoch 1/2]
+    </div>
+    
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th">Epoch</th>
+<th data-quarto-table-cell-role="th">Training Loss</th>
+<th data-quarto-table-cell-role="th">Validation Loss</th>
+<th data-quarto-table-cell-role="th">F1 Score L1</th>
+<th data-quarto-table-cell-role="th">Accuracy Score L1</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0</td>
+<td>No log</td>
+<td>0.933689</td>
+<td>0.395291</td>
+<td>0.695749</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>No log</td>
+<td>0.942117</td>
+<td>0.488467</td>
+<td>0.706935</td>
+</tr>
+</tbody>
+</table>
+<p>
+</p></div>
+</div>
+</section>
+<section id="generate-predictions" class="level2">
+<h2 class="anchored" data-anchor-id="generate-predictions">Generate predictions</h2>
+<p>We will do model evaluation on the validation set. You can also perform model evalution on the training set using similar approach</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>df_val <span class="op">=</span> controller.predict_ddict(ds_type<span class="op">=</span><span class="st">'validation'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>-------------------- Start making predictions --------------------</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<script type="application/vnd.jupyter.widget-view+json">
+{"model_id":"","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
+</script>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>df_val[<span class="st">'label'</span>]<span class="op">=</span> df_val[<span class="st">'label'</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: tdm.label_lists[<span class="dv">0</span>][x]).values</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>df_val.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">text</th>
+<th data-quarto-table-cell-role="th">label</th>
+<th data-quarto-table-cell-role="th">Source</th>
+<th data-quarto-table-cell-role="th">pred_L1</th>
+<th data-quarto-table-cell-role="th">pred_prob_L1</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>google play - Chơi gam rất là lác</td>
+<td>Feature</td>
+<td>google play</td>
+<td>Commercial</td>
+<td>0.751953</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>google play - Zq</td>
+<td>Others</td>
+<td>google play</td>
+<td>Others</td>
+<td>0.980518</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>non owned - Làn sóng kỹ thuật số và sự lựa chọ...</td>
+<td>Others</td>
+<td>non owned</td>
+<td>Others</td>
+<td>0.965513</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>google play - Hàng quốc tế không còn ship COD ...</td>
+<td>Payment</td>
+<td>google play</td>
+<td>Delivery</td>
+<td>0.923603</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>google play - Quá tệ . Giao hàng chậm như rùa ...</td>
+<td>Delivery</td>
+<td>google play</td>
+<td>Delivery</td>
+<td>0.919842</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>df_val.Source.value_counts()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>Source
+google play    280
+non owned      102
+owned           25
+ios             24
+hc search       16
+Name: count, dtype: int64</code></pre>
+</div>
+</div>
+</section>
+<section id="start-the-model-evaluation" class="level2">
+<h2 class="anchored" data-anchor-id="start-the-model-evaluation">Start the model evaluation</h2>
+<hr>
+<p><a href="https://github.com/anhquan0412/that-nlp-library/blob/main/that_nlp_library/evaluations.py#L24" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="evaluate_classification_model_metadata" class="level3">
+<h3 class="anchored" data-anchor-id="evaluate_classification_model_metadata">evaluate_classification_model_metadata</h3>
+<blockquote class="blockquote">
+<pre><code> evaluate_classification_model_metadata (df:pandas.core.frame.DataFrame,
+                                         metadatas:str|list,
+                                         label_name:str, pred_name:str,
+                                         metric_funcs:list)</code></pre>
+</blockquote>
+<table class="table">
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>Type</strong></th>
+<th><strong>Details</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>df</td>
+<td>pd.DataFrame</td>
+<td>The main dataframe containing the predictions</td>
+</tr>
+<tr class="even">
+<td>metadatas</td>
+<td>str | list</td>
+<td>Metadata(s) to perform analysis</td>
+</tr>
+<tr class="odd">
+<td>label_name</td>
+<td>str</td>
+<td>Label’s column name</td>
+</tr>
+<tr class="even">
+<td>pred_name</td>
+<td>str</td>
+<td>Prediction’s column name</td>
+</tr>
+<tr class="odd">
+<td>metric_funcs</td>
+<td>list</td>
+<td>Metric(s) to calculate</td>
+</tr>
+</tbody>
+</table>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>metric_funcs <span class="op">=</span> [partial(f1_score,average<span class="op">=</span><span class="st">'macro'</span>),accuracy_score]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>evaluate_classification_model_metadata(df_val,metadatas<span class="op">=</span><span class="st">'Source'</span>,</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>                                       label_name<span class="op">=</span><span class="st">'label'</span>,</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>                                       pred_name<span class="op">=</span><span class="st">'pred_L1'</span>,</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>                                       metric_funcs<span class="op">=</span>metric_funcs</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>                                      )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>-------------------- label Analysis on metadata: Source --------------------
+---------- Distribution ----------
+             count  proportion
+Source                        
+google play    280    0.626398
+non owned      102    0.228188
+owned           25    0.055928
+ios             24    0.053691
+hc search       16    0.035794
+
+---------- Metrics for each value in Source ----------
+- For all data:
+f1_score: 0.4952 . accuracy_score: 0.7092 . 
+- For google play:
+f1_score: 0.4857 . accuracy_score: 0.6929 . 
+- For hc search:
+f1_score: 0.4315 . accuracy_score: 0.6250 . 
+- For ios:
+f1_score: 0.6736 . accuracy_score: 0.7083 . 
+- For non owned:
+f1_score: 0.3407 . accuracy_score: 0.7647 . 
+- For owned:
+f1_score: 0.4146 . accuracy_score: 0.7200 . </code></pre>
+</div>
+</div>
+<hr>
+<p><a href="https://github.com/anhquan0412/that-nlp-library/blob/main/that_nlp_library/evaluations.py#L46" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="show_top_n_predictions" class="level3">
+<h3 class="anchored" data-anchor-id="show_top_n_predictions">show_top_n_predictions</h3>
+<blockquote class="blockquote">
+<pre><code> show_top_n_predictions (df:pandas.core.frame.DataFrame, text_name:str,
+                         label_name:str, pred_name:str, prob_name:str,
+                         is_incorrect=True, ascending=False, n_show=10)</code></pre>
+</blockquote>
+<table class="table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 25%">
+<col style="width: 34%">
+<col style="width: 34%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>Type</strong></th>
+<th><strong>Default</strong></th>
+<th><strong>Details</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>df</td>
+<td>pd.DataFrame</td>
+<td></td>
+<td>The main dataframe containing the predictions</td>
+</tr>
+<tr class="even">
+<td>text_name</td>
+<td>str</td>
+<td></td>
+<td>Text’s column name</td>
+</tr>
+<tr class="odd">
+<td>label_name</td>
+<td>str</td>
+<td></td>
+<td>Label’s column name</td>
+</tr>
+<tr class="even">
+<td>pred_name</td>
+<td>str</td>
+<td></td>
+<td>Prediction’s column name</td>
+</tr>
+<tr class="odd">
+<td>prob_name</td>
+<td>str</td>
+<td></td>
+<td>Prediction probability’s column name</td>
+</tr>
+<tr class="even">
+<td>is_incorrect</td>
+<td>bool</td>
+<td>True</td>
+<td>To show top correct or incorrect sentences</td>
+</tr>
+<tr class="odd">
+<td>ascending</td>
+<td>bool</td>
+<td>False</td>
+<td>To sort by prob_name ascendingly or descendingly</td>
+</tr>
+<tr class="even">
+<td>n_show</td>
+<td>int</td>
+<td>10</td>
+<td>Number of sentences to show</td>
+</tr>
+</tbody>
+</table>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>show_top_n_predictions(df_val,text_name<span class="op">=</span><span class="st">'text'</span>,</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>                      label_name<span class="op">=</span><span class="st">'label'</span>,</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>                      pred_name<span class="op">=</span><span class="st">'pred_L1'</span>,</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>                      prob_name<span class="op">=</span><span class="st">'pred_prob_L1'</span>,</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>                      is_incorrect<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>                      ascending<span class="op">=</span><span class="va">False</span>,n_show<span class="op">=</span><span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Text: google play - đcm quảng cáo cc à
+True label: Others, but predict Commercial, with confidence 0.9892
+------------------------------------------------------------
+Text: ios - .....
+True label: Delivery, but predict Others, with confidence 0.9872
+------------------------------------------------------------
+Text: non owned - .. ❗ ️ GÓC THANH LÝ Tính ra rẻ hơn cả mua # Shopee Mong 1 lần đc check ib mỏi tay 😆 😆 😆 Em chuyển cửa hàng nên dọn lại có thừa vài chục tấm nệm xuất nhật này . 1 mx2m : 1 m2x2 : 1 m4x2m : 1 m6x2m : 1 m8x2m : 2 mx2m Đệm dày 7-8 phân Nhưng vì còn ít nên topic này em bán thanh lý giá rẻ ạ . Ship cod nhận hàng được kiểm tra thoải mái . Miễn ship toàn quốc . Nên đừng bom tội nghiệp em nhé dày 7-8 phân Nhắn tin em gửi mẫu nhé 🥰
+True label: Commercial, but predict Others, with confidence 0.9849
+------------------------------------------------------------
+Text: google play - Shope lác lắm
+True label: Feature, but predict Commercial, with confidence 0.9847
+------------------------------------------------------------
+Text: google play - Tại sao Shopee quảng cáo là Mua gì cũng có . Mà mình tìm Mua người yêu không thấy có là sao , Bịp à !
+True label: Others, but predict Commercial, with confidence 0.9830
+------------------------------------------------------------</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>show_top_n_predictions(df_val,text_name<span class="op">=</span><span class="st">'text'</span>,</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>                      label_name<span class="op">=</span><span class="st">'label'</span>,</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>                      pred_name<span class="op">=</span><span class="st">'pred_L1'</span>,</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>                      prob_name<span class="op">=</span><span class="st">'pred_prob_L1'</span>,</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>                      is_incorrect<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>                      ascending<span class="op">=</span><span class="va">True</span>,n_show<span class="op">=</span><span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Text: google play - Ko đúng hàng với lại nói giảm giá với miễn siếp nhưng ko có cái gì hết !
+True label: Buyer complained seller,  predict Buyer complained seller, with confidence 0.1908
+------------------------------------------------------------
+Text: google play - Chính thức xóa app này vô thời hạn . Tháng trước mua máy xay sữa hạt loại 1 tr3 mà nó giao loại 7 trăm . Gửi phản ánh cho shopee mà cũng im luôn . Thấy cái shop để là ' yêu thích ' nên tin tưởng ai dè lũ khốn nạn chết bờ chết bụi
+True label: Buyer complained seller,  predict Buyer complained seller, with confidence 0.2325
+------------------------------------------------------------
+Text: google play - Cứ nhắn tin và qc hoài thật là bực mình lắm rồi
+True label: Commercial,  predict Commercial, with confidence 0.2357
+------------------------------------------------------------
+Text: google play - App mua đồ thì ổn nhưng chất lượngCSkh thì chắc cho 1 sao thôi .
+True label: Services,  predict Services, with confidence 0.2445
+------------------------------------------------------------
+Text: google play - Shopee là trang mua bán , nhưng khôn lắm chỉ dành cho người bán thu lợi về shopee , chứ người mua thì chịu thiệt phí ship cao thì được , còn ưu đãi nạp thẻ hễ có thì shopee hạn chế rồi lấy lý do tài khoản liên kết nhiều thiết bị , nhiều tài khoản khác trong khi mình là người dùng liên kết duy nhất chỉ có 1 tài khoản và điện thoại cũng mới mua , mà shopee cứ 1,2 bảo là tài khoản mình liên kết nhiều tài khoản khác rồi hạn chế , nếu như là có đi , thì Shopee cũng bán chứ có cho không đâu mà nói mình lợi dụng
+True label: Shopee account,  predict Shopee account, with confidence 0.2446
+------------------------------------------------------------</code></pre>
+</div>
+</div>
+<hr>
+<p><a href="https://github.com/anhquan0412/that-nlp-library/blob/main/that_nlp_library/evaluations.py#L66" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="evaluate_classification_model" class="level3">
+<h3 class="anchored" data-anchor-id="evaluate_classification_model">evaluate_classification_model</h3>
+<blockquote class="blockquote">
+<pre><code> evaluate_classification_model (df:pandas.core.frame.DataFrame,
+                                text_name:str, label_name:str,
+                                pred_name:str, prob_name:str,
+                                metric_funcs:list=[],
+                                metadatas:str|list=[], n_show=10,
+                                cm_figsize=(20, 20))</code></pre>
+</blockquote>
+<table class="table">
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>Type</strong></th>
+<th><strong>Default</strong></th>
+<th><strong>Details</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>df</td>
+<td>pd.DataFrame</td>
+<td></td>
+<td>The main dataframe containing the predictions</td>
+</tr>
+<tr class="even">
+<td>text_name</td>
+<td>str</td>
+<td></td>
+<td>Text’s column name</td>
+</tr>
+<tr class="odd">
+<td>label_name</td>
+<td>str</td>
+<td></td>
+<td>Label’s column name</td>
+</tr>
+<tr class="even">
+<td>pred_name</td>
+<td>str</td>
+<td></td>
+<td>Prediction’s column name</td>
+</tr>
+<tr class="odd">
+<td>prob_name</td>
+<td>str</td>
+<td></td>
+<td>Prediction probability’s column name</td>
+</tr>
+<tr class="even">
+<td>metric_funcs</td>
+<td>list</td>
+<td>[]</td>
+<td>Metric(s) to calculate</td>
+</tr>
+<tr class="odd">
+<td>metadatas</td>
+<td>str | list</td>
+<td>[]</td>
+<td>Metadata(s) to perform analysis</td>
+</tr>
+<tr class="even">
+<td>n_show</td>
+<td>int</td>
+<td>10</td>
+<td>Number of sentences to show</td>
+</tr>
+<tr class="odd">
+<td>cm_figsize</td>
+<td>tuple</td>
+<td>(20, 20)</td>
+<td>Confusion matrix’s figure size</td>
+</tr>
+</tbody>
+</table>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>evaluate_classification_model(df_val,label_name<span class="op">=</span><span class="st">'label'</span>,</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>                              text_name<span class="op">=</span><span class="st">'text'</span>,</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>                              pred_name<span class="op">=</span><span class="st">'pred_L1'</span>,</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>                              prob_name<span class="op">=</span><span class="st">'pred_prob_L1'</span>,</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>                              metric_funcs<span class="op">=</span>metric_funcs,</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>                              metadatas<span class="op">=</span><span class="st">'Source'</span>,</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>                              cm_figsize<span class="op">=</span>(<span class="dv">8</span>,<span class="dv">8</span>),</span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>                              n_show<span class="op">=</span><span class="dv">5</span></span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>                             )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>-------------------- label Analysis --------------------
+
+--------------- Classification Report ---------------
+                         precision    recall  f1-score   support
+
+Buyer complained seller       0.46      0.46      0.46        13
+             Commercial       0.70      0.78      0.74        60
+               Delivery       0.68      0.80      0.74        40
+                Feature       0.74      0.81      0.78       108
+             Order/Item       0.50      0.12      0.20         8
+                 Others       0.79      0.69      0.73       156
+                Payment       0.75      0.33      0.46         9
+          Return/Refund       0.12      0.11      0.12         9
+               Services       0.00      0.00      0.00         7
+         Shopee account       0.63      0.86      0.73        37
+
+               accuracy                           0.71       447
+              macro avg       0.54      0.50      0.50       447
+           weighted avg       0.70      0.71      0.70       447
+
+
+--------------- Confusion Matrix ---------------
+
+-------------------- label Analysis on metadata: Source --------------------
+---------- Distribution ----------
+             count  proportion
+Source                        
+google play    280    0.626398
+non owned      102    0.228188
+owned           25    0.055928
+ios             24    0.053691
+hc search       16    0.035794
+
+---------- Metrics for each value in Source ----------
+- For all data:
+f1_score: 0.4952 . accuracy_score: 0.7092 . 
+- For google play:
+f1_score: 0.4857 . accuracy_score: 0.6929 . 
+- For hc search:
+f1_score: 0.4315 . accuracy_score: 0.6250 . 
+- For ios:
+f1_score: 0.6736 . accuracy_score: 0.7083 . 
+- For non owned:
+f1_score: 0.3407 . accuracy_score: 0.7647 . 
+- For owned:
+f1_score: 0.4146 . accuracy_score: 0.7200 . 
+
+--------------- Let's look at some wrong predictions with high confidence ---------------
+Text: google play - đcm quảng cáo cc à
+True label: Others, but predict Commercial, with confidence 0.9892
+------------------------------------------------------------
+Text: ios - .....
+True label: Delivery, but predict Others, with confidence 0.9872
+------------------------------------------------------------
+Text: non owned - .. ❗ ️ GÓC THANH LÝ Tính ra rẻ hơn cả mua # Shopee Mong 1 lần đc check ib mỏi tay 😆 😆 😆 Em chuyển cửa hàng nên dọn lại có thừa vài chục tấm nệm xuất nhật này . 1 mx2m : 1 m2x2 : 1 m4x2m : 1 m6x2m : 1 m8x2m : 2 mx2m Đệm dày 7-8 phân Nhưng vì còn ít nên topic này em bán thanh lý giá rẻ ạ . Ship cod nhận hàng được kiểm tra thoải mái . Miễn ship toàn quốc . Nên đừng bom tội nghiệp em nhé dày 7-8 phân Nhắn tin em gửi mẫu nhé 🥰
+True label: Commercial, but predict Others, with confidence 0.9849
+------------------------------------------------------------
+Text: google play - Shope lác lắm
+True label: Feature, but predict Commercial, with confidence 0.9847
+------------------------------------------------------------
+Text: google play - Tại sao Shopee quảng cáo là Mua gì cũng có . Mà mình tìm Mua người yêu không thấy có là sao , Bịp à !
+True label: Others, but predict Commercial, with confidence 0.9830
+------------------------------------------------------------</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/home/quan/anaconda3/envs/fastai_v2/lib/python3.10/site-packages/sklearn/metrics/_classification.py:1344: UndefinedMetricWarning: Precision and F-score are ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, msg_start, len(result))
+/home/quan/anaconda3/envs/fastai_v2/lib/python3.10/site-packages/sklearn/metrics/_classification.py:1344: UndefinedMetricWarning: Precision and F-score are ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, msg_start, len(result))
+/home/quan/anaconda3/envs/fastai_v2/lib/python3.10/site-packages/sklearn/metrics/_classification.py:1344: UndefinedMetricWarning: Precision and F-score are ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, msg_start, len(result))</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="08_evaluations_files/figure-html/cell-25-output-3.png" class="img-fluid"></p>
+</div>
+</div>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
