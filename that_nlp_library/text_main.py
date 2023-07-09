@@ -447,6 +447,7 @@ class TextDataMain():
         test_ddict = DatasetDict()
         test_ddict['test'] = test_dataset
         test_ddict_tokenized = test_ddict.map(partial(tokenize_function,tok=self.tokenizer,
-                                                  is_split_into_words=self.is_split_into_words,max_length=self.max_length))
+                                                      is_split_into_words=self.is_split_into_words,
+                                                      max_length=self.max_length),batched=True)
         
         return test_ddict_tokenized

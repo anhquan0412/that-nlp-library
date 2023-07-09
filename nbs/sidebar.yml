@@ -1,0 +1,39 @@
+website:
+  sidebar:
+    contents:
+      - index.ipynb
+      - 03_model_main_envibert.ipynb
+      - section: Text
+        contents:
+        - section: Text Process
+          contents:
+          - 01_text_augmentation.ipynb
+          - 02_text_transformation.ipynb
+        - section: Text Controller
+          contents:
+          - 00_text_main.ipynb 
+      - section: Model
+        contents:
+        - section: Model Controller
+          contents:
+          - 03_model_main.ipynb
+        - section: Roberta-based model definitions
+          contents:
+          - 04_models.roberta.classifiers.ipynb
+          - 05_models.roberta.deep_hierarchical_classifiers.ipynb
+          - 06_models.roberta.conditional_prob_classifiers.ipynb
+      - section: Model Evaluation
+        contents:
+        - 08_evaluations.ipynb
+      - section: Utility
+        contents:
+        - 07_utils.ipynb
+      - section: All uses cases
+        contents:
+        - section: Roberta-based models
+          contents:
+          - 20_model_main_envibert_singlehead.ipynb
+          - 21_model_main_envibert_multihead.ipynb
+          - 22_model_main_envibert_multilabel.ipynb
+          - 23_model_main_envibert_conditional_prob.ipynb
+          - 24_model_main_envibert_dhc.ipynb
