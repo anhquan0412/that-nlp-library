@@ -16,8 +16,8 @@ import random
 
 # %% auto 0
 __all__ = ['HiddenPrints', 'val2iterable', 'create_dir', 'check_and_get_attribute', 'callable_name', 'print_msg', 'seed_notorch',
-           'seed_everything', 'save_to_pickle', 'load_pickle', 'check_input_validation', 'check_text_leaking', 'isNaN',
-           'nan2emptystr', 'lambda_batch', 'lambda_map_batch', 'augmentation_helper', 'augmentation_stream_generator',
+           'seed_everything', 'save_to_pickle', 'load_pickle', 'check_input_validation', 'check_text_leaking',
+           'none2emptystr', 'lambda_batch', 'lambda_map_batch', 'augmentation_helper', 'augmentation_stream_generator',
            'func_all', 'sigmoid']
 
 # %% ../nbs/07_utils.ipynb 4
@@ -125,11 +125,8 @@ def check_text_leaking(trn_txt:list,
     return test_txt_leaked
 
 # %% ../nbs/07_utils.ipynb 10
-def isNaN(num):
-    return num != num
-
-def nan2emptystr(x):
-    if isNaN(num): return ''
+def none2emptystr(x):
+    if x is None: return ''
     return str(x)
 
 # %% ../nbs/07_utils.ipynb 11
