@@ -61,8 +61,9 @@ def callable_name(any_callable: Callable[..., Any]) -> str:
 
     return str(any_callable)
 
-def print_msg(msg,dash_num=5):
-    print('-'*dash_num+' '+msg+' '+ '-'*dash_num)
+def print_msg(msg,dash_num=5,verbose=True):
+    if verbose:
+        print('-'*dash_num+' '+msg+' '+ '-'*dash_num)
 
 def seed_notorch(seed=42):
     random.seed(seed)
@@ -90,38 +91,40 @@ def load_pickle(fname,parent='pickle_files'):
     return my_list
 
 # %% ../nbs/07_utils.ipynb 8
-def check_input_validation(df:pd.DataFrame):
-    print_msg('Input Validation Precheck')
+def check_input_validation(df:pd.DataFrame,verbose=True):
+    verboseprint = print if verbose else lambda *a, **k: None
+    print_msg('Input Validation Precheck',verbose)
     # check whether index is sorted
     correct_idxs = np.arange(df.shape[0])
     curr_idxs = df.index.values
     if not np.array_equal(correct_idxs,curr_idxs):
-        print("DataFrame Index is not RangeIndex, and will be converted")
+        verboseprint("DataFrame Index is not RangeIndex, and will be converted")
         df.index = correct_idxs
 
     # Do a NA check:
     na_check = df.isna().sum(axis=0)
     na_check = na_check[na_check!=0]
     if na_check.shape[0]!=0:
-        print("Data contains missing values!")
-        print('-----> List of columns and the number of missing values for each')
-        print(na_check)
+        verboseprint("Data contains missing values!")
+        verboseprint('-----> List of columns and the number of missing values for each')
+        verboseprint(na_check)
 
     # Do a row duplication check
     _df = df.copy().astype(str)
     dup_check = _df.value_counts(dropna=False)
     dup_check=dup_check[dup_check>1]
     if dup_check.shape[0]!=0:
-        print("Data contains duplicated values!")
-        print(f'-----> Number of duplications: {(dup_check.values-1).sum()} rows')
+        verboseprint("Data contains duplicated values!")
+        verboseprint(f'-----> Number of duplications: {(dup_check.values-1).sum()} rows')
         
 
 # %% ../nbs/07_utils.ipynb 9
 def check_text_leaking(trn_txt:list,
-                       test_txt:list):
+                       test_txt:list,verbose=True):
+    verboseprint = print if verbose else lambda *a, **k: None
     test_txt_leaked = {i.strip().lower() for i in trn_txt} & {j.strip().lower() for j in test_txt}
     len_leaked = len(test_txt_leaked)
-    print(f'- Number of rows leaked: {len_leaked}, which is {100*len_leaked/len(trn_txt):.2f}% of training set')
+    verboseprint(f'- Number of rows leaked: {len_leaked}, which is {100*len_leaked/len(trn_txt):.2f}% of training set')
     return test_txt_leaked
 
 # %% ../nbs/07_utils.ipynb 10
