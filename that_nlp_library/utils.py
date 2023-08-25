@@ -13,12 +13,13 @@ import pandas as pd
 from typing import Callable, Any
 from collections.abc import Iterable
 import random
+import warnings
 
 # %% auto 0
 __all__ = ['HiddenPrints', 'val2iterable', 'create_dir', 'check_and_get_attribute', 'callable_name', 'print_msg', 'seed_notorch',
            'seed_everything', 'save_to_pickle', 'load_pickle', 'check_input_validation', 'check_text_leaking',
            'none2emptystr', 'lambda_batch', 'lambda_map_batch', 'augmentation_helper', 'augmentation_stream_generator',
-           'func_all', 'sigmoid']
+           'func_all', 'get_dset_col_names', 'sigmoid']
 
 # %% ../nbs/07_utils.ipynb 4
 class HiddenPrints:
@@ -156,7 +157,7 @@ def lambda_map_batch(inp, # HuggingFace Dataset
         results[output_feature] = func(inp[feature]) if is_batched else func([inp[feature]])
     return results
 
-# %% ../nbs/07_utils.ipynb 14
+# %% ../nbs/07_utils.ipynb 13
 def augmentation_helper(inp,text_name,func):
     # inp[text_name] will be list
     inp[text_name]=[func(v) for v in val2iterable(inp[text_name])]
@@ -168,9 +169,15 @@ def augmentation_stream_generator(dset,text_name,func):
         inp[text_name]=func(inp[text_name])
         yield inp
 
-# %% ../nbs/07_utils.ipynb 15
+# %% ../nbs/07_utils.ipynb 14
 def func_all(x, functions):
     return reduce(lambda acc, func: func(acc), functions, x)
+
+# %% ../nbs/07_utils.ipynb 15
+def get_dset_col_names(dset):
+    if dset.column_names is not None: return dset.column_names
+    warnings.warn("Iterable Dataset might contain multiple mapping functions; getting column names can be time and memory consuming") 
+    return list(next(iter(dset)).keys())
 
 # %% ../nbs/07_utils.ipynb 16
 def sigmoid(x):
