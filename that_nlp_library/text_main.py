@@ -266,7 +266,7 @@ class TextDataController():
         
         trn_txt = self.main_ddict['train'][self.main_text]
         val_txt = self.main_ddict['validation'][self.main_text]        
-        val_txt_leaked = check_text_leaking(trn_txt,val_txt)
+        val_txt_leaked = check_text_leaking(trn_txt,val_txt,verbose=self.verbose)
         
         if len(val_txt_leaked)==0: return
         
@@ -556,7 +556,10 @@ class TextDataController():
             
     def _do_train_shuffling(self):
         print_msg('Shuffling train set',20,verbose=self.verbose)
-        self.main_ddict['train'] = self.main_ddict['train'].shuffle(seed=self.seed, buffer_size=self.buffer_size)
+        if self.is_streamed:
+            self.main_ddict['train'] = self.main_ddict['train'].shuffle(seed=self.seed, buffer_size=self.buffer_size)
+        else:
+            self.main_ddict['train'] = self.main_ddict['train'].shuffle(seed=self.seed)
         self.verboseprint('Done')
         
     def do_all_preprocessing(self,
