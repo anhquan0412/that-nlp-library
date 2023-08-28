@@ -118,8 +118,7 @@ class TextDataController():
                  upsampling_list={}, # A list of tuple. Each tuple: (feature,upsampling_function_based_on_the_feature)
                  content_augmentations=[], # A list of text augmentations
                  seed=None, # Random seed
-                 is_batched=True, # Whether to perform operations in batch
-                 batch_size=1000, # Batch size, for when is_batched is True
+                 batch_size=1000, # CPU batch size
                  num_proc=4, # Number of process for multiprocessing
                  cols_to_keep=None, # Columns to keep after all processings
                  buffer_size=10000, # For shuffling data
@@ -140,10 +139,9 @@ class TextDataController():
         self.val_ratio = val_ratio
         self.stratify_cols = val2iterable(stratify_cols)
         self.seed = seed
-        self.is_batched = is_batched
+        self.is_batched = batch_size>1
         self.batch_size = batch_size
         self.num_proc = num_proc
-        self.is_streamed = False
         self.cols_to_keep = cols_to_keep
         self.buffer_size = buffer_size
         self.num_shards = num_shards
@@ -160,8 +158,9 @@ class TextDataController():
                 raise ValueError('The given DatasetDict has no "train" split')
         else: # is dataset
             self.dset = inp
-        if isinstance(self.dset,IterableDataset):
-            self.is_streamed=True
+            
+        self.is_streamed=isinstance(self.dset,IterableDataset)
+        
         self.all_cols = get_dset_col_names(self.dset)
         if self.is_streamed and self.label_names is not None and self.label_lists is None:
             raise ValueError('All class labels must be provided when streaming')
@@ -211,34 +210,6 @@ class TextDataController():
             self.label_names = [self.label_names[0]]
             self.is_multihead=False
             self.is_multilabel=True
-            
-            
-    def _map_dset(self,dset,func,is_batched=None,batch_size=None,num_proc=None):
-        if is_batched is None: is_batched = self.is_batched
-        if batch_size is None: batch_size = self.batch_size
-        if num_proc is None: num_proc = self.num_proc
-        if self.is_streamed:
-            return dset.map(func,
-                            batched=is_batched,
-                            batch_size=batch_size
-                           )
-        return dset.map(func,
-                        batched=is_batched,
-                        batch_size=batch_size,
-                        num_proc=num_proc
-                       )
-    
-    def _filter_dset(self,dset,func):
-        if self.is_streamed:
-            return dset.filter(func,
-                            batched=self.is_batched,
-                            batch_size=self.batch_size
-                           )
-        return dset.filter(func,
-                        batched=self.is_batched,
-                        batch_size=self.batch_size,
-                        num_proc=self.num_proc
-                       )
                      
     def validate_input(self):
         if self.is_streamed:
@@ -276,7 +247,7 @@ class TextDataController():
                         feature=self.main_text,
                         func=lambda x: x.strip().lower() not in val_txt_leaked,
                         is_batched=self.is_batched)
-        self.main_ddict['train'] = self._filter_dset(self.main_ddict['train'],_func)   
+        self.main_ddict['train'] = hf_filter_dset(self.main_ddict['train'],_func,self.is_streamed,self.is_batched,self.batch_size,self.num_proc)   
         self.verboseprint('Done')
            
     def _train_test_split(self):
@@ -389,13 +360,14 @@ class TextDataController():
             
             _func = self._create_label_mapping_func(encoder_classes)
                 
-            self.dset = self._map_dset(self.dset,_func)
+            self.dset = hf_map_dset(self.dset,_func,self.is_streamed,self.is_batched,self.batch_size,self.num_proc)
 
             val_key = list(set(self.ddict_rest.keys()) & set(['val','validation','valid']))
             if len(val_key)>1: raise ValueError('Your DatasetDict has more than 1 validation split')
             if len(val_key)==1:
                 val_key=val_key[0]
-                self.ddict_rest[val_key] = self._map_dset(self.ddict_rest[val_key],_func)
+                self.ddict_rest[val_key] = hf_map_dset(self.ddict_rest[val_key],_func,
+                                                         self.is_streamed,self.is_batched,self.batch_size,self.num_proc)
                     
         else:
             # For MultiLabel, we transform the label itself to one-hot (or actually, few-hot)
@@ -416,13 +388,14 @@ class TextDataController():
                             output_feature='label',
                             is_batched=self.is_batched,
                             is_func_batched=True)
-            self.dset = self._map_dset(self.dset,_func)                                                  
+            self.dset = hf_map_dset(self.dset,_func,self.is_streamed,self.is_batched,self.batch_size,self.num_proc)                                                 
             
             val_key = list(set(self.ddict_rest.keys()) & set(['val','validation','valid']))
             if len(val_key)>1: raise ValueError('Your DatasetDict has more than 1 validation dataset')
             if len(val_key)==1:
                 val_key=val_key[0]
-                self.ddict_rest[val_key] = self._map_dset(self.ddict_rest[val_key],_func)
+                self.ddict_rest[val_key] = hf_map_dset(self.ddict_rest[val_key],_func,
+                                                      self.is_streamed,self.is_batched,self.batch_size,self.num_proc)
             
         self.label_lists = encoder_classes
         self.verboseprint('Done')
@@ -435,9 +408,9 @@ class TextDataController():
                                metadatas=self.metadatas,
                                process_metas=self.process_metas,
                                is_batched=self.is_batched)
-            dset = self._map_dset(dset,map_func)
+            dset = hf_map_dset(dset,map_func,self.is_streamed,self.is_batched,self.batch_size,self.num_proc)
             if ddict_rest is not None:
-                ddict_rest = self._map_dset(ddict_rest,map_func)
+                ddict_rest = hf_map_dset(ddict_rest,map_func,self.is_streamed,self.is_batched,self.batch_size,self.num_proc)
             self.verboseprint('Done')
         return dset if ddict_rest is None else (dset,ddict_rest)
             
@@ -463,9 +436,9 @@ class TextDataController():
                                feature=self.main_text,
                                func=tfm,
                                is_batched=self.is_batched)
-                dset = self._map_dset(dset,_func)
+                dset = hf_map_dset(dset,_func,self.is_streamed,self.is_batched,self.batch_size,self.num_proc)
                 if ddict_rest is not None:
-                    ddict_rest = self._map_dset(ddict_rest,_func)
+                    ddict_rest = hf_map_dset(ddict_rest,_func,self.is_streamed,self.is_batched,self.batch_size,self.num_proc)
             self.verboseprint('Done')
         return dset if ddict_rest is None else (dset,ddict_rest)
  
@@ -480,9 +453,9 @@ class TextDataController():
                                     feature=f,
                                     func=tfm,
                                     is_batched=self.is_batched)
-                    dset = self._filter_dset(dset,_func)
+                    dset = hf_filter_dset(dset,_func,self.is_streamed,self.is_batched,self.batch_size,self.num_proc)
                 if ddict_rest is not None:
-                    ddict_rest = self._filter_dset(ddict_rest,_func)
+                    ddict_rest = hf_filter_dset(ddict_rest,_func,self.is_streamed,self.is_batched,self.batch_size,self.num_proc)
             self.verboseprint('Done')
         return dset if ddict_rest is None else (dset,ddict_rest)
     
@@ -496,7 +469,7 @@ class TextDataController():
                                 feature=f,
                                 func=tfm,
                                 is_batched=self.is_batched)
-                new_dset = self._filter_dset(self.main_ddict['train'],_func)
+                new_dset = hf_filter_dset(self.main_ddict['train'],_func,self.is_streamed,self.is_batched,self.batch_size,self.num_proc)
                 results.append(new_dset)
             # slow concatenation for iterable dataset    
             self.main_ddict['train'] = concatenate_datasets(results+[self.main_ddict['train']])
@@ -508,10 +481,10 @@ class TextDataController():
             print_msg('Text Augmentation',20,verbose=self.verbose)
 
             seed_notorch(self.seed)
+#             self.main_ddict['train'] = self.main_ddict['train'].with_transform(partial(augmentation_helper,
+#                                                                    text_name=self.main_text,
+#                                                                    func=partial(func_all,functions=self.aug_tfms)))  
             if not self.is_streamed:  
-#                 self.main_ddict['train'] = self.main_ddict['train'].with_transform(partial(augmentation_helper,
-#                                                                        text_name=self.main_text,
-#                                                                        func=partial(func_all,functions=self.aug_tfms)))              
                 for tfm in self.aug_tfms:
                     print_msg(callable_name(tfm),verbose=self.verbose)
             
@@ -531,13 +504,14 @@ class TextDataController():
                                    is_batched=is_batched,
                                    is_func_batched=is_func_batched
                                    )
-                    self.main_ddict['train'] = self._map_dset(self.main_ddict['train'],_func,
+                    self.main_ddict['train'] = hf_map_dset(self.main_ddict['train'],_func,
+                                                              self.is_streamed,
                                                               is_batched=is_batched,
                                                               batch_size=bs,
                                                               num_proc=num_proc
                                                              )
 
-            else:
+            else: 
                 self.main_ddict['train'] = IterableDataset.from_generator(augmentation_stream_generator,
                                                features = self.main_ddict['train'].features,
                                                gen_kwargs={'dset': self.main_ddict['train'],
@@ -674,7 +648,20 @@ class TextDataController():
             check_input_validation(df)
         ds = Dataset.from_pandas(df)
         return self.prepare_test_dataset(ds,do_filtering)
+    
+    def prepare_test_dataset_from_raws(self,
+                                       content, # Either a single sentence, list of sentence or a dictionary with keys are metadata columns and values are list
+                                      ):
+        if len(self.metadatas)!=0 and not isinstance(content,dict):
+            raise ValueError(f'There is/are metadatas in the preprocessing step. Please include a dictionary including these keys for metadatas: {self.metadatas}, and texture content: {self.main_text}')
+            
+        _dic = {self.main_text:[content]} if isinstance(content,str) else content
+        for k in _dic.keys():
+            _dic[k] = val2iterable(_dic[k])
         
+        test_dict = Dataset.from_dict(_dic)
+        return self.prepare_test_dataset(test_dict,do_filtering=False)
+    
     def prepare_test_dataset(self,
                              test_dset, # The HuggingFace Dataset as Test set
                              do_filtering=False # whether to perform data filtering on this test set

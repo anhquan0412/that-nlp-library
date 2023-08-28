@@ -13,7 +13,7 @@ from functools import partial
 import pandas as pd
 import numpy as np
 from .utils import *
-from .text_main import TextDataMain
+from .text_main import TextDataController
 
 # %% auto 0
 __all__ = ['model_init_classification', 'compute_metrics_classification', 'compute_metrics_separate_singleheads',
@@ -49,7 +49,7 @@ def model_init_classification(
     if body_model is not None:
         model = model_class(config=config,**model_kwargs)
         layers = list(model.children())
-        print('Loading body weights. This assumes the body is the very first first-layer block of your custom architecture')
+        print('Loading body weights. This assumes the body is the very first block of your custom architecture')
         body_name, _ = next(iter(model.named_children()))
         setattr(model, body_name, body_model)
         model = model.to(device)
@@ -102,7 +102,10 @@ def compute_metrics_separate_singleheads(pred, # An EvalPrediction object from H
                               **kwargs
                              ):
     """
-    Return a dictionary of metric name and its values. Can handle both multiclass and multilabel
+    Return a dictionary of metric name and its values. This is used in Deep Hierarchical Classification (special case of multi-head classification)
+    
+    This metric function is mainly used when you have a separate logit output for each head 
+    (instead of the typical multi-head logit output: all heads' logits are concatenated)
     """
     # pred: EvalPrediction object 
     # (which is a named tuple with predictions and label_ids attributes)
@@ -132,12 +135,12 @@ def loss_for_classification(logits, # output of the last linear layer, before an
     """
     The general loss function for classification
     
-    - If is_multilabel is ```False``` and is_multihead is ```False```: One-Head Classification, e.g. You predict 1 out of n class
+    - If is_multilabel is ```False``` and is_multihead is ```False```: Single-Head Classification, e.g. You predict 1 out of n class
     
     - If is_multilabel is ```False``` and is_multihead is ```True```: Multi-Head Classification, e.g. You predict 1 out of n classes at Level 1, 
     and 1 out of m classes at Level 2
     
-    - If is_multilabel is ```True``` and is_multihead is ```False```: One-Head Multi-Label Classification, e.g. You predict x out of n class (x>=1)
+    - If is_multilabel is ```True``` and is_multihead is ```False```: Single-Head Multi-Label Classification, e.g. You predict x out of n class (x>=0)
     
     - If is_multilabel is ```True``` and is_multihead is ```True```: Not supported!
     
@@ -164,7 +167,7 @@ def loss_for_classification(logits, # output of the last linear layer, before an
             loss = loss_fct(logits,
                             labels.float())
         else:
-            raise ValueError('Multi-Head with Multi-Label classification is not supported. Have you lost your mind?')
+            raise ValueError('Multi-Head with multi-label classification is not supported!')
 #             assert len(head_sizes)==len(head_weights),"For MultiHead, make sure len of head_sizes and head_weights equal"
 #             for i,(_size,_weight) in enumerate(zip(head_sizes,head_weights)):
 #                 start= 0 if i==0 else start+head_sizes[i-1]
@@ -227,7 +230,7 @@ def finetune(lr, # Learning rate
         model=model,
         model_init=model_init if model is None else None,
         args=training_args,
-        train_dataset=ddict['train'],#.shard(200, 0),    # Only use subset of the dataset for a quick training. Remove shard for full training
+        train_dataset=ddict['train'],#.shard(200, 0)
         eval_dataset=ddict['validation'] if not no_valid else None,
         data_collator=data_collator,
         tokenizer=tokenizer,
@@ -239,14 +242,13 @@ def finetune(lr, # Learning rate
     return trainer
 
 # %% ../nbs/03_model_main.ipynb 14
-def _forward_pass_for_predictions(batch,
+def _forward_pass_classification(batch,
                                  model=None, # NLP model
                                  topk=1, # Number of labels to return for each head
                                  is_multilabel=False, # Is this a multilabel classification?
                                  multilabel_threshold=0.5, # The threshold for multilabel classification
                                  tokenizer=None, # HuggingFace tokenizer
                                  data_collator=None, # HuggingFace data collator
-                                 cols_to_remove=[], # list of keys (columns) to remove from ```batch```
                                  label_names=[], # Names of the label columns
                                  label_sizes=[], # Size of each label
                                  device = None, # device that the model is trained on
@@ -260,14 +262,14 @@ def _forward_pass_for_predictions(batch,
 #                    tensor([1, 1, 1, 1, 1, 1, 1, 1, 1])]
 #                    }
 # --- to
-#         [{'input_ids': tensor([    0, 10444,   244, 14585,   125,  2948,  5925,   368,     2]),
-#           'attention_mask': tensor([1, 1, 1, 1, 1, 1, 1, 1, 1])},
-#          {'input_ids': tensor([    0, 16098,  2913,   244,   135,   198, 34629,  6356,     2]),
-#           'attention_mask': tensor([1, 1, 1, 1, 1, 1, 1, 1, 1])}]
+# [{'input_ids': tensor([    0, 10444,   244, 14585,   125,  2948,  5925,   368,     2]),
+#   'attention_mask': tensor([1, 1, 1, 1, 1, 1, 1, 1, 1])},
+#  {'input_ids': tensor([    0, 16098,  2913,   244,   135,   198, 34629,  6356,     2]),
+#   'attention_mask': tensor([1, 1, 1, 1, 1, 1, 1, 1, 1])}]
 
         # remove string text, due to transformer new version       
         collator_inp = []
-        ks = [k for k in batch.keys() if k not in cols_to_remove]
+        ks = [k for k in batch.keys() if k in ['input_ids', 'token_type_ids', 'attention_mask','label']] # hard-coded
         vs = [batch[k] for k in ks]
         for pair in zip(*vs):
             collator_inp.append({k:v for k,v in zip(ks,pair)})
@@ -326,10 +328,45 @@ def _forward_pass_for_predictions(batch,
     return results
 
 # %% ../nbs/03_model_main.ipynb 15
+def _convert_pred_id_to_label(dset,label_names,label_lists,topk=1,
+                              is_multilabel=False,is_streamed=False,
+                              batch_size=1000,num_proc=4
+                             ):
+    
+    is_batched=batch_size>1
+    if is_multilabel:
+        get_label_str_multilabel = lambda x: [label_lists[0][int(j)] for j in np.where(x==True)[0]]
+        _func = partial(lambda_map_batch,feature=f'pred_{label_names[i]}',
+                        func=get_label_str_multilabel,is_batched=is_batched
+                       )
+        dset = hf_map_dset(dset,_func,
+                           is_streamed=is_streamed,
+                           is_batched=batch_size>1,
+                           batch_size=batch_size,
+                           num_proc=num_proc
+                          )
+        return dset
+    
+    for i in range(len(label_names)):
+        _func1 = lambda xs: label_lists[i][int(xs)] if not isinstance(xs,(list,tuple)) else [label_lists[i][int(x)] for x in xs]
+        _func2 = partial(lambda_map_batch,feature=f'pred_{label_names[i]}',
+                        _func=_func1,
+                        is_batched=is_batched
+                       )
+        dset = hf_map_dset(dset,_func2,
+                           is_streamed=is_streamed,
+                           is_batched=is_batched,
+                           batch_size=batch_size,
+                           num_proc=num_proc
+                           )
+    return dset
+
+
+# %% ../nbs/03_model_main.ipynb 16
 class ModelController():
     def __init__(self,
                  model, # NLP model
-                 data_store:TextDataMain=None, # a TextDataMain object
+                 data_store:TextDataController=None, # a TextDataMain object
                  metric_funcs=[accuracy_score], # Metric function (can be from Sklearn)
                  seed=42, # Random seed
                 ):
@@ -370,7 +407,7 @@ class ModelController():
         
         if len(set(ddict.keys()) & set(['train','training']))==0:
             raise ValueError("Missing the following key for DatasetDict: train/training")
-        no_valid = len(set(ddict.keys()) & set(['validation','val']))==0
+        no_valid = len(set(ddict.keys()) & set(['validation','val','valid']))==0
 
         _compute_metrics = partial(compute_metrics,
                                    metric_funcs=self.metric_funcs,
@@ -378,7 +415,6 @@ class ModelController():
                                    label_names=label_names 
                                   )
         
-
         trainer = finetune(learning_rate,batch_size,weight_decay,epochs,
                            ddict,tokenizer,o_dir,
                            save_checkpoint=save_checkpoint,
@@ -395,31 +431,59 @@ class ModelController():
         self.trainer = trainer
         
     def predict_raw_text(self,
-                         content:dict|list|str, # Either a single sentence, list of sentence or a dictionary with keys are metadata, values are list
+                         content:dict|list|str, # Either a single sentence, list of sentence or a dictionary where keys are metadata, values are list
                          batch_size=1, # Batch size. For a small amount of texts, you might want to keep this small
                          is_multilabel=None, # Is this a multilabel classification?
                          multilabel_threshold=0.5, # Threshold for multilabel classification
                          topk=1, # Number of labels to return for each head
                          is_dhc=False # Are outpuf (of model) separate heads?
                         ):
-        if not isinstance(self.data_store,TextDataMain) or not self.data_store._main_called:
-            raise ValueError('This functionality needs a TextDataMain object which has already processed some training data')
+        if not isinstance(self.data_store,TextDataController) or not self.data_store._processed_call:
+            raise ValueError('This functionality needs a TextDataController object which has processed some training data')
         with HiddenPrints():
-            test_ddict = self.data_store.get_test_datasetdict_from_dict(content)
-            df_result =  self.predict_ddict(ddict=test_ddict,
-                                            ds_type='test',
-                                            batch_size=batch_size,
-                                            is_multilabel=is_multilabel,
-                                            multilabel_threshold=multilabel_threshold,
-                                            topk=topk,
-                                            is_dhc=is_dhc
-                                           )
-        return df_result
+            test_dset = self.data_store.prepare_test_dataset_from_raws(content)
+            test_ddict = DatasetDict()
+            test_ddict['test'] = test_dset
+            test_ddict = self.predict_ddict_classification(ddict=test_ddict,
+                                                           ds_type='test',
+                                                           batch_size=batch_size,
+                                                           is_multilabel=is_multilabel,
+                                                           multilabel_threshold=multilabel_threshold,
+                                                           topk=topk,
+                                                           is_dhc=is_dhc
+                                                          )
+        return test_ddict.to_pandas()['test'][:]
     
-    def predict_ddict(self,
-                      ddict=None, # DatasetDict to predict (will override ```data_store```)
-                      ds_type='test', # Keys of DatasetDict to predict
-                      batch_size=16, # Batch size
+    def predict_raw_dset(self,
+                         dset, # A raw HuggingFace dataset
+                         batch_size=16, # Batch size. For a small amount of texts, you might want to keep this small
+                         do_filtering=False, # Whether to perform data filtering on this test set
+                         is_multilabel=None, # Is this a multilabel classification?
+                         multilabel_threshold=0.5, # Threshold for multilabel classification
+                         topk=1, # Number of labels to return for each head
+                         is_dhc=False # Are outpuf (of model) separate heads?
+                        ):
+        if not isinstance(self.data_store,TextDataController) or not self.data_store._processed_call:
+            raise ValueError('This functionality needs a TextDataController object which has processed some training data')
+        with HiddenPrints():
+            test_dset = self.data_store.prepare_test_dataset(dset,do_filtering)
+            test_ddict = DatasetDict()
+            test_ddict['test'] = test_dset
+            test_ddict = self.predict_ddict_classification(test_ddict,
+                                                           ds_type='test',
+                                                           batch_size=batch_size,
+                                                           is_multilabel=is_multilabel,
+                                                           multilabel_threshold=multilabel_threshold,
+                                                           topk=topk,
+                                                           is_dhc=is_dhc
+                                                          )
+        return test_ddict
+        
+                        
+    def predict_ddict_classification(self,
+                      ddict:DatasetDict=None, # A processed and tokenized DatasetDict (will override one in ```data_store```)
+                      ds_type='test', # The split of DatasetDict to predict
+                      batch_size=16, # Batch size for making prediction on GPU
                       is_multilabel=None, # Is this a multilabel classification?
                       multilabel_threshold=0.5, # Threshold for multilabel classification
                       topk=1, # Number of labels to return for each head
@@ -428,7 +492,7 @@ class ModelController():
                       label_names=None, # Names of the label (dependent variable) columns (to override one in ```data_store```)
                       class_names_predefined=None, # List of names associated with the labels (same index order) (to override one in ```data_store```)
                       device=None, # Device that the model is trained on
-                      is_dhc=False # Are outpuf (of model) separate heads?
+                      is_dhc=False # Are outputs (of model) separate heads?
                      ):
         if device is None: device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         if is_multilabel is None: is_multilabel=getattr(self.model,'is_multilabel',False)
@@ -444,52 +508,37 @@ class ModelController():
             label_lists=[label_lists]    
             
         label_sizes = [len(cs) for cs in label_lists]
-        if ddict is None: ddict = check_and_get_attribute(self.data_store,'main_ddict') 
+        if ddict is None: ddict = check_and_get_attribute(self.data_store,'main_ddict')
+        if not isinstance(ddict,DatasetDict): raise ValueError("Make sure your input is a DatasetDict. If it's a test Dataset, convert it to DatasetDict with a split 'test'")
         if ds_type not in ddict.keys():
-            raise ValueError(f'{ds_type} is not in the given DatasetDict keys')
+            raise ValueError(f'{ds_type} is not in the given DatasetDict')
+        
+        is_streamed=isinstance(self.dset,IterableDataset)
         
         ddict.set_format("torch",
                         columns=["input_ids", "attention_mask"])
         
         print_msg('Start making predictions',20)
-        preserved_kws=['input_ids', 'token_type_ids', 'attention_mask','label'] # hard-coded
-        cols_to_remove = (set(ddict[ds_type].features.keys()) - set(preserved_kws)) | {'text'}
+        # this will create features: pred_classname and pred_prob_classname
         ddict[ds_type] = ddict[ds_type].map(
-            partial(_forward_pass_for_predictions,model=self.model,
-                    topk=topk,
-                    is_multilabel=is_multilabel,
-                    multilabel_threshold=multilabel_threshold,
-                    tokenizer=tokenizer,
-                    data_collator=data_collator,
-                    cols_to_remove=cols_to_remove,
-                   label_names=label_names,
-                    label_sizes=label_sizes,
-                    is_dhc = is_dhc,
-                    device=device
-                   ), 
-            batched=True, batch_size=batch_size)
-    
-        ddict.set_format("pandas")
+                            partial(_forward_pass_classification,model=self.model,
+                                    topk=topk,
+                                    is_multilabel=is_multilabel,
+                                    multilabel_threshold=multilabel_threshold,
+                                    tokenizer=tokenizer,
+                                    data_collator=data_collator,
+                                    label_names=label_names,
+                                    label_sizes=label_sizes,
+                                    is_dhc = is_dhc,
+                                    device=device
+                                   ), 
+                            batched=True, 
+                            batch_size=batch_size)
         
-        df_result = ddict[ds_type][:]
-        cols_to_keep = [c for c in df_result.columns.values if c not in preserved_kws[:-1]]
-        df_result = df_result.loc[:,cols_to_keep]
         
-        # convert pred id to string label
-        for i in range(len(label_names)):  
-            if not is_multilabel:
-                if topk==1:
-                    df_result[f'pred_{label_names[i]}'] = df_result[f'pred_{label_names[i]}'].apply(lambda x: label_lists[i][int(x)])
-                else:
-                    df1 = pd.DataFrame(df_result[f'pred_{label_names[i]}'].to_list(),columns=[f'pred_{label_names[i]}_top{j}' for j in range(1,topk+1)])
-                    df1_prob = pd.DataFrame(df_result[f'pred_prob_{label_names[i]}'].to_list(),columns=[f'pred_prob_{label_names[i]}_top{j}' for j in range(1,topk+1)])
-
-                    for j in range(1,topk+1):
-                        df1[f'pred_{label_names[i]}_top{j}'] =  df1[f'pred_{label_names[i]}_top{j}'].apply(lambda x: label_lists[i][int(x)])
-
-                    df_result = pd.concat([df_result,df1,df1_prob],axis=1)
-            else:
-                get_label_str_multilabel = lambda row: ','.join([label_lists[i][int(j)] for j in np.where(row==True)[0]])
-                df_result[f'pred_{label_names[i]}_string'] = df_result[f'pred_{label_names[i]}'].apply(get_label_str_multilabel)
-
-        return df_result
+        ddict[ds_type] = _convert_pred_id_to_label(ddict[ds_type],label_names,label_lists,topk,
+                                         is_multilabel,is_streamed,
+                                         batch_size=1000,num_proc=4
+                                        )
+        return ddict
+        
