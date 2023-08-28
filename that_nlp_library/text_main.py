@@ -22,18 +22,18 @@ def tokenizer_explain(inp, # Input sentence
                       split_word=False # Is input `inp` split into list or not
                      ):
     "Display results from tokenizer"
-    print('----- Tokenizer Explained -----')
-    print('--- Input ---')
+    print('\t\t------- Tokenizer Explained -------')
+    print('----- Input -----')
     print(inp)
     print()
-    print('--- Tokenized results --- ')
+    print('----- Tokenized results ----- ')
     print(tokenizer(inp,is_split_into_words=split_word))
     print()
     tok = tokenizer.encode(inp,is_split_into_words=split_word)
-    print('--- Results from tokenizer.convert_ids_to_tokens ---')
+    print('----- Results from tokenizer.convert_ids_to_tokens -----')
     print(tokenizer.convert_ids_to_tokens(tok))
     print()
-    print('--- Results from tokenizer.decode --- ')
+    print('----- Results from tokenizer.decode ----- ')
     print(tokenizer.decode(tok))
     print()
 
@@ -44,21 +44,25 @@ def two_steps_tokenization_explain(inp, # Input sentence
                                    aug_tfms=[], # A list of text augmentation 
                                   ):
     "Display results form each content transformation, then display results from tokenizer"
-    print('----- Text Transformation Explained -----')
-    print('--- Raw sentence ---')
+    print('\t\t------- Text Transformation Explained -------')
+    print('----- Raw sentence -----')
     print(inp)
-    print('--- Content Transformations (on both train and test) ---')
+    print()
+    print('----- Content Transformations (on both train and test) -----')
     content_tfms = val2iterable(content_tfms)
     for tfm in content_tfms:
         print_msg(callable_name(tfm),3)
         inp = tfm(inp)
         print(inp)
-    print('--- Augmentations (on train only) ---')
+        print()
+    print()
+    print('----- Augmentations (on train only) -----')
     aug_tfms = val2iterable(aug_tfms)
     for tfm in aug_tfms:
         print_msg(callable_name(tfm),3)
         inp = tfm(inp)
         print(inp)
+        print()
     print()
     tokenizer_explain(inp,tokenizer)
 
@@ -113,7 +117,7 @@ class TextDataController():
                  metadatas=[], # Names of the metadata columns
                  process_metas=True, # Whether to do simple text processing on the chosen metadatas
                  content_transformations=[], # A list of text transformations
-                 val_ratio:list|float|None=0.2, # Ratio of data for validation set. If given a list, validation set will be chosen based on indices in this list
+                 val_ratio:int|float|None=0.2, # Ratio of data for validation set
                  stratify_cols=[], # Column(s) needed to do stratified shuffle split
                  upsampling_list={}, # A list of tuple. Each tuple: (feature,upsampling_function_based_on_the_feature)
                  content_augmentations=[], # A list of text augmentations
@@ -262,14 +266,6 @@ class TextDataController():
         elif self.val_ratio is None: # use all data
             self.verboseprint('No validation split defined')
             self.main_ddict=DatasetDict({'train':self.dset})
-        
-        elif isinstance(self.val_ratio,list) or isinstance(self.val_ratio,np.ndarray): # filter with indices
-            self.verboseprint('Validation indices are provided')
-            if self.is_streamed: raise ValueError('Data streaming does not support validation set filtering using indices')
-            val_idxs = list(self.val_ratio)
-            trn_idxs = list(set(range(len(self.dset))) - set(val_idxs))
-            self.main_ddict=DatasetDict({'train':self.dset.select(trn_idxs),
-                                         'validation':self.dset.select(val_idxs)})
             
         elif (isinstance(self.val_ratio,float) or isinstance(self.val_ratio,int)) and not len(self.stratify_cols):
             self.verboseprint('Validation split based on val_ratio')

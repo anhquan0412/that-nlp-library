@@ -328,6 +328,39 @@ def _forward_pass_classification(batch,
     return results
 
 # %% ../nbs/03_model_main.ipynb 15
+def _forward_pass_regression(batch,
+                             model=None, # NLP model
+                             tokenizer=None, # HuggingFace tokenizer
+                             data_collator=None, # HuggingFace data collator
+                             device=None, # device that the model is trained on
+                             ):
+    if data_collator is not None:
+        # remove string text, due to transformer new version       
+        collator_inp = []
+        ks = [k for k in batch.keys() if k in ['input_ids', 'token_type_ids', 'attention_mask','label']] # hard-coded
+        vs = [batch[k] for k in ks]
+        for pair in zip(*vs):
+            collator_inp.append({k:v for k,v in zip(ks,pair)})
+        
+        batch = data_collator(collator_inp)
+    
+    inputs = {k:v.to(device) for k,v in batch.items()
+              if k in tokenizer.model_input_names}
+        
+    # switch to eval mode for evaluation
+    if model.training:
+        model.eval()
+    with torch.no_grad():
+        output = model(**inputs)
+        output_logits = output.logits.cpu()
+    
+    # Switch back to train mode
+    if not model.training:
+        model.train()
+    
+    return {f'pred':output_logits}
+
+# %% ../nbs/03_model_main.ipynb 16
 def _convert_pred_id_to_label(dset,label_names,label_lists,topk=1,
                               is_multilabel=False,is_streamed=False,
                               batch_size=1000,num_proc=4
@@ -362,7 +395,7 @@ def _convert_pred_id_to_label(dset,label_names,label_lists,topk=1,
     return dset
 
 
-# %% ../nbs/03_model_main.ipynb 16
+# %% ../nbs/03_model_main.ipynb 17
 class ModelController():
     def __init__(self,
                  model, # NLP model
@@ -433,6 +466,7 @@ class ModelController():
     def predict_raw_text(self,
                          content:dict|list|str, # Either a single sentence, list of sentence or a dictionary where keys are metadata, values are list
                          batch_size=1, # Batch size. For a small amount of texts, you might want to keep this small
+                         is_regression=False, # Is this a regression problem? If yes, ignore the rest of the arguments below
                          is_multilabel=None, # Is this a multilabel classification?
                          multilabel_threshold=0.5, # Threshold for multilabel classification
                          topk=1, # Number of labels to return for each head
@@ -444,20 +478,27 @@ class ModelController():
             test_dset = self.data_store.prepare_test_dataset_from_raws(content)
             test_ddict = DatasetDict()
             test_ddict['test'] = test_dset
-            test_ddict = self.predict_ddict_classification(ddict=test_ddict,
+            if is_regression:
+                test_ddict = self.predict_ddict_regression(test_ddict,
                                                            ds_type='test',
-                                                           batch_size=batch_size,
-                                                           is_multilabel=is_multilabel,
-                                                           multilabel_threshold=multilabel_threshold,
-                                                           topk=topk,
-                                                           is_dhc=is_dhc
+                                                           batch_size=batch_size
                                                           )
+            else:
+                test_ddict = self.predict_ddict_classification(ddict=test_ddict,
+                                                               ds_type='test',
+                                                               batch_size=batch_size,
+                                                               is_multilabel=is_multilabel,
+                                                               multilabel_threshold=multilabel_threshold,
+                                                               topk=topk,
+                                                               is_dhc=is_dhc
+                                                              )
         return test_ddict.to_pandas()['test'][:]
     
     def predict_raw_dset(self,
                          dset, # A raw HuggingFace dataset
                          batch_size=16, # Batch size. For a small amount of texts, you might want to keep this small
                          do_filtering=False, # Whether to perform data filtering on this test set
+                         is_regression=False, # Is this a regression problem? If yes, ignore the rest of the arguments below
                          is_multilabel=None, # Is this a multilabel classification?
                          multilabel_threshold=0.5, # Threshold for multilabel classification
                          topk=1, # Number of labels to return for each head
@@ -469,17 +510,58 @@ class ModelController():
             test_dset = self.data_store.prepare_test_dataset(dset,do_filtering)
             test_ddict = DatasetDict()
             test_ddict['test'] = test_dset
-            test_ddict = self.predict_ddict_classification(test_ddict,
+            if is_regression:
+                test_ddict = self.predict_ddict_regression(test_ddict,
                                                            ds_type='test',
-                                                           batch_size=batch_size,
-                                                           is_multilabel=is_multilabel,
-                                                           multilabel_threshold=multilabel_threshold,
-                                                           topk=topk,
-                                                           is_dhc=is_dhc
+                                                           batch_size=batch_size
                                                           )
+            else:
+                test_ddict = self.predict_ddict_classification(test_ddict,
+                                                               ds_type='test',
+                                                               batch_size=batch_size,
+                                                               is_multilabel=is_multilabel,
+                                                               multilabel_threshold=multilabel_threshold,
+                                                               topk=topk,
+                                                               is_dhc=is_dhc
+                                                              )
         return test_ddict
         
-                        
+                   
+    def predict_ddict_regression(self,
+                      ddict:DatasetDict=None, # A processed and tokenized DatasetDict (will override one in ```data_store```)
+                      ds_type='test', # The split of DatasetDict to predict
+                      batch_size=16, # Batch size for making prediction on GPU
+                      tokenizer=None, # Tokenizer (to override one in ```data_store```)
+                      data_collator=None, # Data Collator (to override one in ```data_store```)
+                      device=None, # Device that the model is trained on
+                     ):
+        if device is None: device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        if tokenizer is None: tokenizer=check_and_get_attribute(self.data_store,'tokenizer')
+        if data_collator is None: data_collator=getattr(self.data_store,'data_collator',None)
+            
+        if ddict is None: ddict = check_and_get_attribute(self.data_store,'main_ddict')
+        if not isinstance(ddict,DatasetDict): raise ValueError("Make sure your input is a DatasetDict. If it's a test Dataset, convert it to DatasetDict with a split 'test'")
+        if ds_type not in ddict.keys():
+            raise ValueError(f'{ds_type} is not in the given DatasetDict')
+        
+        is_streamed=isinstance(self.dset,IterableDataset)
+        
+        ddict.set_format("torch",
+                        columns=["input_ids", "attention_mask"])
+        
+        print_msg('Start making predictions',20)
+        # this will create 1 features: pred
+        ddict[ds_type] = ddict[ds_type].map(
+                            partial(_forward_pass_regression,
+                                    model=self.model,
+                                    tokenizer=tokenizer,
+                                    data_collator=data_collator,
+                                    device=device
+                                   ), 
+                            batched=True, 
+                            batch_size=batch_size)
+        return ddict
+    
     def predict_ddict_classification(self,
                       ddict:DatasetDict=None, # A processed and tokenized DatasetDict (will override one in ```data_store```)
                       ds_type='test', # The split of DatasetDict to predict
