@@ -14,7 +14,8 @@ from functools import partial
 import warnings
 
 # %% auto 0
-__all__ = ['tokenizer_explain', 'two_steps_tokenization_explain', 'tokenize_function', 'concat_metadatas', 'TextDataController']
+__all__ = ['tokenizer_explain', 'two_steps_tokenization_explain', 'tokenize_function', 'concat_metadatas',
+           'TextDataControllerStreaming', 'TextDataController']
 
 # %% ../nbs/00_text_main.ipynb 6
 def tokenizer_explain(inp, # Input sentence
@@ -67,20 +68,19 @@ def two_steps_tokenization_explain(inp, # Input sentence
     tokenizer_explain(inp,tokenizer)
 
 # %% ../nbs/00_text_main.ipynb 41
-def tokenize_function(examples:dict,
+def tokenize_function(text,
                       tok,
-                      text_name,
                       max_length=None,
                       is_split_into_words=False):
     if max_length is None:
         # pad to model's default max sequence length
-        return tok(examples[text_name], padding="max_length", truncation=True,is_split_into_words=is_split_into_words)
+        return tok(text, padding="max_length", truncation=True,is_split_into_words=is_split_into_words)
     if isinstance(max_length,int) and max_length>0:
         # pad to max length of the current batch, and start truncating at max_length
-        return tok(examples[text_name], padding=True, max_length=max_length,truncation=True,is_split_into_words=is_split_into_words)
+        return tok(text, padding=True, max_length=max_length,truncation=True,is_split_into_words=is_split_into_words)
     
     # no padding (still truncate at model's default max sequence length)
-    return tok(examples[text_name], truncation=True,is_split_into_words=is_split_into_words)
+    return tok(text, truncation=True,is_split_into_words=is_split_into_words)
 
 # %% ../nbs/00_text_main.ipynb 53
 def concat_metadatas(dset:dict, # HuggingFace Dataset
@@ -106,7 +106,342 @@ def concat_metadatas(dset:dict, # HuggingFace Dataset
             results[main_text] = f'{m_data} {sep} {results[main_text]}'
     return results
 
-# %% ../nbs/00_text_main.ipynb 57
+# %% ../nbs/00_text_main.ipynb 56
+class TextDataControllerStreaming():
+    def __init__(self,
+                 inp, # HuggingFainpce Dataset or DatasetDict
+                 main_text:str, # Name of the main text column
+                 label_names=None, # Names of the label (dependent variable) columns
+                 class_names_predefined=None, # List of names associated with the labels (same index order)
+                 filter_dict={}, # A dictionary: {feature: filtering_function_based_on_the_feature}
+                 metadatas=[], # Names of the metadata columns
+                 process_metas=True, # Whether to do simple text processing on the chosen metadatas
+                 content_transformations=[], # A list of text transformations
+                 content_augmentations=[], # A list of text augmentations
+                 seed=None, # Random seed
+                 batch_size=1000, # CPU batch size
+                 num_proc=4, # Number of process for multiprocessing. This will be applied on non-streamed validation set
+                 cols_to_keep=None, # Columns to keep after all processings
+                 buffer_size=10000, # For shuffling data
+                 verbose=True, # Whether to print processing information
+                ):
+            
+        self.main_text = main_text
+        self.metadatas = val2iterable(metadatas)
+        self.process_metas = process_metas
+        self.label_names = val2iterable(label_names) if label_names is not None else None
+        self.label_lists = class_names_predefined
+        self.filter_dict = filter_dict
+        self.content_tfms = val2iterable(content_transformations)
+        self.aug_tfms = val2iterable(content_augmentations)
+        self.seed = seed
+        self.is_batched = batch_size>1
+        self.batch_size = batch_size
+        self.num_proc = num_proc
+        self.cols_to_keep = cols_to_keep
+        self.buffer_size = buffer_size
+        self.verbose = verbose
+        self.main_ddict=DatasetDict()
+        self.verboseprint = print if verbose else lambda *a, **k: None
+        
+        if hasattr(inp,'keys'): # is datasetdict
+            if 'train' not in inp.keys(): 
+                raise ValueError('The given DatasetDict has no "train" split')
+            else:
+                self.main_ddict['train'] = inp['train']
+            val_key = list(set(inp.keys()) & set(['val','validation','valid']))
+            if len(val_key)>1: raise ValueError('Your DatasetDict has more than 1 validation split')
+            if len(val_key)==1:
+                self.main_ddict['validation'] = inp[val_key[0]]
+        else: # is dataset
+            self.main_ddict['train'] = inp
+        
+        
+        
+        is_streamed=isinstance(self.main_ddict['train'],IterableDataset)
+        if not is_streamed: raise Exception('This Text Data Controller only handles streamed dataset')
+        
+        self.all_cols = get_dset_col_names(self.main_ddict['train'])
+        if is_streamed and self.label_names is not None and self.label_lists is None:
+            raise ValueError('All class labels must be provided when streaming')
+            
+        self._processed_call=False
+        
+        self._determine_multihead_multilabel()
+        
+            
+    @classmethod
+    def from_pickle(cls,
+                    fname, # Name of the pickle file
+                    parent='pickle_files' # Parent folder
+                   ):
+        return load_pickle(fname,parent=parent)
+    
+    def _determine_multihead_multilabel(self):
+        self.is_multilabel=False
+        self.is_multihead=False
+        if self.label_names is None: return
+        
+        if len(self.label_names)>1:
+            self.is_multihead=True
+        # get label of first row
+        first_label = next(iter(self.main_ddict['train']))[self.label_names[0]]
+        if isinstance(first_label,(list,set,tuple)):
+            # This is multi-label. Ignore self.label_names[1:]
+            self.label_names = [self.label_names[0]]
+            self.is_multihead=False
+            self.is_multilabel=True
+                     
+    
+    def save_as_pickles(self,
+                        fname, # Name of the pickle file
+                        parent='pickle_files', # Parent folder
+                        drop_data_attributes=False # Whether to drop all large-size data attributes
+                       ):
+        if drop_data_attributes:
+            if hasattr(self, 'main_ddict'):
+                del self.main_ddict
+        save_to_pickle(self,fname,parent=parent)
+    
+                             
+    def _create_label_mapping_func(self,encoder_classes):
+        if self.is_multihead:
+            label2idxs = [{v:i for i,v in enumerate(l_classes)} for l_classes in encoder_classes]
+                    
+            _func = lambda inp: {'label': [[label2idxs[i][v] for i,v in enumerate(vs)] for vs in zip(*[inp[l] for l in self.label_names])] \
+                                    if self.is_batched else [label2idxs[i][v] for i,v in enumerate([inp[l] for l in self.label_names])]
+                              }
+            
+        else:
+            label2idx = {v:i for i,v in enumerate(encoder_classes[0])}
+            _func = partial(lambda_map_batch,
+                           feature=self.label_names[0],
+                           func=lambda x: label2idx[x],
+                           output_feature='label',
+                           is_batched=self.is_batched)
+        return _func
+        
+    def _encode_labels(self):
+        if self.label_names is None: return        
+        if not isinstance(self.label_lists[0],list):
+            self.label_lists = [self.label_lists]
+                    
+        encoder_classes=[]
+        if not self.is_multilabel:
+            for idx,l in enumerate(self.label_names):
+                l_classes = sorted(list(self.label_lists[idx]))
+                encoder_classes.append(l_classes)
+            
+            _func = self._create_label_mapping_func(encoder_classes)
+            self.main_ddict['train'] = hf_map_dset(self.main_ddict['train'],_func,self.is_batched,self.batch_size,self.num_proc)
+            if 'validation' in self.main_ddict.keys():
+                self.main_ddict['validation'] = hf_map_dset(self.main_ddict['validation'],_func,self.is_batched,self.batch_size,self.num_proc)
+                    
+        else:
+            # For MultiLabel, we transform the label itself to one-hot (or actually, few-hot)
+            l_classes = sorted(list(self.label_lists[0]))   
+            encoder_classes.append(l_classes)
+            
+            l_encoder = MultiLabelBinarizer(classes=encoder_classes[0])
+            _ = l_encoder.fit(None)
+            _func = partial(lambda_map_batch,
+                            feature=self.label_names[0],
+                            func=lambda x: l_encoder.transform(x),
+                            output_feature='label',
+                            is_batched=self.is_batched,
+                            is_func_batched=True)
+            self.main_ddict['train'] = hf_map_dset(self.main_ddict['train'],_func,self.is_batched,self.batch_size,self.num_proc)
+            if 'validation' in self.main_ddict.keys():
+                self.main_ddict['validation'] = hf_map_dset(self.main_ddict['validation'],_func,self.is_batched,self.batch_size,self.num_proc)
+            
+        self.label_lists = encoder_classes
+        
+    def _process_metadatas(self,dtrain):
+        if len(self.metadatas)>0:
+            map_func = partial(concat_metadatas,
+                               main_text=self.main_text,
+                               metadatas=self.metadatas,
+                               process_metas=self.process_metas,
+                               is_batched=self.is_batched)
+            dtrain = hf_map_dset(dtrain,map_func,self.is_batched,self.batch_size,self.num_proc)
+        return dtrain
+            
+            
+    def _simplify_ddict(self):
+        if self.cols_to_keep is None:
+            self.cols_to_keep= [self.main_text] + self.metadatas
+            if self.label_names is not None: self.cols_to_keep+=self.label_names
+        cols_to_remove = set(self.all_cols) - set(self.cols_to_keep)
+        self.main_ddict['train']=self.main_ddict['train'].remove_columns(list(cols_to_remove))
+        if 'validation' in self.main_ddict.keys():
+            self.main_ddict['validation']=self.main_ddict['validation'].remove_columns(list(cols_to_remove))
+
+    def _do_filtering(self,dtrain):
+        if len(self.filter_dict):
+            col_names = get_dset_col_names(dtrain)
+            for f,tfm in self.filter_dict.items():
+                if f in col_names:
+                    _func = partial(lambda_batch,
+                                    feature=f,
+                                    func=tfm,
+                                    is_batched=self.is_batched)
+                    dtrain = hf_filter_dset(dtrain,_func,self.is_batched,self.batch_size,self.num_proc)
+        return dtrain
+        
+
+    def _do_transformation_tokenization(self,dtrain,tokenizer,max_length):
+        tok_func = partial(tokenize_function,tok=tokenizer,max_length=max_length)
+        if len(self.content_tfms):            
+            for tfm in self.content_tfms:
+                _func = partial(lambda_map_batch,
+                                feature=self.main_text,
+                                func=tfm,
+                                is_batched=self.is_batched)
+                dtrain = hf_map_dset(dtrain,_func,self.is_batched,self.batch_size,self.num_proc)
+        
+        _func = partial(lambda_map_batch,
+                        feature=self.main_text,
+                        func=tok_func,
+                        output_feature=None,
+                        is_batched=self.is_batched)
+        dtrain = hf_map_dset(dtrain,_func,self.is_batched,self.batch_size,self.num_proc)
+            
+        return dtrain 
+ 
+    def _do_transformation_augmentation_tokenization(self,tokenizer,max_length):
+        tok_func = partial(tokenize_function,tok=tokenizer,max_length=max_length)
+        all_tfms = self.content_tfms + self.aug_tfms
+        all_tfms = partial(func_all,functions=all_tfms) if len(all_tfms) else None
+        seed_everything(self.seed)
+           
+        self.main_ddict['train'] = IterableDataset.from_generator(aug_and_tok_stream_generator,
+                                                   gen_kwargs={'dset': self.main_ddict['train'],
+                                                               'text_name':self.main_text,
+                                                               'tok_func':tok_func,
+                                                               'func': all_tfms
+                                                              }
+                                                                 )
+        
+        
+    def process_and_tokenize(self,
+                             tokenizer, # Tokenizer (preferably from HuggingFace)
+                             max_length=None, # pad to model's allowed max length (default is max_sequence_length)
+                            ):
+        if self._processed_call:
+            warnings.warn('Your dataset has already been processed. Returning the previous processed DatasetDict...')
+            return self.main_ddict
+        
+        self.tokenizer = tokenizer
+        self.max_length = max_length
+                             
+        # Filtering
+        for k in self.main_ddict.keys():   
+            self.main_ddict[k] = self._do_filtering(self.main_ddict[k])
+
+        
+        # Process metadatas
+        for k in self.main_ddict.keys():   
+            self.main_ddict[k] = self._process_metadatas(self.main_ddict[k])
+        
+        # Process labels
+        self._encode_labels()
+
+        
+        # Dropping unused columns
+        self._simplify_ddict()
+
+        
+        # Content transformation + tokenization for validation
+        if 'validation' in self.main_ddict.keys():
+            self.main_ddict['validation'] = self._do_transformation_tokenization(self.main_ddict['validation'],tokenizer,max_length)
+            
+ 
+        # Content transformation + augmentation + tokenization for train
+        self._do_transformation_augmentation_tokenization(tokenizer,max_length)
+        
+        self._processed_call=True
+        
+#         return self.main_ddict
+    
+        
+    
+#     def set_data_collator(self,data_collator):
+#         self.data_collator = data_collator
+        
+    
+#     def prepare_test_dataset_from_csv(self,
+#                                       file_path, # path to csv file
+#                                       do_filtering=False # whether to perform data filtering on this test set
+#                                      ):
+#         file_path = Path(file_path)
+#         ds = load_dataset(str(file_path.parent),
+#                           data_files=file_path.name,
+#                           split='train')
+#         return self.prepare_test_dataset(ds,do_filtering)
+    
+#     def prepare_test_dataset_from_df(self,
+#                                      df, # Pandas Dataframe
+#                                      validate=True, # whether to perform input data validation
+#                                      do_filtering=False # whether to perform data filtering on this test set 
+#                                     ):
+#         if validate:
+#             check_input_validation(df)
+#         ds = Dataset.from_pandas(df)
+#         return self.prepare_test_dataset(ds,do_filtering)
+    
+#     def prepare_test_dataset_from_raws(self,
+#                                        content, # Either a single sentence, list of sentence or a dictionary with keys are metadata columns and values are list
+#                                       ):
+#         if len(self.metadatas)!=0 and not isinstance(content,dict):
+#             raise ValueError(f'There is/are metadatas in the preprocessing step. Please include a dictionary including these keys for metadatas: {self.metadatas}, and texture content: {self.main_text}')
+            
+#         _dic = {self.main_text:[content]} if isinstance(content,str) else content
+#         for k in _dic.keys():
+#             _dic[k] = val2iterable(_dic[k])
+        
+#         test_dict = Dataset.from_dict(_dic)
+#         return self.prepare_test_dataset(test_dict,do_filtering=False)
+    
+#     def prepare_test_dataset(self,
+#                              test_dset, # The HuggingFace Dataset as Test set
+#                              do_filtering=False # whether to perform data filtering on this test set
+#                             ):
+#         test_cols = set(get_dset_col_names(test_dset))
+#         test_cols = test_cols - set(self.label_names)
+#         missing_cols = set(self.cols_to_keep) - set(self.label_names) - set(test_cols)
+#         if len(missing_cols):
+#             raise ValueError(f'Test set does not have these columns required for preprocessings: {missing_cols}')
+            
+#         print_msg('Start Test Set Transformation',20,verbose=self.verbose)
+
+#         # Filtering
+#         if do_filtering:
+#             test_dset = self._do_filtering(test_dset)
+        
+#         # Process metadatas
+#         test_dset = self._process_metadatas(test_dset)
+        
+#         # Content transformation
+#         test_dset = self._do_transformation(test_dset)
+        
+#         # Drop unused columns
+#         cols_to_remove = test_cols - set(self.cols_to_keep)
+#         test_dset=test_dset.remove_columns(list(cols_to_remove))
+        
+#         # Tokenization
+#         print_msg('Tokenization',20,verbose=self.verbose)
+#         test_dset = test_dset.map(partial(tokenize_function,
+#                                           text_name=self.main_text,
+#                                           tok=self.tokenizer,
+#                                           max_length=self.max_length),
+#                                   batched=True,
+#                                   batch_size=self.batch_size
+#                                  )
+#         self.verboseprint('Done')
+#         return test_dset
+
+
+# %% ../nbs/00_text_main.ipynb 58
 class TextDataController():
     def __init__(self,
                  inp, # HuggingFainpce Dataset or DatasetDict
@@ -232,6 +567,8 @@ class TextDataController():
         if drop_data_attributes:
             if hasattr(self, 'main_ddict'):
                 del self.main_ddict
+            if hasattr(self, 'ddict_rest'):
+                del self.ddict_rest
         save_to_pickle(self,fname,parent=parent)
     
         
@@ -251,7 +588,7 @@ class TextDataController():
                         feature=self.main_text,
                         func=lambda x: x.strip().lower() not in val_txt_leaked,
                         is_batched=self.is_batched)
-        self.main_ddict['train'] = hf_filter_dset(self.main_ddict['train'],_func,self.is_streamed,self.is_batched,self.batch_size,self.num_proc)   
+        self.main_ddict['train'] = hf_filter_dset(self.main_ddict['train'],_func,self.is_batched,self.batch_size,self.num_proc)   
         self.verboseprint('Done')
            
     def _train_test_split(self):
@@ -270,8 +607,6 @@ class TextDataController():
         elif (isinstance(self.val_ratio,float) or isinstance(self.val_ratio,int)) and not len(self.stratify_cols):
             self.verboseprint('Validation split based on val_ratio')
             if self.is_streamed:
-                # shuffle dataset before splitting it. This is memory-consuming
-#                 self.dset = self.dset.shuffle(seed=self.seed,buffer_size=self.buffer_size)
                 if isinstance(self.val_ratio,float):
                     warnings.warn("Length of streamed dataset is unknown to use float validation ratio. Default to the first 1000 data points for validation")
                     self.val_ratio=1000  
@@ -356,14 +691,14 @@ class TextDataController():
             
             _func = self._create_label_mapping_func(encoder_classes)
                 
-            self.dset = hf_map_dset(self.dset,_func,self.is_streamed,self.is_batched,self.batch_size,self.num_proc)
+            self.dset = hf_map_dset(self.dset,_func,self.is_batched,self.batch_size,self.num_proc)
 
             val_key = list(set(self.ddict_rest.keys()) & set(['val','validation','valid']))
             if len(val_key)>1: raise ValueError('Your DatasetDict has more than 1 validation split')
             if len(val_key)==1:
                 val_key=val_key[0]
                 self.ddict_rest[val_key] = hf_map_dset(self.ddict_rest[val_key],_func,
-                                                         self.is_streamed,self.is_batched,self.batch_size,self.num_proc)
+                                                       self.is_batched,self.batch_size,self.num_proc)
                     
         else:
             # For MultiLabel, we transform the label itself to one-hot (or actually, few-hot)
@@ -384,14 +719,14 @@ class TextDataController():
                             output_feature='label',
                             is_batched=self.is_batched,
                             is_func_batched=True)
-            self.dset = hf_map_dset(self.dset,_func,self.is_streamed,self.is_batched,self.batch_size,self.num_proc)                                                 
+            self.dset = hf_map_dset(self.dset,_func,self.is_batched,self.batch_size,self.num_proc)                                                 
             
             val_key = list(set(self.ddict_rest.keys()) & set(['val','validation','valid']))
             if len(val_key)>1: raise ValueError('Your DatasetDict has more than 1 validation dataset')
             if len(val_key)==1:
                 val_key=val_key[0]
                 self.ddict_rest[val_key] = hf_map_dset(self.ddict_rest[val_key],_func,
-                                                      self.is_streamed,self.is_batched,self.batch_size,self.num_proc)
+                                                       self.is_batched,self.batch_size,self.num_proc)
             
         self.label_lists = encoder_classes
         self.verboseprint('Done')
@@ -404,9 +739,9 @@ class TextDataController():
                                metadatas=self.metadatas,
                                process_metas=self.process_metas,
                                is_batched=self.is_batched)
-            dset = hf_map_dset(dset,map_func,self.is_streamed,self.is_batched,self.batch_size,self.num_proc)
+            dset = hf_map_dset(dset,map_func,self.is_batched,self.batch_size,self.num_proc)
             if ddict_rest is not None:
-                ddict_rest = hf_map_dset(ddict_rest,map_func,self.is_streamed,self.is_batched,self.batch_size,self.num_proc)
+                ddict_rest = hf_map_dset(ddict_rest,map_func,self.is_batched,self.batch_size,self.num_proc)
             self.verboseprint('Done')
         return dset if ddict_rest is None else (dset,ddict_rest)
             
@@ -432,9 +767,9 @@ class TextDataController():
                                feature=self.main_text,
                                func=tfm,
                                is_batched=self.is_batched)
-                dset = hf_map_dset(dset,_func,self.is_streamed,self.is_batched,self.batch_size,self.num_proc)
+                dset = hf_map_dset(dset,_func,self.is_batched,self.batch_size,self.num_proc)
                 if ddict_rest is not None:
-                    ddict_rest = hf_map_dset(ddict_rest,_func,self.is_streamed,self.is_batched,self.batch_size,self.num_proc)
+                    ddict_rest = hf_map_dset(ddict_rest,_func,self.is_batched,self.batch_size,self.num_proc)
             self.verboseprint('Done')
         return dset if ddict_rest is None else (dset,ddict_rest)
  
@@ -449,9 +784,9 @@ class TextDataController():
                                     feature=f,
                                     func=tfm,
                                     is_batched=self.is_batched)
-                    dset = hf_filter_dset(dset,_func,self.is_streamed,self.is_batched,self.batch_size,self.num_proc)
-                if ddict_rest is not None:
-                    ddict_rest = hf_filter_dset(ddict_rest,_func,self.is_streamed,self.is_batched,self.batch_size,self.num_proc)
+                    dset = hf_filter_dset(dset,_func,self.is_batched,self.batch_size,self.num_proc)
+                if ddict_rest is not None: # assuming ddict_rest has the column to filter, always
+                    ddict_rest = hf_filter_dset(ddict_rest,_func,self.is_batched,self.batch_size,self.num_proc)
             self.verboseprint('Done')
         return dset if ddict_rest is None else (dset,ddict_rest)
     
@@ -465,7 +800,7 @@ class TextDataController():
                                 feature=f,
                                 func=tfm,
                                 is_batched=self.is_batched)
-                new_dset = hf_filter_dset(self.main_ddict['train'],_func,self.is_streamed,self.is_batched,self.batch_size,self.num_proc)
+                new_dset = hf_filter_dset(self.main_ddict['train'],_func,self.is_batched,self.batch_size,self.num_proc)
                 results.append(new_dset)
             # slow concatenation for iterable dataset    
             self.main_ddict['train'] = concatenate_datasets(results+[self.main_ddict['train']])
@@ -501,7 +836,6 @@ class TextDataController():
                                    is_func_batched=is_func_batched
                                    )
                     self.main_ddict['train'] = hf_map_dset(self.main_ddict['train'],_func,
-                                                              self.is_streamed,
                                                               is_batched=is_batched,
                                                               batch_size=bs,
                                                               num_proc=num_proc
@@ -509,7 +843,7 @@ class TextDataController():
 
             else: 
                 self.main_ddict['train'] = IterableDataset.from_generator(augmentation_stream_generator,
-                                               features = self.main_ddict['train'].features,
+#                                                features = self.main_ddict['train'].features,
                                                gen_kwargs={'dset': self.main_ddict['train'],
                                                            'text_name':self.main_text,
                                                            'func':partial(func_all,functions=self.aug_tfms)
@@ -583,33 +917,31 @@ class TextDataController():
     
         
     def do_tokenization(self,
-                             tokenizer, # Tokenizer (preferably from HuggingFace)
-                             is_split_into_words=False, # Is text split into list or not
-                             max_length=None, # pad to model's allowed max length (default is max_sequence_length)
-                             trn_size=None, # The number of training data to be tokenized
-                            ):
+                        tokenizer, # Tokenizer (preferably from HuggingFace)
+                        max_length=None, # pad to model's allowed max length (default is max_sequence_length)
+                        trn_size=None, # The number of training data to be tokenized
+                       ):
         print_msg('Tokenization',20,verbose=self.verbose)
         self.tokenizer = tokenizer
-        self.is_split_into_words= is_split_into_words
         self.max_length = max_length
+        tok_func = partial(tokenize_function,tok=tokenizer,max_length=max_length)
+        _func = partial(lambda_map_batch,
+                        feature=self.main_text,
+                        func=tok_func,
+                        output_feature=None,
+                        is_batched=self.is_batched)
+        
         if trn_size is not None:
             self.main_ddict['train'] = self.main_ddict['train'].take(trn_size)
         
         for k in self.main_ddict.keys():
-            self.main_ddict[k] = self.main_ddict[k].map(partial(tokenize_function,
-                                                                text_name=self.main_text,
-                                                                tok=tokenizer,
-                                                                is_split_into_words=is_split_into_words,
-                                                                max_length=max_length),
-                                                            batched=True,
-                                                            batch_size=self.batch_size
-                                                           )
+            self.main_ddict[k] = hf_map_dset(self.main_ddict[k],_func,self.is_batched,self.batch_size,self.num_proc)
+
         self.verboseprint('Done')
         return self.main_ddict
         
     def process_and_tokenize(self,
                              tokenizer, # Tokenizer (preferably from HuggingFace)
-                             is_split_into_words=False, # Is text split into list or not
                              max_length=None, # pad to model's allowed max length (default is max_sequence_length)
                              trn_size=None, # The number of training data to be tokenized
                              shuffle_trn=True, # To shuffle the train set before tokenization
@@ -618,7 +950,7 @@ class TextDataController():
         This will perform `do_all_processing` then `do_tokenization`
         """
         _ = self.do_all_preprocessing(shuffle_trn)
-        _ = self.do_tokenization(tokenizer,is_split_into_words,max_length,trn_size)
+        _ = self.do_tokenization(tokenizer,max_length,trn_size)
         
     
     def set_data_collator(self,data_collator):
@@ -686,14 +1018,14 @@ class TextDataController():
         
         # Tokenization
         print_msg('Tokenization',20,verbose=self.verbose)
-        test_dset = test_dset.map(partial(tokenize_function,
-                                          text_name=self.main_text,
-                                          tok=self.tokenizer,
-                                          is_split_into_words=self.is_split_into_words,
-                                          max_length=self.max_length),
-                                  batched=True,
-                                  batch_size=self.batch_size
-                                 )
+        _func = partial(lambda_batch,
+                        feature=self.main_text,
+                        func=partial(tokenize_function,tok=self.tokenizer,max_length=self.max_length),
+                        output_feature=None,
+                        is_batched=self.is_batched)
+        
+        test_dset = hf_map_dset(test_dset,_func,self.is_batched,self.batch_size,self.num_proc)
+        
         self.verboseprint('Done')
         return test_dset
 

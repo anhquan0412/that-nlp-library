@@ -12,14 +12,15 @@ import numpy as np
 import pandas as pd
 from typing import Callable, Any
 from collections.abc import Iterable
+from datasets import IterableDataset
 import random
 import warnings
 
 # %% auto 0
 __all__ = ['HiddenPrints', 'val2iterable', 'create_dir', 'check_and_get_attribute', 'callable_name', 'print_msg', 'seed_notorch',
            'seed_everything', 'save_to_pickle', 'load_pickle', 'check_input_validation', 'check_text_leaking',
-           'none2emptystr', 'lambda_batch', 'lambda_map_batch', 'augmentation_stream_generator', 'func_all',
-           'get_dset_col_names', 'hf_map_dset', 'hf_filter_dset', 'sigmoid']
+           'none2emptystr', 'lambda_batch', 'lambda_map_batch', 'augmentation_stream_generator',
+           'aug_and_tok_stream_generator', 'func_all', 'get_dset_col_names', 'hf_map_dset', 'hf_filter_dset', 'sigmoid']
 
 # %% ../nbs/07_utils.ipynb 4
 class HiddenPrints:
@@ -146,11 +147,14 @@ def lambda_map_batch(inp, # HuggingFace Dataset
                      feature, # Feature name.
                      func, # The function to apply
                      is_batched, # Whether batching is applied
-                     output_feature=None, # New feature output, if different from 'feature'
-                     is_func_batched=False # Whether the func above only works with batch
+                     output_feature='same', # New feature output, if different from 'feature'. If none, use function's output feature(s)
+                     is_func_batched=False # Whether the func above only works with batch (mostly sklearn's)
                     ):
+    
+    if output_feature is None: 
+        return func(inp[feature]) if is_batched else func([inp[feature]])
+    if output_feature.strip().lower()=='same': output_feature = feature
     results={}
-    if output_feature is None: output_feature = feature
     if not is_func_batched:
         results[output_feature] = lambda_batch(inp,feature,func,is_batched)
     else:
@@ -164,22 +168,32 @@ def augmentation_stream_generator(dset,text_name,func):
         inp[text_name]=func(inp[text_name])
         yield inp
 
-# %% ../nbs/07_utils.ipynb 15
+# %% ../nbs/07_utils.ipynb 14
+def aug_and_tok_stream_generator(dset,text_name,tok_func,func=None):
+    for inp in dset:
+        # inp[text_name] will be a single item
+        if func is not None: inp[text_name]=func(inp[text_name])
+        result_dict = tok_func(inp[text_name])
+        for k,v in result_dict.items():
+            inp[k]=v
+        yield inp
+
+# %% ../nbs/07_utils.ipynb 16
 def func_all(x, functions):
     return reduce(lambda acc, func: func(acc), functions, x)
 
-# %% ../nbs/07_utils.ipynb 16
+# %% ../nbs/07_utils.ipynb 17
 def get_dset_col_names(dset):
     if dset.column_names is not None: return dset.column_names
     warnings.warn("Iterable Dataset might contain multiple mapping functions; getting column names can be time and memory consuming") 
     return list(next(iter(dset)).keys())
 
-# %% ../nbs/07_utils.ipynb 17
+# %% ../nbs/07_utils.ipynb 18
 def hf_map_dset(dset,func,
-                is_streamed=False,
                 is_batched=True,
                 batch_size=100,
                 num_proc=1):
+    is_streamed = isinstance(dset,IterableDataset)
     if is_streamed:
         return dset.map(func,
                         batched=is_batched,
@@ -192,10 +206,10 @@ def hf_map_dset(dset,func,
                    )
 
 def hf_filter_dset(dset,func,
-                   is_streamed=False,
                    is_batched=True,
                    batch_size=100,
                    num_proc=1):
+    is_streamed = isinstance(dset,IterableDataset)
     if is_streamed:
         return dset.filter(func,
                            batched=is_batched,
@@ -207,7 +221,7 @@ def hf_filter_dset(dset,func,
                        num_proc=num_proc
                       )
 
-# %% ../nbs/07_utils.ipynb 18
+# %% ../nbs/07_utils.ipynb 19
 def sigmoid(x):
     """
     A numerically stable version of the logistic sigmoid function.
