@@ -144,7 +144,6 @@ class TextDataController():
         self.batch_size = batch_size
         self.num_proc = num_proc
         self.cols_to_keep = cols_to_keep
-        self.buffer_size = buffer_size
         self.ddict_rest = DatasetDict()
         self.verbose = verbose
         self.verboseprint = print if verbose else lambda *a, **k: None
@@ -215,13 +214,15 @@ class TextDataController():
     def save_as_pickles(self,
                         fname, # Name of the pickle file
                         parent='pickle_files', # Parent folder
-                        drop_data_attributes=False # Whether to drop all large-size data attributes
+                        drop_attributes=False # Whether to drop large-size attributes
                        ):
-        if drop_data_attributes:
+        if drop_attributes:
             if hasattr(self, 'main_ddict'):
                 del self.main_ddict
             if hasattr(self, 'ddict_rest'):
                 del self.ddict_rest
+            if hasattr(self, 'aug_tfms'):
+                del self.aug_tfms
         save_to_pickle(self,fname,parent=parent)
     
         
@@ -482,8 +483,8 @@ class TextDataController():
 
             
     def _do_train_shuffling(self):
-        print_msg('Shuffling train set',20,verbose=self.verbose)
-        self.main_ddict['train'] = self.main_ddict['train'].shuffle(seed=self.seed)
+        print_msg('Shuffling and flattening train set',20,verbose=self.verbose)
+        self.main_ddict['train'] = self.main_ddict['train'].shuffle(seed=self.seed).flatten_indices(num_proc = self.num_proc)
         self.verboseprint('Done')
         
     def do_all_preprocessing(self,
@@ -549,7 +550,12 @@ class TextDataController():
                         is_batched=self.is_batched)
         
         if trn_size is not None:
-            self.main_ddict['train'] = self.main_ddict['train'].take(trn_size)
+            if isinstance(trn_size,float):
+                num_shard = int(1/trn_size)
+            else: # int
+                trn_len=len(self.main_ddict['train'])
+                num_shard = trn_len//trn_size
+            self.main_ddict['train'] = self.main_ddict['train'].shard(num_shard,0)
         
         for k in self.main_ddict.keys():
             self.main_ddict[k] = hf_map_dset(self.main_ddict[k],_func,self.is_batched,self.batch_size,self.num_proc)
@@ -635,19 +641,18 @@ class TextDataController():
         
         # Tokenization
         print_msg('Tokenization',20,verbose=self.verbose)
-        _func = partial(lambda_batch,
+        _func = partial(lambda_map_batch,
                         feature=self.main_text,
                         func=partial(tokenize_function,tok=self.tokenizer,max_length=self.max_length),
                         output_feature=None,
                         is_batched=self.is_batched)
-        
         test_dset = hf_map_dset(test_dset,_func,self.is_batched,self.batch_size,self.num_proc)
         
         self.verboseprint('Done')
         return test_dset
 
 
-# %% ../nbs/00_text_main.ipynb 62
+# %% ../nbs/00_text_main.ipynb 259
 class TextDataControllerStreaming():
     def __init__(self,
                  inp, # HuggingFainpce Dataset or DatasetDict
@@ -660,10 +665,9 @@ class TextDataControllerStreaming():
                  content_transformations=[], # A list of text transformations
                  content_augmentations=[], # A list of text augmentations
                  seed=None, # Random seed
-                 batch_size=1000, # CPU batch size
-                 num_proc=4, # Number of process for multiprocessing. This will be applied on non-streamed validation set
+                 batch_size=100, # CPU batch size
+                 num_proc=1, # Number of process for multiprocessing. This will be applied on non-streamed validation set
                  cols_to_keep=None, # Columns to keep after all processings
-                 buffer_size=10000, # For shuffling data
                  verbose=True, # Whether to print processing information
                 ):
             
@@ -680,7 +684,6 @@ class TextDataControllerStreaming():
         self.batch_size = batch_size
         self.num_proc = num_proc
         self.cols_to_keep = cols_to_keep
-        self.buffer_size = buffer_size
         self.verbose = verbose
         self.main_ddict=DatasetDict()
         self.verboseprint = print if verbose else lambda *a, **k: None
@@ -737,18 +740,21 @@ class TextDataControllerStreaming():
     def save_as_pickles(self,
                         fname, # Name of the pickle file
                         parent='pickle_files', # Parent folder
-                        drop_data_attributes=False # Whether to drop all large-size data attributes
+                        drop_attributes=False # Whether to drop large-size attributes
                        ):
-        if drop_data_attributes:
+        if drop_attributes:
             if hasattr(self, 'main_ddict'):
                 del self.main_ddict
+            if hasattr(self, 'ddict_rest'):
+                del self.ddict_rest
+            if hasattr(self, 'aug_tfms'):
+                del self.aug_tfms
         save_to_pickle(self,fname,parent=parent)
     
                              
     def _create_label_mapping_func(self,encoder_classes):
         if self.is_multihead:
             label2idxs = [{v:i for i,v in enumerate(l_classes)} for l_classes in encoder_classes]
-                    
             _func = lambda inp: {'label': [[label2idxs[i][v] for i,v in enumerate(vs)] for vs in zip(*[inp[l] for l in self.label_names])] \
                                     if self.is_batched else [label2idxs[i][v] for i,v in enumerate([inp[l] for l in self.label_names])]
                               }
@@ -774,7 +780,6 @@ class TextDataControllerStreaming():
             for idx,l in enumerate(self.label_names):
                 l_classes = sorted(list(self.label_lists[idx]))
                 encoder_classes.append(l_classes)
-            
             _func = self._create_label_mapping_func(encoder_classes)
             self.main_ddict['train'] = hf_map_dset(self.main_ddict['train'],_func,self.is_batched,self.batch_size,self.num_proc)
             if 'validation' in self.main_ddict.keys():
@@ -903,12 +908,12 @@ class TextDataControllerStreaming():
         
         # Content transformation + tokenization for validation
         if 'validation' in self.main_ddict.keys():
-            print_msg('Perform content transformation and tokenization on validation set',verbose=self.verbose)
+            print_msg('Performing content transformation and tokenization on validation set',verbose=self.verbose)
             self.main_ddict['validation'] = self._do_transformation_tokenization(self.main_ddict['validation'],tokenizer,max_length)
             self.verboseprint('Done')
  
         # Content transformation + augmentation + tokenization for train
-        print_msg('Create generator for content transformation, augmentation and tokenization on train set',verbose=self.verbose)
+        print_msg('Creating a generator for content transformation, augmentation and tokenization on train set',verbose=self.verbose)
         self._do_transformation_augmentation_tokenization(tokenizer,max_length)
         self.verboseprint('Done')
         self._processed_call=True
@@ -966,18 +971,26 @@ class TextDataControllerStreaming():
 
         # Filtering
         if do_filtering:
+            print_msg('Data Filtering',20,verbose=self.verbose)
             test_dset = self._do_filtering(test_dset)
+            self.verboseprint('Done')
         
         # Process metadatas
+        print_msg('Metadata Simple Processing & Concatenating to Main Content',verbose=self.verbose)    
         test_dset = self._process_metadatas(test_dset)
+        self.verboseprint('Done')
         
         # Drop unused columns
+        print_msg('Dropping unused features',20,verbose=self.verbose)
         cols_to_remove = test_cols - set(self.cols_to_keep)
         test_dset=test_dset.remove_columns(list(cols_to_remove))
+        self.verboseprint('Done')
         
         
         # Content transformation and tokenization
+        print_msg('Performing content transformation and tokenization on test set',verbose=self.verbose)
         test_dset = self._do_transformation_tokenization(test_dset,self.tokenizer,self.max_length)
+        self.verboseprint('Done')
         
         return test_dset
 
