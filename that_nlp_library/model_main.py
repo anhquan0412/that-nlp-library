@@ -4,16 +4,14 @@
 from __future__ import annotations
 import os, sys
 from transformers import Trainer, TrainingArguments, AutoConfig
-from datasets import DatasetDict,Dataset
-from pathlib import Path
+from datasets import DatasetDict
 import torch
 import gc
 from sklearn.metrics import accuracy_score
 from functools import partial
-import pandas as pd
 import numpy as np
 from .utils import *
-from .text_main import TextDataController
+from .text_main import TextDataController,TextDataControllerStreaming
 
 # %% auto 0
 __all__ = ['model_init_classification', 'compute_metrics_classification', 'compute_metrics_separate_singleheads',
@@ -247,13 +245,14 @@ def _forward_pass_classification(batch,
                                  topk=1, # Number of labels to return for each head
                                  is_multilabel=False, # Is this a multilabel classification?
                                  multilabel_threshold=0.5, # The threshold for multilabel classification
-                                 tokenizer=None, # HuggingFace tokenizer
+                                 model_input_names=['input_ids', 'token_type_ids', 'attention_mask'], # Model required inputs, from tokenizer.model_input_names
                                  data_collator=None, # HuggingFace data collator
                                  label_names=[], # Names of the label columns
                                  label_sizes=[], # Size of each label
                                  device = None, # device that the model is trained on
                                  is_dhc=False
                                  ):
+    print(batch)
     if data_collator is not None:
 # --- Convert from  
 # {'input_ids': [tensor([    0, 10444,   244, 14585,   125,  2948,  5925,   368,     2]), 
@@ -269,7 +268,7 @@ def _forward_pass_classification(batch,
 
         # remove string text, due to transformer new version       
         collator_inp = []
-        ks = [k for k in batch.keys() if k in ['input_ids', 'token_type_ids', 'attention_mask','label']] # hard-coded
+        ks = [k for k in batch.keys() if k in model_input_names+['label']] # hard-coded
         vs = [batch[k] for k in ks]
         for pair in zip(*vs):
             collator_inp.append({k:v for k,v in zip(ks,pair)})
@@ -277,7 +276,7 @@ def _forward_pass_classification(batch,
         batch = data_collator(collator_inp)
     
     inputs = {k:v.to(device) for k,v in batch.items()
-              if k in tokenizer.model_input_names}
+              if k in model_input_names}
     
     _f = partial(torch.nn.functional.softmax,dim=1) if not is_multilabel else torch.sigmoid
     
@@ -330,14 +329,14 @@ def _forward_pass_classification(batch,
 # %% ../nbs/03_model_main.ipynb 15
 def _forward_pass_regression(batch,
                              model=None, # NLP model
-                             tokenizer=None, # HuggingFace tokenizer
+                             model_input_names=['input_ids', 'token_type_ids', 'attention_mask'], # Model required inputs, from tokenizer.model_input_names
                              data_collator=None, # HuggingFace data collator
                              device=None, # device that the model is trained on
                              ):
     if data_collator is not None:
         # remove string text, due to transformer new version       
         collator_inp = []
-        ks = [k for k in batch.keys() if k in ['input_ids', 'token_type_ids', 'attention_mask','label']] # hard-coded
+        ks = [k for k in batch.keys() if k in model_input_names+['label']] # hard-coded
         vs = [batch[k] for k in ks]
         for pair in zip(*vs):
             collator_inp.append({k:v for k,v in zip(ks,pair)})
@@ -345,7 +344,7 @@ def _forward_pass_regression(batch,
         batch = data_collator(collator_inp)
     
     inputs = {k:v.to(device) for k,v in batch.items()
-              if k in tokenizer.model_input_names}
+              if k in model_input_names}
         
     # switch to eval mode for evaluation
     if model.training:
@@ -362,7 +361,7 @@ def _forward_pass_regression(batch,
 
 # %% ../nbs/03_model_main.ipynb 16
 def _convert_pred_id_to_label(dset,label_names,label_lists,topk=1,
-                              is_multilabel=False,is_streamed=False,
+                              is_multilabel=False,
                               batch_size=1000,num_proc=4
                              ):
     
@@ -373,7 +372,6 @@ def _convert_pred_id_to_label(dset,label_names,label_lists,topk=1,
                         func=get_label_str_multilabel,is_batched=is_batched
                        )
         dset = hf_map_dset(dset,_func,
-                           is_streamed=is_streamed,
                            is_batched=batch_size>1,
                            batch_size=batch_size,
                            num_proc=num_proc
@@ -387,7 +385,6 @@ def _convert_pred_id_to_label(dset,label_names,label_lists,topk=1,
                         is_batched=is_batched
                        )
         dset = hf_map_dset(dset,_func2,
-                           is_streamed=is_streamed,
                            is_batched=is_batched,
                            batch_size=batch_size,
                            num_proc=num_proc
@@ -399,7 +396,7 @@ def _convert_pred_id_to_label(dset,label_names,label_lists,topk=1,
 class ModelController():
     def __init__(self,
                  model, # NLP model
-                 data_store:TextDataController=None, # a TextDataMain object
+                 data_store=None, # a TextDataController/TextDataControllerStreaming object
                  metric_funcs=[accuracy_score], # Metric function (can be from Sklearn)
                  seed=42, # Random seed
                 ):
@@ -472,7 +469,7 @@ class ModelController():
                          topk=1, # Number of labels to return for each head
                          is_dhc=False # Are outpuf (of model) separate heads?
                         ):
-        if not isinstance(self.data_store,TextDataController) or not self.data_store._processed_call:
+        if not isinstance(self.data_store,(TextDataController,TextDataControllerStreaming)) or not self.data_store._processed_call:
             raise ValueError('This functionality needs a TextDataController object which has processed some training data')
         with HiddenPrints():
             test_dset = self.data_store.prepare_test_dataset_from_raws(content)
@@ -504,7 +501,7 @@ class ModelController():
                          topk=1, # Number of labels to return for each head
                          is_dhc=False # Are outpuf (of model) separate heads?
                         ):
-        if not isinstance(self.data_store,TextDataController) or not self.data_store._processed_call:
+        if not isinstance(self.data_store,(TextDataController,TextDataControllerStreaming)) or not self.data_store._processed_call:
             raise ValueError('This functionality needs a TextDataController object which has processed some training data')
         with HiddenPrints():
             test_dset = self.data_store.prepare_test_dataset(dset,do_filtering)
@@ -543,18 +540,16 @@ class ModelController():
         if not isinstance(ddict,DatasetDict): raise ValueError("Make sure your input is a DatasetDict. If it's a test Dataset, convert it to DatasetDict with a split 'test'")
         if ds_type not in ddict.keys():
             raise ValueError(f'{ds_type} is not in the given DatasetDict')
-        
-        is_streamed=isinstance(self.dset,IterableDataset)
-        
+                
         ddict.set_format("torch",
-                        columns=["input_ids", "attention_mask"])
+                        columns=tokenizer.model_input_names)
         
         print_msg('Start making predictions',20)
         # this will create 1 features: pred
         ddict[ds_type] = ddict[ds_type].map(
                             partial(_forward_pass_regression,
                                     model=self.model,
-                                    tokenizer=tokenizer,
+                                    model_input_names=tokenizer.model_input_names,
                                     data_collator=data_collator,
                                     device=device
                                    ), 
@@ -595,10 +590,10 @@ class ModelController():
         if ds_type not in ddict.keys():
             raise ValueError(f'{ds_type} is not in the given DatasetDict')
         
-        is_streamed=isinstance(self.dset,IterableDataset)
-        
+        print(ddict['validation']['input_ids'][:3])
         ddict.set_format("torch",
-                        columns=["input_ids", "attention_mask"])
+                        columns=tokenizer.model_input_names)
+        print(type(ddict['validation']['input_ids']))
         
         print_msg('Start making predictions',20)
         # this will create features: pred_classname and pred_prob_classname
@@ -607,7 +602,7 @@ class ModelController():
                                     topk=topk,
                                     is_multilabel=is_multilabel,
                                     multilabel_threshold=multilabel_threshold,
-                                    tokenizer=tokenizer,
+                                    model_input_names=tokenizer.model_input_names,
                                     data_collator=data_collator,
                                     label_names=label_names,
                                     label_sizes=label_sizes,
@@ -619,8 +614,9 @@ class ModelController():
         
         
         ddict[ds_type] = _convert_pred_id_to_label(ddict[ds_type],label_names,label_lists,topk,
-                                         is_multilabel,is_streamed,
-                                         batch_size=1000,num_proc=4
-                                        )
+                                                   is_multilabel,
+                                                   batch_size=1000,
+                                                   num_proc=4
+                                                  )
         return ddict
         

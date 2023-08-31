@@ -4,11 +4,9 @@
 from __future__ import annotations
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.preprocessing import LabelEncoder,MultiLabelBinarizer
 from datasets import DatasetDict,Dataset,IterableDataset,load_dataset,concatenate_datasets
 from pathlib import Path
-from tqdm import tqdm
 from .utils import *
 from functools import partial
 import warnings
@@ -71,18 +69,20 @@ def two_steps_tokenization_explain(inp, # Input sentence
 def tokenize_function(text,
                       tok,
                       max_length=None,
-                      is_split_into_words=False):
+                      is_split_into_words=False,
+                      return_tensors=None
+                     ):
     if max_length is None:
         # pad to model's default max sequence length
-        return tok(text, padding="max_length", truncation=True,is_split_into_words=is_split_into_words)
+        return tok(text, padding="max_length", truncation=True,is_split_into_words=is_split_into_words,return_tensors=return_tensors)
     if isinstance(max_length,int) and max_length>0:
         # pad to max length of the current batch, and start truncating at max_length
-        return tok(text, padding=True, max_length=max_length,truncation=True,is_split_into_words=is_split_into_words)
+        return tok(text, padding=True, max_length=max_length,truncation=True,is_split_into_words=is_split_into_words,return_tensors=return_tensors)
     
     # no padding (still truncate at model's default max sequence length)
-    return tok(text, truncation=True,is_split_into_words=is_split_into_words)
+    return tok(text, truncation=True,is_split_into_words=is_split_into_words,return_tensors=return_tensors)
 
-# %% ../nbs/00_text_main.ipynb 53
+# %% ../nbs/00_text_main.ipynb 56
 def concat_metadatas(dset:dict, # HuggingFace Dataset
                      main_text, # Text feature name
                      metadatas, # Metadata (or a list of metadatas)
@@ -98,7 +98,7 @@ def concat_metadatas(dset:dict, # HuggingFace Dataset
         m_data = dset[m]
         if process_metas:
             # just strip and lowercase
-            m_data = [none2emptystr(v).strip().lower() for v in m_data] if is_batched else nan2emptystr(m_data).strip().lower()
+            m_data = [none2emptystr(v).strip().lower() for v in m_data] if is_batched else none2emptystr(m_data).strip().lower()
         results[m]=m_data
         if is_batched:
             results[main_text] = [f'{m_data[i]} {sep} {results[main_text][i]}' for i in range(len(m_data))]
@@ -106,7 +106,7 @@ def concat_metadatas(dset:dict, # HuggingFace Dataset
             results[main_text] = f'{m_data} {sep} {results[main_text]}'
     return results
 
-# %% ../nbs/00_text_main.ipynb 56
+# %% ../nbs/00_text_main.ipynb 59
 class TextDataController():
     def __init__(self,
                  inp, # HuggingFainpce Dataset or DatasetDict
@@ -615,7 +615,7 @@ class TextDataController():
     
     def prepare_test_dataset(self,
                              test_dset, # The HuggingFace Dataset as Test set
-                             do_filtering=False # whether to perform data filtering on this test set
+                             do_filtering=False, # whether to perform data filtering on this test set
                             ):
         test_cols = set(get_dset_col_names(test_dset))
         test_cols = test_cols - set(self.label_names)
@@ -652,7 +652,7 @@ class TextDataController():
         return test_dset
 
 
-# %% ../nbs/00_text_main.ipynb 259
+# %% ../nbs/00_text_main.ipynb 262
 class TextDataControllerStreaming():
     def __init__(self,
                  inp, # HuggingFainpce Dataset or DatasetDict
@@ -840,7 +840,7 @@ class TextDataControllerStreaming():
         return dtrain
         
 
-    def _do_transformation_tokenization(self,dtrain,tokenizer,max_length):
+    def _do_transformation_tokenization(self,dtrain,tokenizer,max_length,):
         tok_func = partial(tokenize_function,tok=tokenizer,max_length=max_length)
         if len(self.content_tfms):            
             for tfm in self.content_tfms:
@@ -909,7 +909,10 @@ class TextDataControllerStreaming():
         # Content transformation + tokenization for validation
         if 'validation' in self.main_ddict.keys():
             print_msg('Performing content transformation and tokenization on validation set',verbose=self.verbose)
-            self.main_ddict['validation'] = self._do_transformation_tokenization(self.main_ddict['validation'],tokenizer,max_length)
+            self.main_ddict['validation'] = self._do_transformation_tokenization(self.main_ddict['validation'],
+                                                                                 tokenizer,
+                                                                                 max_length,
+                                                                                )
             self.verboseprint('Done')
  
         # Content transformation + augmentation + tokenization for train
@@ -959,7 +962,7 @@ class TextDataControllerStreaming():
     
     def prepare_test_dataset(self,
                              test_dset, # The HuggingFace Dataset as Test set
-                             do_filtering=False # whether to perform data filtering on this test set
+                             do_filtering=False, # whether to perform data filtering on this test set
                             ):
         test_cols = set(get_dset_col_names(test_dset))
         test_cols = test_cols - set(self.label_names)

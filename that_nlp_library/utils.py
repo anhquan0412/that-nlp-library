@@ -2,7 +2,6 @@
 
 # %% ../nbs/07_utils.ipynb 3
 from __future__ import annotations
-from tqdm import tqdm
 import os, sys
 from pathlib import Path
 from functools import partial, reduce

@@ -78,7 +78,7 @@ class RobertaClassificationHeadCustom(torch.nn.Module):
     """
     Same as RobertaClassificationHead, but you can freely adjust dropout
     
-    Reference: https://github.com/huggingface/transformers/blob/dbc12269ed5546b2da9236b9f1078b95b6a4d3d5/src/transformers/models/roberta/modeling_roberta.py#L1449
+    Reference: https://github.com/huggingface/transformers/blob/main/src/transformers/models/roberta/modeling_roberta.py#L1424
     """
     
     def __init__(self, 
@@ -106,7 +106,7 @@ class RobertaBaseForSequenceClassification(RobertaPreTrainedModel):
     """
     Base Roberta Architecture for Sequence Classification task
     
-    Based on: https://github.com/huggingface/transformers/blob/fb78769b9c053876ed7ae152ee995b0439a4462a/src/transformers/models/roberta/modeling_roberta.py#L1155
+    Based on: https://github.com/huggingface/transformers/blob/main/src/transformers/models/roberta/modeling_roberta.py#L1155C35-L1155C35
     """
     # make sure standard XLM-R are used
     config_class = RobertaConfig
