@@ -4,7 +4,7 @@
 from __future__ import annotations
 import os, sys
 from transformers import Trainer, TrainingArguments, AutoConfig
-from datasets import DatasetDict
+from datasets import DatasetDict,Dataset
 import torch
 import gc
 from sklearn.metrics import accuracy_score
@@ -252,7 +252,6 @@ def _forward_pass_classification(batch,
                                  device = None, # device that the model is trained on
                                  is_dhc=False
                                  ):
-    print(batch)
     if data_collator is not None:
 # --- Convert from  
 # {'input_ids': [tensor([    0, 10444,   244, 14585,   125,  2948,  5925,   368,     2]), 
@@ -362,7 +361,7 @@ def _forward_pass_regression(batch,
 # %% ../nbs/03_model_main.ipynb 16
 def _convert_pred_id_to_label(dset,label_names,label_lists,topk=1,
                               is_multilabel=False,
-                              batch_size=1000,num_proc=4
+                              batch_size=1000,num_proc=1
                              ):
     
     is_batched=batch_size>1
@@ -380,8 +379,9 @@ def _convert_pred_id_to_label(dset,label_names,label_lists,topk=1,
     
     for i in range(len(label_names)):
         _func1 = lambda xs: label_lists[i][int(xs)] if not isinstance(xs,(list,tuple)) else [label_lists[i][int(x)] for x in xs]
-        _func2 = partial(lambda_map_batch,feature=f'pred_{label_names[i]}',
-                        _func=_func1,
+        _func2 = partial(lambda_map_batch,
+                         feature=f'pred_{label_names[i]}',
+                        func=_func1,
                         is_batched=is_batched
                        )
         dset = hf_map_dset(dset,_func2,
@@ -476,12 +476,12 @@ class ModelController():
             test_ddict = DatasetDict()
             test_ddict['test'] = test_dset
             if is_regression:
-                test_ddict = self.predict_ddict_regression(test_ddict,
+                results = self.predict_ddict_regression(test_ddict,
                                                            ds_type='test',
                                                            batch_size=batch_size
                                                           )
             else:
-                test_ddict = self.predict_ddict_classification(ddict=test_ddict,
+                results = self.predict_ddict_classification(ddict=test_ddict,
                                                                ds_type='test',
                                                                batch_size=batch_size,
                                                                is_multilabel=is_multilabel,
@@ -489,7 +489,7 @@ class ModelController():
                                                                topk=topk,
                                                                is_dhc=is_dhc
                                                               )
-        return test_ddict.to_pandas()['test'][:]
+        return results.to_pandas()['test'][:]
     
     def predict_raw_dset(self,
                          dset, # A raw HuggingFace dataset
@@ -508,12 +508,12 @@ class ModelController():
             test_ddict = DatasetDict()
             test_ddict['test'] = test_dset
             if is_regression:
-                test_ddict = self.predict_ddict_regression(test_ddict,
+                results = self.predict_ddict_regression(test_ddict,
                                                            ds_type='test',
                                                            batch_size=batch_size
                                                           )
             else:
-                test_ddict = self.predict_ddict_classification(test_ddict,
+                results = self.predict_ddict_classification(test_ddict,
                                                                ds_type='test',
                                                                batch_size=batch_size,
                                                                is_multilabel=is_multilabel,
@@ -521,7 +521,7 @@ class ModelController():
                                                                topk=topk,
                                                                is_dhc=is_dhc
                                                               )
-        return test_ddict
+        return results
         
                    
     def predict_ddict_regression(self,
@@ -537,16 +537,17 @@ class ModelController():
         if data_collator is None: data_collator=getattr(self.data_store,'data_collator',None)
             
         if ddict is None: ddict = check_and_get_attribute(self.data_store,'main_ddict')
-        if not isinstance(ddict,DatasetDict): raise ValueError("Make sure your input is a DatasetDict. If it's a test Dataset, convert it to DatasetDict with a split 'test'")
-        if ds_type not in ddict.keys():
-            raise ValueError(f'{ds_type} is not in the given DatasetDict')
+        if isinstance(ddict,DatasetDict):
+            if ds_type not in ddict.keys():
+                raise ValueError(f'{ds_type} is not in the given DatasetDict')
+            ddict = ddict[ds_type]
                 
         ddict.set_format("torch",
                         columns=tokenizer.model_input_names)
         
         print_msg('Start making predictions',20)
         # this will create 1 features: pred
-        ddict[ds_type] = ddict[ds_type].map(
+        results = ddict.map(
                             partial(_forward_pass_regression,
                                     model=self.model,
                                     model_input_names=tokenizer.model_input_names,
@@ -555,10 +556,10 @@ class ModelController():
                                    ), 
                             batched=True, 
                             batch_size=batch_size)
-        return ddict
+        return results
     
     def predict_ddict_classification(self,
-                      ddict:DatasetDict=None, # A processed and tokenized DatasetDict (will override one in ```data_store```)
+                      ddict:DatasetDict|Dataset=None, # A processed and tokenized DatasetDict/Dataset (will override one in ```data_store```)
                       ds_type='test', # The split of DatasetDict to predict
                       batch_size=16, # Batch size for making prediction on GPU
                       is_multilabel=None, # Is this a multilabel classification?
@@ -586,18 +587,18 @@ class ModelController():
             
         label_sizes = [len(cs) for cs in label_lists]
         if ddict is None: ddict = check_and_get_attribute(self.data_store,'main_ddict')
-        if not isinstance(ddict,DatasetDict): raise ValueError("Make sure your input is a DatasetDict. If it's a test Dataset, convert it to DatasetDict with a split 'test'")
-        if ds_type not in ddict.keys():
-            raise ValueError(f'{ds_type} is not in the given DatasetDict')
-        
-        print(ddict['validation']['input_ids'][:3])
+        if isinstance(ddict,DatasetDict):
+            if ds_type not in ddict.keys():
+                raise ValueError(f'{ds_type} is not in the given DatasetDict')
+            ddict = ddict[ds_type]
+            
         ddict.set_format("torch",
                         columns=tokenizer.model_input_names)
-        print(type(ddict['validation']['input_ids']))
         
         print_msg('Start making predictions',20)
         # this will create features: pred_classname and pred_prob_classname
-        ddict[ds_type] = ddict[ds_type].map(
+        
+        results = ddict.map(
                             partial(_forward_pass_classification,model=self.model,
                                     topk=topk,
                                     is_multilabel=is_multilabel,
@@ -612,11 +613,10 @@ class ModelController():
                             batched=True, 
                             batch_size=batch_size)
         
-        
-        ddict[ds_type] = _convert_pred_id_to_label(ddict[ds_type],label_names,label_lists,topk,
-                                                   is_multilabel,
-                                                   batch_size=1000,
-                                                   num_proc=4
-                                                  )
-        return ddict
+        results = _convert_pred_id_to_label(results,label_names,label_lists,topk,
+                                            is_multilabel,
+                                            batch_size=1000,
+#                                                    num_proc=1 # Cannot make it work with num_proc>1
+                                           )
+        return results
         
