@@ -267,7 +267,7 @@ def _forward_pass_classification(batch,
 
         # remove string text, due to transformer new version       
         collator_inp = []
-        ks = [k for k in batch.keys() if k in model_input_names+['label']] # hard-coded
+        ks = [k for k in batch.keys() if k in model_input_names+['label']]
         vs = [batch[k] for k in ks]
         for pair in zip(*vs):
             collator_inp.append({k:v for k,v in zip(ks,pair)})
@@ -323,6 +323,7 @@ def _forward_pass_classification(batch,
     for i in range(len(label_names)):
         results[f'pred_{label_names[i]}']= pred_label_list[i].numpy()
         results[f'pred_prob_{label_names[i]}']= pred_prob_list[i].numpy()
+    
     return results
 
 # %% ../nbs/03_model_main.ipynb 15
@@ -363,22 +364,22 @@ def _convert_pred_id_to_label(dset,label_names,label_lists,topk=1,
                               is_multilabel=False,
                               batch_size=1000,num_proc=1
                              ):
-    
     is_batched=batch_size>1
     if is_multilabel:
         get_label_str_multilabel = lambda x: [label_lists[0][int(j)] for j in np.where(x==True)[0]]
         _func = partial(lambda_map_batch,feature=f'pred_{label_names[i]}',
-                        func=get_label_str_multilabel,is_batched=is_batched
+                        func=get_label_str_multilabel,
+                        is_batched=is_batched
                        )
         dset = hf_map_dset(dset,_func,
-                           is_batched=batch_size>1,
+                           is_batched=is_batched,
                            batch_size=batch_size,
                            num_proc=num_proc
                           )
         return dset
     
     for i in range(len(label_names)):
-        _func1 = lambda xs: label_lists[i][int(xs)] if not isinstance(xs,(list,tuple)) else [label_lists[i][int(x)] for x in xs]
+        _func1 = lambda xs: label_lists[i][int(xs)] if not isinstance(xs,np.ndarray) else [label_lists[i][int(x)] for x in xs]
         _func2 = partial(lambda_map_batch,
                          feature=f'pred_{label_names[i]}',
                         func=_func1,
@@ -471,25 +472,25 @@ class ModelController():
                         ):
         if not isinstance(self.data_store,(TextDataController,TextDataControllerStreaming)) or not self.data_store._processed_call:
             raise ValueError('This functionality needs a TextDataController object which has processed some training data')
-        with HiddenPrints():
-            test_dset = self.data_store.prepare_test_dataset_from_raws(content)
-            test_ddict = DatasetDict()
-            test_ddict['test'] = test_dset
-            if is_regression:
-                results = self.predict_ddict_regression(test_ddict,
+#         with HiddenPrints():
+        test_dset = self.data_store.prepare_test_dataset_from_raws(content)
+        test_ddict = DatasetDict()
+        test_ddict['test'] = test_dset
+        if is_regression:
+            results = self.predict_ddict_regression(test_ddict,
+                                                       ds_type='test',
+                                                       batch_size=batch_size
+                                                      )
+        else:
+            results = self.predict_ddict_classification(ddict=test_ddict,
                                                            ds_type='test',
-                                                           batch_size=batch_size
+                                                           batch_size=batch_size,
+                                                           is_multilabel=is_multilabel,
+                                                           multilabel_threshold=multilabel_threshold,
+                                                           topk=topk,
+                                                           is_dhc=is_dhc
                                                           )
-            else:
-                results = self.predict_ddict_classification(ddict=test_ddict,
-                                                               ds_type='test',
-                                                               batch_size=batch_size,
-                                                               is_multilabel=is_multilabel,
-                                                               multilabel_threshold=multilabel_threshold,
-                                                               topk=topk,
-                                                               is_dhc=is_dhc
-                                                              )
-        return results.to_pandas()['test'][:]
+        return results.to_pandas()
     
     def predict_raw_dset(self,
                          dset, # A raw HuggingFace dataset
@@ -503,24 +504,24 @@ class ModelController():
                         ):
         if not isinstance(self.data_store,(TextDataController,TextDataControllerStreaming)) or not self.data_store._processed_call:
             raise ValueError('This functionality needs a TextDataController object which has processed some training data')
-        with HiddenPrints():
-            test_dset = self.data_store.prepare_test_dataset(dset,do_filtering)
-            test_ddict = DatasetDict()
-            test_ddict['test'] = test_dset
-            if is_regression:
-                results = self.predict_ddict_regression(test_ddict,
+#         with HiddenPrints():
+        test_dset = self.data_store.prepare_test_dataset(dset,do_filtering)
+        test_ddict = DatasetDict()
+        test_ddict['test'] = test_dset
+        if is_regression:
+            results = self.predict_ddict_regression(test_ddict,
+                                                       ds_type='test',
+                                                       batch_size=batch_size
+                                                      )
+        else:
+            results = self.predict_ddict_classification(test_ddict,
                                                            ds_type='test',
-                                                           batch_size=batch_size
+                                                           batch_size=batch_size,
+                                                           is_multilabel=is_multilabel,
+                                                           multilabel_threshold=multilabel_threshold,
+                                                           topk=topk,
+                                                           is_dhc=is_dhc
                                                           )
-            else:
-                results = self.predict_ddict_classification(test_ddict,
-                                                               ds_type='test',
-                                                               batch_size=batch_size,
-                                                               is_multilabel=is_multilabel,
-                                                               multilabel_threshold=multilabel_threshold,
-                                                               topk=topk,
-                                                               is_dhc=is_dhc
-                                                              )
         return results
         
                    
@@ -597,7 +598,6 @@ class ModelController():
         
         print_msg('Start making predictions',20)
         # this will create features: pred_classname and pred_prob_classname
-        
         results = ddict.map(
                             partial(_forward_pass_classification,model=self.model,
                                     topk=topk,
@@ -613,10 +613,13 @@ class ModelController():
                             batched=True, 
                             batch_size=batch_size)
         
+        # convert all to numpy
+        results.set_format('numpy')
+            
         results = _convert_pred_id_to_label(results,label_names,label_lists,topk,
                                             is_multilabel,
                                             batch_size=1000,
-#                                                    num_proc=1 # Cannot make it work with num_proc>1
+                                            num_proc=4
                                            )
         return results
         

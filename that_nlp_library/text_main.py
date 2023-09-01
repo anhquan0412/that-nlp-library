@@ -189,7 +189,11 @@ class TextDataController():
                     parent='pickle_files' # Parent folder
                    ):
         return load_pickle(fname,parent=parent)
-    
+
+    def set_verbose(self,verbose):
+        self.verbose = verbose
+        self.verboseprint = print if verbose else lambda *a, **k: None
+        
     def _determine_multihead_multilabel(self):
         self.is_multilabel=False
         self.is_multihead=False
@@ -721,6 +725,10 @@ class TextDataControllerStreaming():
                    ):
         return load_pickle(fname,parent=parent)
     
+    def set_verbose(self,verbose):
+        self.verbose = verbose
+        self.verboseprint = print if verbose else lambda *a, **k: None
+        
     def _determine_multihead_multilabel(self):
         self.is_multilabel=False
         self.is_multihead=False
