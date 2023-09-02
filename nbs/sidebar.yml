@@ -2,14 +2,14 @@ website:
   sidebar:
     contents:
       - index.ipynb
-      - 03_model_main_envibert.ipynb
+      - 03_model_classification_tutorial.ipynb
       - section: Text
         contents:
         - section: Text Process
           contents:
           - 01_text_augmentation.ipynb
           - 02_text_transformation.ipynb
-        - section: Text Controller
+        - section: Text Controller Full Tutorial
           contents:
           - 00_text_main.ipynb 
       - section: Model
@@ -28,7 +28,7 @@ website:
       - section: Utility
         contents:
         - 07_utils.ipynb
-      - section: All uses cases
+      - section: All use cases
         contents:
         - section: Roberta-based models
           contents:

@@ -19,8 +19,7 @@ __all__ = ['ConcatHeadExtended', 'ConcatHeadSimple', 'RobertaClassificationHeadC
 class ConcatHeadExtended(torch.nn.Module):
     """
     Concatenated head for Roberta Classification Model. 
-
-    This head takes the last 4 hidden states (of the last 4 layers), and concatenate them before passing through the classifier head
+    This head takes the last n hidden states of [CLS], and concatenate them before passing through the classifier head
     """
     def __init__(self,
                  config, # HuggingFace model configuration
@@ -52,8 +51,7 @@ class ConcatHeadExtended(torch.nn.Module):
 class ConcatHeadSimple(torch.nn.Module):
     """
     Concatenated head for Roberta Classification Model, the simpler version (no hidden linear layer)
-
-    This head takes the last 4 hidden states (of the last 4 layers), and concatenate them before passing through the classifier head
+    This head takes the last n hidden states of [CLS], and concatenate them before passing through the classifier head
     """
     def __init__(self,
                  config, # HuggingFace model configuration

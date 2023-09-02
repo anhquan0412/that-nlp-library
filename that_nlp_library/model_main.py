@@ -24,7 +24,7 @@ def model_init_classification(
                               output_hidden_states:bool, # To whether output the model hidden states or not. Useful when you try to build a custom classification head 
                               device=None, # Device to train on
                               config=None, # Model config. If not provided, AutoConfig is used to load config from cpoint_path
-                              seed=42, # Random seed
+                              seed=None, # Random seed
                               body_model=None, # If not none, we use this to initialize model's body. If you only want to load the model checkpoint in cpoint_path, leave this as none
                               model_kwargs={} # Keyword arguments for model (both head and body)
                              ):
@@ -194,7 +194,7 @@ def finetune(lr, # Learning rate
              lr_scheduler_type='cosine',  # The scheduler type to use. Including: linear, cosine, cosine_with_restarts, polynomial, constant, constant_with_warmup
              warmup_ratio=0.1, # The warmup ratio for some lr scheduler
              no_valid=False, # Whether there is a validation set or not
-             seed=42, # Random seed
+             seed=None, # Random seed
              report_to='none', # The list of integrations to report the results and logs to. Supported platforms are "azure_ml", "comet_ml", "mlflow", "neptune", "tensorboard","clearml" and "wandb". Use "all" to report to all integrations installed, "none" for no integrations.
              trainer_class=None, # You can include the class name of your custom trainer here
             ):
@@ -393,23 +393,22 @@ def _convert_pred_id_to_label(dset,label_names,label_lists,topk=1,
     return dset
 
 
-# %% ../nbs/03_model_main.ipynb 17
+# %% ../nbs/03_model_main.ipynb 18
 class ModelController():
     def __init__(self,
                  model, # NLP model
                  data_store=None, # a TextDataController/TextDataControllerStreaming object
-                 metric_funcs=[accuracy_score], # Metric function (can be from Sklearn)
-                 seed=42, # Random seed
+                 seed=None, # Random seed
                 ):
         self.model = model
         self.data_store = data_store
-        self.metric_funcs = metric_funcs
         self.seed = seed
         
     def fit(self,
             epochs, # Number of epochs
             learning_rate, # Learning rate
             ddict=None, # DatasetDict to fit (will override data_store)
+            metric_funcs=[accuracy_score], # Metric function (can be from Sklearn)
             batch_size=16, # Batch size
             weight_decay=0.01, # Weight decay
             lr_scheduler_type='cosine', # The scheduler type to use. Including: linear, cosine, cosine_with_restarts, polynomial, constant, constant_with_warmup
@@ -433,7 +432,9 @@ class ModelController():
         if label_names is None: label_names=check_and_get_attribute(self.data_store,'label_names')
         label_names = val2iterable(label_names)
         
-        if head_sizes is None: head_sizes=check_and_get_attribute(self.model,'head_class_sizes')
+        if head_sizes is None: 
+            head_sizes=check_and_get_attribute(self.data_store,'label_lists')
+            head_sizes=list(map(len,head_sizes))
         head_sizes = val2iterable(head_sizes)
         
         if len(set(ddict.keys()) & set(['train','training']))==0:
@@ -441,7 +442,7 @@ class ModelController():
         no_valid = len(set(ddict.keys()) & set(['validation','val','valid']))==0
 
         _compute_metrics = partial(compute_metrics,
-                                   metric_funcs=self.metric_funcs,
+                                   metric_funcs=metric_funcs,
                                    head_sizes=head_sizes,
                                    label_names=label_names 
                                   )
