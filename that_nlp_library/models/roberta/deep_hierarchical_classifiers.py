@@ -132,11 +132,21 @@ class RobertaSimpleHSCDHCSequenceClassification(RobertaPreTrainedModel):
         
     
     def forward(self, input_ids=None, attention_mask=None, token_type_ids=None,
-                labels=None, **kwargs):
+                labels=None, 
+                output_attentions= None,
+                output_hidden_states= None,
+                return_dict= None,
+                **kwargs):
         # Use model body to get encoder representations
         # the only ones we need for now are input_ids and attention_mask
-        outputs = self.body_model(input_ids, attention_mask=attention_mask,
-                               token_type_ids=token_type_ids, **kwargs)
+        output_hidden_states = output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
+        outputs = self.body_model(input_ids, 
+                                  attention_mask=attention_mask,
+                                  token_type_ids=token_type_ids, 
+                                  output_attentions=output_attentions,
+                                  output_hidden_states=output_hidden_states,
+                                  return_dict=return_dict,
+                                  **kwargs)
         
         hidden_states = outputs['hidden_states'] # tuples with len 13 (number of layer/block)
         # each with shape: (bs,seq_len,hidden_size_len), e.g. for phobert: (bs,256, 768)
@@ -221,11 +231,21 @@ class RobertaHSCDHCSequenceClassification(RobertaPreTrainedModel):
 
     
     def forward(self, input_ids=None, attention_mask=None, token_type_ids=None,
-                labels=None, **kwargs):
+                labels=None, 
+                output_attentions= None,
+                output_hidden_states= None,
+                return_dict= None,
+                **kwargs):
         # Use model body to get encoder representations
         # the only ones we need for now are input_ids and attention_mask
-        outputs = self.body_model(input_ids, attention_mask=attention_mask,
-                               token_type_ids=token_type_ids, **kwargs)
+        output_hidden_states = output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
+        outputs = self.body_model(input_ids, 
+                                  attention_mask=attention_mask,
+                                  token_type_ids=token_type_ids, 
+                                  output_attentions=output_attentions,
+                                  output_hidden_states=output_hidden_states,
+                                  return_dict=return_dict,
+                                  **kwargs)
         
         hidden_states = outputs['hidden_states'] # tuples with len 13 (number of layer/block)
         # each with shape: (bs,seq_len,hidden_size_len), e.g. for phobert: (bs,256, 768)

@@ -367,7 +367,7 @@ def _convert_pred_id_to_label(dset,label_names,label_lists,topk=1,
     is_batched=batch_size>1
     if is_multilabel:
         get_label_str_multilabel = lambda x: [label_lists[0][int(j)] for j in np.where(x==True)[0]]
-        _func = partial(lambda_map_batch,feature=f'pred_{label_names[i]}',
+        _func = partial(lambda_map_batch,feature=f'pred_{label_names[0]}',
                         func=get_label_str_multilabel,
                         is_batched=is_batched
                        )
