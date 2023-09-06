@@ -11,7 +11,8 @@ website:
           - 02_text_transformation.ipynb
         - section: Text Controller Full Tutorial
           contents:
-          - 00_text_main.ipynb 
+          - 00_text_main.ipynb
+          - 00_text_main_benchmark.ipynb
       - section: Model
         contents:
         - section: Model Controller
@@ -25,15 +26,15 @@ website:
       - section: Model Evaluation
         contents:
         - 08_evaluations.ipynb
-      - section: Utility
-        contents:
-        - 07_utils.ipynb
       - section: All use cases
         contents:
         - section: Roberta-based models
           contents:
-          - 20_model_main_envibert_singlehead.ipynb
-          - 21_model_main_envibert_multihead.ipynb
-          - 22_model_main_envibert_multilabel.ipynb
-          - 23_model_main_envibert_conditional_prob.ipynb
-          - 24_model_main_envibert_dhc.ipynb
+          - 20_model_main_roberta_singlehead.ipynb
+          - 21_model_main_roberta_multihead.ipynb
+          - 22_model_main_roberta_multilabel.ipynb
+          - 23_model_main_roberta_conditional_prob.ipynb
+          - 24_model_main_roberta_dhc.ipynb
+      - section: Utility
+        contents:
+        - 07_utils.ipynb
