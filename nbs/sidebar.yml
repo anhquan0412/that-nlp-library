@@ -23,10 +23,10 @@ website:
           - 04_models.roberta.classifiers.ipynb
           - 05_models.roberta.deep_hierarchical_classifiers.ipynb
           - 06_models.roberta.conditional_prob_classifiers.ipynb
-      - section: Model Evaluation
+      - section: Evaluations
         contents:
         - 08_evaluations.ipynb
-      - section: All use cases
+      - section: All use-cases
         contents:
         - section: Roberta-based models
           contents:
