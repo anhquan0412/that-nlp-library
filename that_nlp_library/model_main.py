@@ -14,8 +14,8 @@ from .utils import *
 from .text_main import TextDataController,TextDataControllerStreaming
 
 # %% auto 0
-__all__ = ['model_init_classification', 'compute_metrics_classification', 'compute_metrics_separate_singleheads',
-           'loss_for_classification', 'finetune', 'ModelController']
+__all__ = ['model_init_classification', 'compute_metrics_regression', 'compute_metrics_classification',
+           'compute_metrics_separate_singleheads', 'loss_for_classification', 'finetune', 'ModelController']
 
 # %% ../nbs/03_model_main.ipynb 4
 def model_init_classification(
@@ -28,9 +28,9 @@ def model_init_classification(
                               body_model=None, # If not none, we use this to initialize model's body. If you only want to load the model checkpoint in cpoint_path, leave this as none
                               model_kwargs={} # Keyword arguments for model (both head and body)
                              ):
-    """To initialize a classification model, either from an existing HuggingFace model or custom architecture
+    """To initialize a classification (or regression) model, either from an existing HuggingFace model or custom architecture
     
-    Can be used for binary, multi-class single-head, multi-class "two-head", and multi-label clasisifcation
+    Can be used for binary, multi-class single-head, multi-class multi-head, multi-label clasisifcation, and regression
     """
     if device is None: device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -57,6 +57,31 @@ def model_init_classification(
     return model
 
 # %% ../nbs/03_model_main.ipynb 6
+def compute_metrics_regression(pred, # An EvalPrediction object from HuggingFace (which is a named tuple with ```predictions``` and ```label_ids``` attributes)
+                               metric_funcs=[], # A list of metric functions to evaluate
+                               label_name=None, # Names of the label (dependent variable) columns, to print the results
+                               **kwargs
+                              ):
+    """
+    Return a dictionary of metric name and its values. Can handle both multiclass and multilabel    
+    
+    Reference: https://github.com/huggingface/transformers/blob/main/src/transformers/trainer_utils.py#L107C16-L107C16
+    """
+    labels = pred.label_ids 
+    if isinstance(pred.predictions,tuple):
+        preds = pred.predictions[0]
+    else:
+        preds = pred.predictions
+    if label_name is None: label_name='Label'
+        
+    results={}
+    metric_funcs = val2iterable(metric_funcs)
+    for m_func in metric_funcs:
+        m_name = callable_name(m_func)
+        results[f'{m_name}_{label_name}']=m_func(labels,preds)
+    return results
+
+# %% ../nbs/03_model_main.ipynb 9
 def compute_metrics_classification(pred, # An EvalPrediction object from HuggingFace (which is a named tuple with ```predictions``` and ```label_ids``` attributes)
                                    metric_funcs=[], # A list of metric functions to evaluate
                                    head_sizes=[], # Class size for each head,
@@ -93,7 +118,7 @@ def compute_metrics_classification(pred, # An EvalPrediction object from Hugging
             results[f'{m_name}_{_name}']=m_func(_label,_pred)
     return results
 
-# %% ../nbs/03_model_main.ipynb 8
+# %% ../nbs/03_model_main.ipynb 11
 def compute_metrics_separate_singleheads(pred, # An EvalPrediction object from HuggingFace (which is a named tuple with ```predictions``` and ```label_ids``` attributes)
                               metric_funcs=[], # A list of metric functions to evaluate
                               label_names=[], # Names of the label (dependent variable) columns
@@ -122,7 +147,7 @@ def compute_metrics_separate_singleheads(pred, # An EvalPrediction object from H
     
     return results
 
-# %% ../nbs/03_model_main.ipynb 10
+# %% ../nbs/03_model_main.ipynb 13
 def loss_for_classification(logits, # output of the last linear layer, before any softmax/sigmoid. Size: (bs,class_size)
                             labels, # determined by your datasetdict. Size: (bs,number_of_head)
                             is_multilabel=False, # Whether this is a multilabel classification
@@ -177,7 +202,7 @@ def loss_for_classification(logits, # output of the last linear layer, before an
             
     return loss
 
-# %% ../nbs/03_model_main.ipynb 12
+# %% ../nbs/03_model_main.ipynb 15
 def finetune(lr, # Learning rate
              bs, # Batch size
              wd, # Weight decay
@@ -239,7 +264,7 @@ def finetune(lr, # Learning rate
     trainer.train()
     return trainer
 
-# %% ../nbs/03_model_main.ipynb 14
+# %% ../nbs/03_model_main.ipynb 17
 def _forward_pass_classification(batch,
                                  model=None, # NLP model
                                  topk=1, # Number of labels to return for each head
@@ -326,7 +351,7 @@ def _forward_pass_classification(batch,
     
     return results
 
-# %% ../nbs/03_model_main.ipynb 15
+# %% ../nbs/03_model_main.ipynb 18
 def _forward_pass_regression(batch,
                              model=None, # NLP model
                              model_input_names=['input_ids', 'token_type_ids', 'attention_mask'], # Model required inputs, from tokenizer.model_input_names
@@ -336,7 +361,7 @@ def _forward_pass_regression(batch,
     if data_collator is not None:
         # remove string text, due to transformer new version       
         collator_inp = []
-        ks = [k for k in batch.keys() if k in model_input_names+['label']] # hard-coded
+        ks = [k for k in batch.keys() if k in model_input_names+['label']] 
         vs = [batch[k] for k in ks]
         for pair in zip(*vs):
             collator_inp.append({k:v for k,v in zip(ks,pair)})
@@ -352,14 +377,14 @@ def _forward_pass_regression(batch,
     with torch.no_grad():
         output = model(**inputs)
         output_logits = output.logits.cpu()
-    
+        
     # Switch back to train mode
     if not model.training:
         model.train()
-    
+
     return {f'pred':output_logits}
 
-# %% ../nbs/03_model_main.ipynb 16
+# %% ../nbs/03_model_main.ipynb 19
 def _convert_pred_id_to_label(dset,label_names,label_lists,topk=1,
                               is_multilabel=False,
                               batch_size=1000,num_proc=1
@@ -393,7 +418,7 @@ def _convert_pred_id_to_label(dset,label_names,label_lists,topk=1,
     return dset
 
 
-# %% ../nbs/03_model_main.ipynb 18
+# %% ../nbs/03_model_main.ipynb 20
 class ModelController():
     def __init__(self,
                  model, # NLP model
@@ -434,7 +459,9 @@ class ModelController():
         
         if head_sizes is None: 
             head_sizes=check_and_get_attribute(self.data_store,'label_lists')
-            head_sizes=list(map(len,head_sizes))
+            if head_sizes is None: head_sizes=[1]
+            else:
+                head_sizes=list(map(len,head_sizes))
         head_sizes = val2iterable(head_sizes)
         
         if len(set(ddict.keys()) & set(['train','training']))==0:
@@ -558,6 +585,17 @@ class ModelController():
                                    ), 
                             batched=True, 
                             batch_size=batch_size)
+        
+        _func = partial(lambda_map_batch,feature='pred',
+                        func=lambda x: x[0],
+                        is_batched=True
+                       )
+        results = hf_map_dset(results,
+                              _func,
+                               is_batched=True,
+                               batch_size=batch_size,
+                               num_proc=1
+                          )
         return results
     
     def predict_ddict_classification(self,

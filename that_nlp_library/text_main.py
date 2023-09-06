@@ -622,8 +622,12 @@ class TextDataController():
                              do_filtering=False, # whether to perform data filtering on this test set
                             ):
         test_cols = set(get_dset_col_names(test_dset))
-        test_cols = test_cols - set(self.label_names)
-        missing_cols = set(self.cols_to_keep) - set(self.label_names) - set(test_cols)
+        if self.label_names is None: # no label (i.e. regression)
+            label_names_set = set([])
+        else:
+            label_names_set = set(self.label_names)
+        test_cols = test_cols - label_names_set
+        missing_cols = set(self.cols_to_keep) - label_names_set - set(test_cols)
         if len(missing_cols):
             raise ValueError(f'Test set does not have these columns required for preprocessings: {missing_cols}')
             
@@ -973,8 +977,12 @@ class TextDataControllerStreaming():
                              do_filtering=False, # whether to perform data filtering on this test set
                             ):
         test_cols = set(get_dset_col_names(test_dset))
-        test_cols = test_cols - set(self.label_names)
-        missing_cols = set(self.cols_to_keep) - set(self.label_names) - test_cols
+        if self.label_names is None: # no label (i.e. regression)
+            label_names_set = set([])
+        else:
+            label_names_set = set(self.label_names)
+        test_cols = test_cols - label_names_set
+        missing_cols = set(self.cols_to_keep) - label_names_set - test_cols
         if len(missing_cols):
             raise ValueError(f'Test set does not have these columns required for preprocessings: {missing_cols}')
             

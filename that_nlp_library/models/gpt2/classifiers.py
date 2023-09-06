@@ -7,6 +7,7 @@ from transformers.models.gpt2.modeling_gpt2 import GPT2Model,GPT2PreTrainedModel
 from transformers.models.gpt2.configuration_gpt2 import GPT2Config
 from transformers.modeling_outputs import SequenceClassifierOutputWithPast
 from ...model_main import loss_for_classification
+from torch.nn import MSELoss
 from ...utils import *
 
 # %% auto 0
@@ -43,9 +44,9 @@ class GPT2BaseForSequenceClassification(GPT2PreTrainedModel):
         
         # Set up token classification head
         if head_class is None:
-            self.classification_head = torch.nn.Linear(config.n_embd, num_labels, bias=False)
-        else:  
-            self.classification_head = head_class(config,**head_class_kwargs)
+            self.head = torch.nn.Linear(config.n_embd, num_labels, bias=False)
+        else:
+            self.head = head_class(config,**head_class_kwargs)
 
         
         # Model parallel
@@ -117,13 +118,17 @@ class GPT2BaseForSequenceClassification(GPT2PreTrainedModel):
         sequence_output = sequence_output[torch.arange(batch_size, device=sequence_output.device), 
                                           sequence_lengths,:] # (bs,hidden_sizes)
         
-        logits = self.classification_head(sequence_output) # (bs,sum of all class sizes)
+        logits = self.head(sequence_output) # (bs,sum of all class sizes)
         
         # Calculate losses
         if labels is None:
             loss=None
         else:
-            loss = loss_for_classification(logits, labels, 
+            if self.config.num_labels==1:
+                loss_fct = MSELoss()
+                loss = loss_fct(logits.squeeze(),labels.squeeze())
+            else:
+                loss = loss_for_classification(logits, labels, 
                                        self.is_multilabel,
                                        self.is_multihead, 
                                        self.head_class_sizes,
@@ -174,7 +179,7 @@ class GPT2HiddenStateConcatForSequenceClassification(GPT2PreTrainedModel):
         self.body_model = GPT2Model(config)
         
         # Set up classification head
-        self.classification_head = head_class(config=config,layer2concat=layer2concat,
+        self.head = head_class(config=config,layer2concat=layer2concat,
                                               **head_class_kwargs)
 
         # Model parallel
@@ -248,14 +253,18 @@ class GPT2HiddenStateConcatForSequenceClassification(GPT2PreTrainedModel):
         
         hidden_concat = torch.cat([hidden_states[i][torch.arange(batch_size, device=sequence_output.device), sequence_lengths,:] for i in range(-1,-self.layer2concat-1,-1)],
                                   -1)        
-        logits = self.classification_head(hidden_concat) # (bs,sum of all class sizes)
+        logits = self.head(hidden_concat) # (bs,sum of all class sizes)
         
     
         # Calculate losses
         if labels is None:
             loss=None
         else:
-            loss = loss_for_classification(logits, labels, 
+            if self.config.num_labels==1:
+                loss_fct = MSELoss()
+                loss = loss_fct(logits.squeeze(),labels.squeeze())
+            else:
+                loss = loss_for_classification(logits, labels, 
                                        self.is_multilabel,
                                        self.is_multihead, 
                                        self.head_class_sizes,

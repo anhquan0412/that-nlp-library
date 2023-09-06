@@ -2,14 +2,17 @@ website:
   sidebar:
     contents:
       - index.ipynb
-      - 03_model_classification_tutorial.ipynb
+      - section: Beginner Tutorials
+        contents:
+        - 00_text_main.ipynb
+        - 03_model_classification_tutorial.ipynb
       - section: Text
         contents:
         - section: Text Process
           contents:
           - 01_text_augmentation.ipynb
           - 02_text_transformation.ipynb
-        - section: Text Controller Full Tutorial
+        - section: Text Controller
           contents:
           - 00_text_main.ipynb
           - 00_text_main_benchmark.ipynb
@@ -23,6 +26,9 @@ website:
           - 04_models.roberta.classifiers.ipynb
           - 05_models.roberta.deep_hierarchical_classifiers.ipynb
           - 06_models.roberta.conditional_prob_classifiers.ipynb
+        - section: GPT2-based model definitions
+          contents:
+          - 09_models.gpt2.classifiers.ipynb
       - section: Evaluations
         contents:
         - 08_evaluations.ipynb
@@ -30,6 +36,7 @@ website:
         contents:
         - section: Roberta-based models
           contents:
+          - 19_model_main_roberta_regression.ipynb
           - 20_model_main_roberta_singlehead.ipynb
           - 21_model_main_roberta_multihead.ipynb
           - 22_model_main_roberta_multilabel.ipynb
@@ -37,6 +44,7 @@ website:
           - 24_model_main_roberta_dhc.ipynb
         - section: GPT2-based models
           contents:
+          - 19_model_main_gpt2_regression.ipynb
           - 20_model_main_gpt2_singlehead.ipynb
           - 21_model_main_gpt2_multihead.ipynb
       - section: Utility

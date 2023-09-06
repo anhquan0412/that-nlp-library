@@ -9,6 +9,7 @@ from transformers.models.roberta.modeling_roberta import RobertaPreTrainedModel
 from transformers.modeling_outputs import SequenceClassifierOutput
 from transformers import AutoConfig
 from ...model_main import loss_for_classification
+from torch.nn import MSELoss
 from ...utils import *
 
 # %% auto 0
@@ -130,8 +131,8 @@ class RobertaBaseForSequenceClassification(RobertaPreTrainedModel):
         
         # add_pooling_layer to False to ensure all hidden states are returned and not only the one associated with the [CLS] token.
         self.body_model = RobertaModel(config, add_pooling_layer=False)
-        # Set up classification head
-        self.classification_head = head_class(config=config,**head_class_kwargs)
+        # Set up head
+        self.head = head_class(config=config,**head_class_kwargs)
 
 
     def forward(
@@ -164,13 +165,17 @@ class RobertaBaseForSequenceClassification(RobertaPreTrainedModel):
         )
         sequence_output = outputs[0]
         sequence_output = sequence_output[:, 0, :]  # take <s> token (equiv. to [CLS])
-        logits = self.classification_head(sequence_output) # (bs,sum of all class sizes)
+        logits = self.head(sequence_output) # (bs,sum of all class sizes)
         
         # Calculate losses
         if labels is None:
             loss=None
         else:
-            loss = loss_for_classification(logits, labels, 
+            if self.config.num_labels==1:
+                loss_fct = MSELoss()
+                loss = loss_fct(logits.squeeze(),labels.squeeze())
+            else:
+                loss = loss_for_classification(logits, labels, 
                                        self.is_multilabel,
                                        self.is_multihead, 
                                        self.head_class_sizes,
@@ -216,8 +221,8 @@ class RobertaHiddenStateConcatForSequenceClassification(RobertaPreTrainedModel):
         # add_pooling_layer to False to ensure all hidden states are returned  and not only the one associated with the [CLS] token.
         self.body_model = RobertaModel(config, add_pooling_layer=False)
         
-        # Set up classification head
-        self.classification_head = head_class(config=config,layer2concat=layer2concat,
+        # Set up head
+        self.head = head_class(config=config,layer2concat=layer2concat,
                                               **head_class_kwargs)
 
     def forward(
@@ -254,18 +259,21 @@ class RobertaHiddenStateConcatForSequenceClassification(RobertaPreTrainedModel):
         # Note: hidden_size_len = embedding_size
         hidden_concat = torch.cat([hidden_states[i][:,0] for i in range(-1,-self.layer2concat-1,-1)],
                                   -1) 
-        logits = self.classification_head(hidden_concat) # (bs,sum of all class sizes)
+        logits = self.head(hidden_concat) # (bs,sum of all class sizes)
         
         # Calculate losses
         if labels is None:
             loss=None
         else:
-            loss = loss_for_classification(logits, labels, 
+            if self.config.num_labels==1:
+                loss_fct = MSELoss()
+                loss = loss_fct(logits.squeeze(),labels.squeeze())
+            else:
+                loss = loss_for_classification(logits, labels, 
                                        self.is_multilabel,
                                        self.is_multihead, 
                                        self.head_class_sizes,
                                        self.head_weights)
-
             
         if not return_dict:
             output = (logits,) + outputs[2:]
