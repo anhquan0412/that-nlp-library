@@ -67,7 +67,7 @@ def compute_metrics_classification(pred, # An EvalPrediction object from Hugging
     """
     Return a dictionary of metric name and its values. Can handle both multiclass and multilabel    
     
-    Reference: https://github.com/huggingface/transformers/blob/dbc12269ed5546b2da9236b9f1078b95b6a4d3d5/src/transformers/trainer_utils.py#LL100C22-L100C22
+    Reference: https://github.com/huggingface/transformers/blob/main/src/transformers/trainer_utils.py#L107C16-L107C16
     """
     assert len(head_sizes)==len(label_names)
     labels = pred.label_ids 

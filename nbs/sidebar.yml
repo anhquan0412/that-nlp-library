@@ -35,6 +35,10 @@ website:
           - 22_model_main_roberta_multilabel.ipynb
           - 23_model_main_roberta_conditional_prob.ipynb
           - 24_model_main_roberta_dhc.ipynb
+        - section: GPT2-based models
+          contents:
+          - 20_model_main_gpt2_singlehead.ipynb
+          - 21_model_main_gpt2_multihead.ipynb
       - section: Utility
         contents:
         - 07_utils.ipynb
