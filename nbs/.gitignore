@@ -1,0 +1,14 @@
+# Model cache
+.model_cache
+
+# Data
+secret_data
+
+# Pickles
+pickle_files
+
+# Weights
+*_weights
+
+# Wandb
+wandb

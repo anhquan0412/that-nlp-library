@@ -1,0 +1,9 @@
+project:
+  output-dir: _docs
+
+website:
+  title: "that-nlp-library"
+  site-url: "https://anhquan0412.github.io/that-nlp-library"
+  description: "Aim to be a convenient NLP library with the help from HuggingFace"
+  repo-branch: main
+  repo-url: "https://github.com/anhquan0412/that-nlp-library"
