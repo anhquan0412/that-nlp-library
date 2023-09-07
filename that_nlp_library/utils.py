@@ -135,10 +135,10 @@ def none2emptystr(x):
 
 # %% ../nbs/07_utils.ipynb 11
 def lambda_batch(inp, # HuggingFace Dataset
-                     feature, # Feature name.
-                     func, # The function to apply
-                     is_batched, # Whether batching is applied
-                    ):
+                 feature, # Feature name.
+                 func, # The function to apply
+                 is_batched, # Whether batching is applied
+                ):
     return [func(v) for v in inp[feature]] if is_batched else func(inp[feature])
 
 # %% ../nbs/07_utils.ipynb 12

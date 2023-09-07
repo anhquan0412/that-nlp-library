@@ -5,15 +5,14 @@ from __future__ import annotations
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder,MultiLabelBinarizer
-from datasets import DatasetDict,Dataset,IterableDataset,load_dataset,concatenate_datasets
+from datasets import DatasetDict,Dataset,IterableDataset,load_dataset,concatenate_datasets,Value
 from pathlib import Path
 from .utils import *
 from functools import partial
 import warnings
 
 # %% auto 0
-__all__ = ['tokenizer_explain', 'two_steps_tokenization_explain', 'tokenize_function', 'concat_metadatas', 'TextDataController',
-           'TextDataControllerStreaming']
+__all__ = ['tokenizer_explain', 'two_steps_tokenization_explain', 'tokenize_function', 'concat_metadatas', 'TextDataController']
 
 # %% ../nbs/00_text_main.ipynb 6
 def tokenizer_explain(inp, # Input sentence
@@ -111,9 +110,11 @@ class TextDataController():
     def __init__(self,
                  inp, # HuggingFainpce Dataset or DatasetDict
                  main_text:str, # Name of the main text column
-                 label_names=None, # Names of the label (dependent variable) columns
-                 class_names_predefined=None, # List of names associated with the labels (same index order)
-                 filter_dict={}, # A dictionary: {feature: filtering_function_based_on_the_feature}
+                 label_names=[], # Names of the label (dependent variable) columns
+                 sup_types=[], # Type of supervised learning for each label name ('classification' or 'regression')
+                 class_names_predefined=[], # List of names associated with the labels (same index order). Use empty list for regression
+                 filter_dict={}, # A dictionary: {feature: filtering_function_for_that_feature}
+                 label_tfm_dict={}, # A dictionary: {label_name: transform_function_for_that_label}
                  metadatas=[], # Names of the metadata columns
                  process_metas=True, # Whether to do simple text processing on the chosen metadatas
                  content_transformations=[], # A list of text transformations
@@ -125,25 +126,35 @@ class TextDataController():
                  batch_size=1000, # CPU batch size
                  num_proc=4, # Number of process for multiprocessing
                  cols_to_keep=None, # Columns to keep after all processings
-                 verbose=True, # Whether to print processing information
+                 verbose=True, # Whether to prdint processing information
                 ):
             
         self.main_text = main_text
+        
+        self.label_names = val2iterable(label_names)
+        self.sup_types = val2iterable(sup_types)
+        self._check_sup_types()
+        self.label_lists = class_names_predefined
+        
+        self.filter_dict = filter_dict
+        self.label_tfm_dict = label_tfm_dict
         self.metadatas = val2iterable(metadatas)
         self.process_metas = process_metas
-        self.label_names = val2iterable(label_names) if label_names is not None else None
-        self.label_lists = class_names_predefined
-        self.filter_dict = filter_dict
+        
         self.content_tfms = val2iterable(content_transformations)
-        self.upsampling_list = upsampling_list
-        self.aug_tfms = val2iterable(content_augmentations)
+        
         self.val_ratio = val_ratio
         self.stratify_cols = val2iterable(stratify_cols)
+        
+        self.upsampling_list = upsampling_list
+        self.aug_tfms = val2iterable(content_augmentations)
+        
         self.seed = seed
         self.is_batched = batch_size>1
         self.batch_size = batch_size
         self.num_proc = num_proc
         self.cols_to_keep = cols_to_keep
+        
         self.ddict_rest = DatasetDict()
         self.verbose = verbose
         self.verboseprint = print if verbose else lambda *a, **k: None
@@ -156,16 +167,16 @@ class TextDataController():
                 raise ValueError('The given DatasetDict has no "train" split')
         else: # is dataset
             self.dset = inp
-            
+        
         if isinstance(self.dset,IterableDataset):
             raise ValueError('TextDataController does not handle Iterable Dataset as input. Consider `TextDataControllerStreaming`')
         
+        self._determine_val_key()
         self.all_cols = get_dset_col_names(self.dset)
-            
-        self._processed_call=False
-        
         self._determine_multihead_multilabel()
+        self._convert_regression_to_float()
         
+        self._processed_call=False
             
     @classmethod
     def from_csv(cls,file_path,**kwargs):
@@ -193,14 +204,37 @@ class TextDataController():
     def set_verbose(self,verbose):
         self.verbose = verbose
         self.verboseprint = print if verbose else lambda *a, **k: None
+    
+    def _convert_regression_to_float(self):
+        if len(self.sup_types)==0: return
+        # convert regression labels to float64
+        reg_idxs = [i for i,v in enumerate(self.sup_types) if v=='regression']
+        for i in reg_idxs:
+            self.dset = self.dset.cast_column(self.label_names[i],Value("float64"))
+            if self.val_key is not None:
+                self.ddict_rest[self.val_key] = self.ddict_rest[self.val_key].cast_column(self.label_names[i],Value("float64"))
         
+    def _check_sup_types(self):
+        assert len(self.label_names)==len(self.sup_types), "The number of supervised learning declaration must equal to the number of label"
+        assert len(set(self.sup_types) - set(['classification','regression']))==0, 'Accepted inputs for `sup_types` are `classification` and `regression`'
+    
+    def _determine_val_key(self):
+        # determine validation split key
+        self.val_key=None
+        val_key = list(set(self.ddict_rest.keys()) & set(['val','validation','valid']))
+        if len(val_key)>1: raise ValueError('Your DatasetDict has more than 1 validation split')
+        if len(val_key)==1:
+            val_key=val_key[0]
+            self.val_key=val_key
+            
     def _determine_multihead_multilabel(self):
         self.is_multilabel=False
         self.is_multihead=False
-        if self.label_names is None: return
+        if len(self.label_names)==0: return
         
         if len(self.label_names)>1:
             self.is_multihead=True
+            
         # get label of first row
         first_label = self.dset[self.label_names[0]][0]
         if isinstance(first_label,(list,set,tuple)):
@@ -212,8 +246,6 @@ class TextDataController():
     def validate_input(self):
         _df = self.dset.to_pandas()
         check_input_validation(_df)
-    
-    
     
     def save_as_pickles(self,
                         fname, # Name of the pickle file
@@ -248,21 +280,133 @@ class TextDataController():
                         is_batched=self.is_batched)
         self.main_ddict['train'] = hf_filter_dset(self.main_ddict['train'],_func,self.is_batched,self.batch_size,self.num_proc)   
         self.verboseprint('Done')
-           
+    
+    def _process_metadatas(self,dset,ddict_rest=None):
+        if len(self.metadatas):
+            print_msg('Metadata Simple Processing & Concatenating to Main Content',verbose=self.verbose)
+            map_func = partial(concat_metadatas,
+                               main_text=self.main_text,
+                               metadatas=self.metadatas,
+                               process_metas=self.process_metas,
+                               is_batched=self.is_batched)
+            dset = hf_map_dset(dset,map_func,self.is_batched,self.batch_size,self.num_proc)
+            if ddict_rest is not None:
+                ddict_rest = hf_map_dset(ddict_rest,map_func,self.is_batched,self.batch_size,self.num_proc)
+            self.verboseprint('Done')
+        return dset if ddict_rest is None else (dset,ddict_rest)
+    
+    def _do_label_transformation(self):
+        if len(self.label_names)==0 or len(self.label_tfm_dict)==0: return
+        print_msg('Label Transformation',20,verbose=self.verbose)
+        for f,tfm in self.label_tfm_dict.items():
+            if f in self.label_names:
+                _func = partial(lambda_map_batch,
+                                feature=f,
+                                func=tfm,
+                                is_batched=self.is_batched
+                               )                
+                self.dset = hf_map_dset(self.dset,_func,self.is_batched,self.batch_size,self.num_proc)
+                if self.val_key is not None:
+                    self.ddict_rest[self.val_key] = hf_map_dset(self.ddict_rest[self.val_key],
+                                                                _func,
+                                                                self.is_batched,
+                                                                self.batch_size,
+                                                                self.num_proc)
+        self.verboseprint('Done')
+        
+    def _create_label_mapping_func(self,encoder_classes):
+        if self.is_multihead:
+            label2idxs = [{v:i for i,v in enumerate(l_classes)} for l_classes in encoder_classes]
+            _func = lambda inp: {'label': [[label2idxs[i][v] if len(label2idxs[i]) else v for i,v in enumerate(vs)] \
+                                           for vs in zip(*[inp[l] for l in self.label_names])] if self.is_batched \
+                                 else [label2idxs[i][v] if len(label2idxs[i]) else v for i,v in enumerate([inp[l] for l in self.label_names])]
+                                }
+            
+        else: # single-head
+            if self.sup_types[0]=='regression':
+                _func1 = lambda x: x
+            else:
+                label2idx = {v:i for i,v in enumerate(encoder_classes[0])}
+                _func1 = lambda x: label2idx[x]
+                
+            _func = partial(lambda_map_batch,
+                           feature=self.label_names[0],
+                           func=_func1,
+                           output_feature='label',
+                           is_batched=self.is_batched)
+        return _func
+        
+    def _encode_labels(self):
+        if len(self.label_names)==0: return
+        print_msg('Label Encoding',verbose=self.verbose)
+        
+        if len(self.label_lists) and not isinstance(self.label_lists[0],list):
+            self.label_lists = [self.label_lists]
+                    
+        encoder_classes=[]
+        if not self.is_multilabel:
+            for idx,l in enumerate(self.label_names):
+                if self.sup_types[idx]=='regression':
+                    l_classes=[]
+                else:
+                    # classification
+                    if len(self.label_lists)==0:
+                        l_encoder = LabelEncoder()
+                        _ = l_encoder.fit(self.dset[l])
+                        l_classes = list(l_encoder.classes_)
+                    else:
+                        l_classes = sorted(list(self.label_lists[idx]))
+                encoder_classes.append(l_classes)
+            
+            _func = self._create_label_mapping_func(encoder_classes)
+                
+            self.dset = hf_map_dset(self.dset,_func,self.is_batched,self.batch_size,self.num_proc)
+            if self.val_key is not None:
+                self.ddict_rest[self.val_key] = hf_map_dset(self.ddict_rest[self.val_key],_func,
+                                                       self.is_batched,self.batch_size,self.num_proc)
+                    
+        else:
+            # For MultiLabel, we transform the label itself to one-hot (or actually, few-hot)
+            if len(self.label_lists)==0:
+                l_encoder = MultiLabelBinarizer()
+                _ = l_encoder.fit(self.dset[self.label_names[0]])
+                l_classes = list(l_encoder.classes_)
+            else:
+                l_classes = sorted(list(self.label_lists[0]))
+            
+            encoder_classes.append(l_classes)
+            
+            l_encoder = MultiLabelBinarizer(classes=encoder_classes[0])
+            _ = l_encoder.fit(None)
+            _func = partial(lambda_map_batch,
+                            feature=self.label_names[0],
+                            func=lambda x: l_encoder.transform(x),
+                            output_feature='label',
+                            is_batched=self.is_batched,
+                            is_func_batched=True)
+            self.dset = hf_map_dset(self.dset,_func,self.is_batched,self.batch_size,self.num_proc)                                                 
+            
+            if self.val_key is not None:
+                self.ddict_rest[self.val_key] = hf_map_dset(self.ddict_rest[self.val_key],_func,
+                                                       self.is_batched,self.batch_size,self.num_proc)
+            
+        self.label_lists = encoder_classes
+        self.verboseprint('Done')
+        
+    
     def _train_test_split(self):
         print_msg('Train Test Split',20,verbose=self.verbose)
-        val_key = list(set(self.ddict_rest.keys()) & set(['val','validation','valid']))
-        if len(val_key)==1: # val split exists
+        if self.val_key is not None: # val split exists
             self.verboseprint('Validation split already exists')
             self.main_ddict=DatasetDict({'train':self.dset,
-                                         'validation':self.ddict_rest.pop(val_key[0])})
+                                         'validation':self.ddict_rest.pop(self.val_key)})
             
     
         elif self.val_ratio is None: # use all data
             self.verboseprint('No validation split defined')
             self.main_ddict=DatasetDict({'train':self.dset})
             
-        elif (isinstance(self.val_ratio,float) or isinstance(self.val_ratio,int)) and not len(self.stratify_cols):
+        elif (isinstance(self.val_ratio,float) or isinstance(self.val_ratio,int)) and len(self.stratify_cols)==0:
             self.verboseprint('Validation split based on val_ratio')
             # train val split
             self.main_ddict = self.dset.train_test_split(test_size=self.val_ratio,shuffle=True,seed=self.seed)
@@ -286,6 +430,7 @@ class TextDataController():
                                       batched=self.is_batched,
                                       batch_size=self.batch_size,
                                       num_proc=self.num_proc)
+            
             self.dset=self.dset.class_encode_column("stratified")
             # train val split
             self.main_ddict = self.dset.train_test_split(test_size=self.val_ratio,
@@ -298,105 +443,12 @@ class TextDataController():
         
         del self.dset
         self.verboseprint('Done')
-
-                             
-    def _create_label_mapping_func(self,encoder_classes):
-        if self.is_multihead:
-            label2idxs = [{v:i for i,v in enumerate(l_classes)} for l_classes in encoder_classes]
-                    
-            _func = lambda inp: {'label': [[label2idxs[i][v] for i,v in enumerate(vs)] for vs in zip(*[inp[l] for l in self.label_names])] \
-                                    if self.is_batched else [label2idxs[i][v] for i,v in enumerate([inp[l] for l in self.label_names])]
-                              }
-            
-        else:
-            label2idx = {v:i for i,v in enumerate(encoder_classes[0])}
-            _func = partial(lambda_map_batch,
-                           feature=self.label_names[0],
-                           func=lambda x: label2idx[x],
-                           output_feature='label',
-                           is_batched=self.is_batched)
-        return _func
-        
-    def _encode_labels(self):
-        if self.label_names is None: return
-        print_msg('Label Encoding',verbose=self.verbose)
-        
-        if self.label_lists is not None and not isinstance(self.label_lists[0],list):
-            self.label_lists = [self.label_lists]
-                    
-        encoder_classes=[]
-        if not self.is_multilabel:
-            for idx,l in enumerate(self.label_names):
-                if self.label_lists is None:
-                    l_encoder = LabelEncoder()
-                    _ = l_encoder.fit(self.dset[l])
-                    l_classes = list(l_encoder.classes_)
-                else:
-                    l_classes = sorted(list(self.label_lists[idx]))
-                encoder_classes.append(l_classes)
-            
-            _func = self._create_label_mapping_func(encoder_classes)
-                
-            self.dset = hf_map_dset(self.dset,_func,self.is_batched,self.batch_size,self.num_proc)
-
-            val_key = list(set(self.ddict_rest.keys()) & set(['val','validation','valid']))
-            if len(val_key)>1: raise ValueError('Your DatasetDict has more than 1 validation split')
-            if len(val_key)==1:
-                val_key=val_key[0]
-                self.ddict_rest[val_key] = hf_map_dset(self.ddict_rest[val_key],_func,
-                                                       self.is_batched,self.batch_size,self.num_proc)
-                    
-        else:
-            # For MultiLabel, we transform the label itself to one-hot (or actually, few-hot)
-            if self.label_lists is None:
-                l_encoder = MultiLabelBinarizer()
-                _ = l_encoder.fit(self.dset[self.label_names[0]])
-                l_classes = list(l_encoder.classes_)
-            else:
-                l_classes = sorted(list(self.label_lists[0]))
-            
-            encoder_classes.append(l_classes)
-            
-            l_encoder = MultiLabelBinarizer(classes=encoder_classes[0])
-            _ = l_encoder.fit(None)
-            _func = partial(lambda_map_batch,
-                            feature=self.label_names[0],
-                            func=lambda x: l_encoder.transform(x),
-                            output_feature='label',
-                            is_batched=self.is_batched,
-                            is_func_batched=True)
-            self.dset = hf_map_dset(self.dset,_func,self.is_batched,self.batch_size,self.num_proc)                                                 
-            
-            val_key = list(set(self.ddict_rest.keys()) & set(['val','validation','valid']))
-            if len(val_key)>1: raise ValueError('Your DatasetDict has more than 1 validation dataset')
-            if len(val_key)==1:
-                val_key=val_key[0]
-                self.ddict_rest[val_key] = hf_map_dset(self.ddict_rest[val_key],_func,
-                                                       self.is_batched,self.batch_size,self.num_proc)
-            
-        self.label_lists = encoder_classes
-        self.verboseprint('Done')
-        
-    def _process_metadatas(self,dset,ddict_rest=None):
-        if len(self.metadatas)>0:
-            print_msg('Metadata Simple Processing & Concatenating to Main Content',verbose=self.verbose)
-            map_func = partial(concat_metadatas,
-                               main_text=self.main_text,
-                               metadatas=self.metadatas,
-                               process_metas=self.process_metas,
-                               is_batched=self.is_batched)
-            dset = hf_map_dset(dset,map_func,self.is_batched,self.batch_size,self.num_proc)
-            if ddict_rest is not None:
-                ddict_rest = hf_map_dset(ddict_rest,map_func,self.is_batched,self.batch_size,self.num_proc)
-            self.verboseprint('Done')
-        return dset if ddict_rest is None else (dset,ddict_rest)
-            
     
     def _simplify_ddict(self):
         print_msg('Dropping unused features',20,verbose=self.verbose)
         if self.cols_to_keep is None:
-            self.cols_to_keep= [self.main_text] + self.metadatas
-            if self.label_names is not None: self.cols_to_keep+=self.label_names
+            self.cols_to_keep= [self.main_text] + self.metadatas + self.label_names
+            
         cols_to_remove = set(self.all_cols) - set(self.cols_to_keep)
         self.main_ddict['train']=self.main_ddict['train'].remove_columns(list(cols_to_remove))
         if 'validation' in self.main_ddict.keys():
@@ -452,7 +504,6 @@ class TextDataController():
             self.verboseprint('Done')
       
     def _do_augmentation(self):
-        
         if len(self.aug_tfms):
             print_msg('Text Augmentation',20,verbose=self.verbose)
 
@@ -505,6 +556,9 @@ class TextDataController():
         
         # Process metadatas
         self.dset,self.ddict_rest = self._process_metadatas(self.dset,self.ddict_rest)
+        
+        # Label transformation
+        self._do_label_transformation()
         
         # Process labels
         self._encode_labels()
@@ -607,7 +661,7 @@ class TextDataController():
     def prepare_test_dataset_from_raws(self,
                                        content, # Either a single sentence, list of sentence or a dictionary with keys are metadata columns and values are list
                                       ):
-        if len(self.metadatas)!=0 and not isinstance(content,dict):
+        if len(self.metadatas) and not isinstance(content,dict):
             raise ValueError(f'There is/are metadatas in the preprocessing step. Please include a dictionary including these keys for metadatas: {self.metadatas}, and texture content: {self.main_text}')
             
         _dic = {self.main_text:[content]} if isinstance(content,str) else content
@@ -615,19 +669,22 @@ class TextDataController():
             _dic[k] = val2iterable(_dic[k])
         
         test_dict = Dataset.from_dict(_dic)
-        return self.prepare_test_dataset(test_dict,do_filtering=False)
+        
+        # set num_proc to 1 for small data processing
+        _tmp = self.num_proc
+        self.num_proc=1
+        results = self.prepare_test_dataset(test_dict,do_filtering=False)
+        self.num_proc = _tmp
+        return results
     
     def prepare_test_dataset(self,
                              test_dset, # The HuggingFace Dataset as Test set
                              do_filtering=False, # whether to perform data filtering on this test set
                             ):
         test_cols = set(get_dset_col_names(test_dset))
-        if self.label_names is None: # no label (i.e. regression)
-            label_names_set = set([])
-        else:
-            label_names_set = set(self.label_names)
+        label_names_set = set(self.label_names)
         test_cols = test_cols - label_names_set
-        missing_cols = set(self.cols_to_keep) - label_names_set - set(test_cols)
+        missing_cols = set(self.cols_to_keep) - label_names_set - test_cols
         if len(missing_cols):
             raise ValueError(f'Test set does not have these columns required for preprocessings: {missing_cols}')
             
@@ -657,359 +714,5 @@ class TextDataController():
         test_dset = hf_map_dset(test_dset,_func,self.is_batched,self.batch_size,self.num_proc)
         
         self.verboseprint('Done')
-        return test_dset
-
-
-# %% ../nbs/00_text_main.ipynb 262
-class TextDataControllerStreaming():
-    def __init__(self,
-                 inp, # HuggingFainpce Dataset or DatasetDict
-                 main_text:str, # Name of the main text column
-                 label_names=None, # Names of the label (dependent variable) columns
-                 class_names_predefined=None, # List of names associated with the labels (same index order)
-                 filter_dict={}, # A dictionary: {feature: filtering_function_based_on_the_feature}
-                 metadatas=[], # Names of the metadata columns
-                 process_metas=True, # Whether to do simple text processing on the chosen metadatas
-                 content_transformations=[], # A list of text transformations
-                 content_augmentations=[], # A list of text augmentations
-                 seed=None, # Random seed
-                 batch_size=100, # CPU batch size
-                 num_proc=1, # Number of process for multiprocessing. This will be applied on non-streamed validation set
-                 cols_to_keep=None, # Columns to keep after all processings
-                 verbose=True, # Whether to print processing information
-                ):
-            
-        self.main_text = main_text
-        self.metadatas = val2iterable(metadatas)
-        self.process_metas = process_metas
-        self.label_names = val2iterable(label_names) if label_names is not None else None
-        self.label_lists = class_names_predefined
-        self.filter_dict = filter_dict
-        self.content_tfms = val2iterable(content_transformations)
-        self.aug_tfms = val2iterable(content_augmentations)
-        self.seed = seed
-        self.is_batched = batch_size>1
-        self.batch_size = batch_size
-        self.num_proc = num_proc
-        self.cols_to_keep = cols_to_keep
-        self.verbose = verbose
-        self.main_ddict=DatasetDict()
-        self.verboseprint = print if verbose else lambda *a, **k: None
-        
-        if hasattr(inp,'keys'): # is datasetdict
-            if 'train' not in inp.keys(): 
-                raise ValueError('The given DatasetDict has no "train" split')
-            else:
-                self.main_ddict['train'] = inp['train']
-            val_key = list(set(inp.keys()) & set(['val','validation','valid']))
-            if len(val_key)>1: raise ValueError('Your DatasetDict has more than 1 validation split')
-            if len(val_key)==1:
-                self.main_ddict['validation'] = inp[val_key[0]]
-        else: # is dataset
-            self.main_ddict['train'] = inp
-        
-        
-        
-        is_streamed=isinstance(self.main_ddict['train'],IterableDataset)
-        if not is_streamed: raise Exception('This Text Data Controller only handles streamed dataset')
-        
-        self.all_cols = get_dset_col_names(self.main_ddict['train'])
-        if is_streamed and self.label_names is not None and self.label_lists is None:
-            raise ValueError('All class labels must be provided when streaming')
-            
-        self._processed_call=False
-        
-        self._determine_multihead_multilabel()
-        
-            
-    @classmethod
-    def from_pickle(cls,
-                    fname, # Name of the pickle file
-                    parent='pickle_files' # Parent folder
-                   ):
-        return load_pickle(fname,parent=parent)
-    
-    def set_verbose(self,verbose):
-        self.verbose = verbose
-        self.verboseprint = print if verbose else lambda *a, **k: None
-        
-    def _determine_multihead_multilabel(self):
-        self.is_multilabel=False
-        self.is_multihead=False
-        if self.label_names is None: return
-        
-        if len(self.label_names)>1:
-            self.is_multihead=True
-        # get label of first row
-        first_label = next(iter(self.main_ddict['train']))[self.label_names[0]]
-        if isinstance(first_label,(list,set,tuple)):
-            # This is multi-label. Ignore self.label_names[1:]
-            self.label_names = [self.label_names[0]]
-            self.is_multihead=False
-            self.is_multilabel=True
-                     
-    
-    def save_as_pickles(self,
-                        fname, # Name of the pickle file
-                        parent='pickle_files', # Parent folder
-                        drop_attributes=False # Whether to drop large-size attributes
-                       ):
-        if drop_attributes:
-            if hasattr(self, 'main_ddict'):
-                del self.main_ddict
-            if hasattr(self, 'ddict_rest'):
-                del self.ddict_rest
-            if hasattr(self, 'aug_tfms'):
-                del self.aug_tfms
-        save_to_pickle(self,fname,parent=parent)
-    
-                             
-    def _create_label_mapping_func(self,encoder_classes):
-        if self.is_multihead:
-            label2idxs = [{v:i for i,v in enumerate(l_classes)} for l_classes in encoder_classes]
-            _func = lambda inp: {'label': [[label2idxs[i][v] for i,v in enumerate(vs)] for vs in zip(*[inp[l] for l in self.label_names])] \
-                                    if self.is_batched else [label2idxs[i][v] for i,v in enumerate([inp[l] for l in self.label_names])]
-                              }
-            
-        else:
-            label2idx = {v:i for i,v in enumerate(encoder_classes[0])}
-            _func = partial(lambda_map_batch,
-                           feature=self.label_names[0],
-                           func=lambda x: label2idx[x],
-                           output_feature='label',
-                           is_batched=self.is_batched)
-        return _func
-        
-    def _encode_labels(self):
-        if self.label_names is None: return
-        print_msg('Label Encoding',verbose=self.verbose)
-        
-        if not isinstance(self.label_lists[0],list):
-            self.label_lists = [self.label_lists]
-                    
-        encoder_classes=[]
-        if not self.is_multilabel:
-            for idx,l in enumerate(self.label_names):
-                l_classes = sorted(list(self.label_lists[idx]))
-                encoder_classes.append(l_classes)
-            _func = self._create_label_mapping_func(encoder_classes)
-            self.main_ddict['train'] = hf_map_dset(self.main_ddict['train'],_func,self.is_batched,self.batch_size,self.num_proc)
-            if 'validation' in self.main_ddict.keys():
-                self.main_ddict['validation'] = hf_map_dset(self.main_ddict['validation'],_func,self.is_batched,self.batch_size,self.num_proc)
-                    
-        else:
-            # For MultiLabel, we transform the label itself to one-hot (or actually, few-hot)
-            l_classes = sorted(list(self.label_lists[0]))   
-            encoder_classes.append(l_classes)
-            
-            l_encoder = MultiLabelBinarizer(classes=encoder_classes[0])
-            _ = l_encoder.fit(None)
-            _func = partial(lambda_map_batch,
-                            feature=self.label_names[0],
-                            func=lambda x: l_encoder.transform(x),
-                            output_feature='label',
-                            is_batched=self.is_batched,
-                            is_func_batched=True)
-            self.main_ddict['train'] = hf_map_dset(self.main_ddict['train'],_func,self.is_batched,self.batch_size,self.num_proc)
-            if 'validation' in self.main_ddict.keys():
-                self.main_ddict['validation'] = hf_map_dset(self.main_ddict['validation'],_func,self.is_batched,self.batch_size,self.num_proc)
-            
-        self.label_lists = encoder_classes
-        self.verboseprint('Done')
-        
-    def _process_metadatas(self,dtrain):
-        if len(self.metadatas)>0:
-            map_func = partial(concat_metadatas,
-                               main_text=self.main_text,
-                               metadatas=self.metadatas,
-                               process_metas=self.process_metas,
-                               is_batched=self.is_batched)
-            dtrain = hf_map_dset(dtrain,map_func,self.is_batched,self.batch_size,self.num_proc)
-        return dtrain
-            
-            
-    def _simplify_ddict(self):
-        print_msg('Dropping unused features',20,verbose=self.verbose)
-        if self.cols_to_keep is None:
-            self.cols_to_keep= [self.main_text] + self.metadatas
-            if self.label_names is not None: self.cols_to_keep+=self.label_names
-        cols_to_remove = set(self.all_cols) - set(self.cols_to_keep)
-        self.main_ddict['train']=self.main_ddict['train'].remove_columns(list(cols_to_remove))
-        if 'validation' in self.main_ddict.keys():
-            self.main_ddict['validation']=self.main_ddict['validation'].remove_columns(list(cols_to_remove))
-        self.verboseprint('Done')
-
-    def _do_filtering(self,dtrain):
-        if len(self.filter_dict):
-            col_names = get_dset_col_names(dtrain)
-            for f,tfm in self.filter_dict.items():
-                if f in col_names:
-                    _func = partial(lambda_batch,
-                                    feature=f,
-                                    func=tfm,
-                                    is_batched=self.is_batched)
-                    dtrain = hf_filter_dset(dtrain,_func,self.is_batched,self.batch_size,self.num_proc)
-        return dtrain
-        
-
-    def _do_transformation_tokenization(self,dtrain,tokenizer,max_length,):
-        tok_func = partial(tokenize_function,tok=tokenizer,max_length=max_length)
-        if len(self.content_tfms):            
-            for tfm in self.content_tfms:
-                _func = partial(lambda_map_batch,
-                                feature=self.main_text,
-                                func=tfm,
-                                is_batched=self.is_batched)
-                dtrain = hf_map_dset(dtrain,_func,self.is_batched,self.batch_size,self.num_proc)
-        
-        _func = partial(lambda_map_batch,
-                        feature=self.main_text,
-                        func=tok_func,
-                        output_feature=None,
-                        is_batched=self.is_batched)
-        dtrain = hf_map_dset(dtrain,_func,self.is_batched,self.batch_size,self.num_proc)
-            
-        return dtrain 
- 
-    def _do_transformation_augmentation_tokenization(self,tokenizer,max_length):
-        tok_func = partial(tokenize_function,tok=tokenizer,max_length=max_length)
-        all_tfms = self.content_tfms + self.aug_tfms
-        all_tfms = partial(func_all,functions=all_tfms) if len(all_tfms) else None
-        seed_everything(self.seed)
-           
-        self.main_ddict['train'] = IterableDataset.from_generator(aug_and_tok_stream_generator,
-                                                   gen_kwargs={'dset': self.main_ddict['train'],
-                                                               'text_name':self.main_text,
-                                                               'tok_func':tok_func,
-                                                               'func': all_tfms
-                                                              }
-                                                                 )
-        
-        
-    def process_and_tokenize(self,
-                             tokenizer, # Tokenizer (preferably from HuggingFace)
-                             max_length=None, # pad to model's allowed max length (default is max_sequence_length)
-                            ):
-        if self._processed_call:
-            warnings.warn('Your dataset has already been processed. Returning the previous processed DatasetDict...')
-            return self.main_ddict
-        
-        self.tokenizer = tokenizer
-        self.max_length = max_length
-                             
-        # Filtering
-        print_msg('Data Filtering',20,verbose=self.verbose)
-        for k in self.main_ddict.keys():   
-            self.main_ddict[k] = self._do_filtering(self.main_ddict[k])
-        self.verboseprint('Done')
-
-        
-        # Process metadatas
-        print_msg('Metadata Simple Processing & Concatenating to Main Content',verbose=self.verbose)
-        for k in self.main_ddict.keys():   
-            self.main_ddict[k] = self._process_metadatas(self.main_ddict[k])
-        self.verboseprint('Done')
-        
-        # Process labels
-        self._encode_labels()
-
-        
-        # Dropping unused columns
-        self._simplify_ddict()
-
-        
-        # Content transformation + tokenization for validation
-        if 'validation' in self.main_ddict.keys():
-            print_msg('Performing content transformation and tokenization on validation set',verbose=self.verbose)
-            self.main_ddict['validation'] = self._do_transformation_tokenization(self.main_ddict['validation'],
-                                                                                 tokenizer,
-                                                                                 max_length,
-                                                                                )
-            self.verboseprint('Done')
- 
-        # Content transformation + augmentation + tokenization for train
-        print_msg('Creating a generator for content transformation, augmentation and tokenization on train set',verbose=self.verbose)
-        self._do_transformation_augmentation_tokenization(tokenizer,max_length)
-        self.verboseprint('Done')
-        self._processed_call=True
-    
-        
-    
-    def set_data_collator(self,data_collator):
-        self.data_collator = data_collator
-        
-    
-    def prepare_test_dataset_from_csv(self,
-                                      file_path, # path to csv file
-                                      do_filtering=False # whether to perform data filtering on this test set
-                                     ):
-        file_path = Path(file_path)
-        ds = load_dataset(str(file_path.parent),
-                          data_files=file_path.name,
-                          split='train')
-        return self.prepare_test_dataset(ds,do_filtering)
-    
-    def prepare_test_dataset_from_df(self,
-                                     df, # Pandas Dataframe
-                                     validate=True, # whether to perform input data validation
-                                     do_filtering=False # whether to perform data filtering on this test set 
-                                    ):
-        if validate:
-            check_input_validation(df)
-        ds = Dataset.from_pandas(df)
-        return self.prepare_test_dataset(ds,do_filtering)
-    
-    def prepare_test_dataset_from_raws(self,
-                                       content, # Either a single sentence, list of sentence or a dictionary with keys are metadata columns and values are list
-                                      ):
-        if len(self.metadatas)!=0 and not isinstance(content,dict):
-            raise ValueError(f'There is/are metadatas in the preprocessing step. Please include a dictionary including these keys for metadatas: {self.metadatas}, and texture content: {self.main_text}')
-            
-        _dic = {self.main_text:[content]} if isinstance(content,str) else content
-        for k in _dic.keys():
-            _dic[k] = val2iterable(_dic[k])
-        
-        test_dict = Dataset.from_dict(_dic)
-        return self.prepare_test_dataset(test_dict,do_filtering=False)
-    
-    def prepare_test_dataset(self,
-                             test_dset, # The HuggingFace Dataset as Test set
-                             do_filtering=False, # whether to perform data filtering on this test set
-                            ):
-        test_cols = set(get_dset_col_names(test_dset))
-        if self.label_names is None: # no label (i.e. regression)
-            label_names_set = set([])
-        else:
-            label_names_set = set(self.label_names)
-        test_cols = test_cols - label_names_set
-        missing_cols = set(self.cols_to_keep) - label_names_set - test_cols
-        if len(missing_cols):
-            raise ValueError(f'Test set does not have these columns required for preprocessings: {missing_cols}')
-            
-        print_msg('Start Test Set Transformation',20,verbose=self.verbose)
-
-        # Filtering
-        if do_filtering:
-            print_msg('Data Filtering',20,verbose=self.verbose)
-            test_dset = self._do_filtering(test_dset)
-            self.verboseprint('Done')
-        
-        # Process metadatas
-        print_msg('Metadata Simple Processing & Concatenating to Main Content',verbose=self.verbose)    
-        test_dset = self._process_metadatas(test_dset)
-        self.verboseprint('Done')
-        
-        # Drop unused columns
-        print_msg('Dropping unused features',20,verbose=self.verbose)
-        cols_to_remove = test_cols - set(self.cols_to_keep)
-        test_dset=test_dset.remove_columns(list(cols_to_remove))
-        self.verboseprint('Done')
-        
-        
-        # Content transformation and tokenization
-        print_msg('Performing content transformation and tokenization on test set',verbose=self.verbose)
-        test_dset = self._do_transformation_tokenization(test_dset,self.tokenizer,self.max_length)
-        self.verboseprint('Done')
-        
         return test_dset
 
