@@ -303,7 +303,9 @@ def _forward_pass_prediction(batch,
                 results[f'pred_prob_{label_names[i]}']=_preds.numpy()
             else:
                 if head_sizes[i]==1: # regression
-                    results[f'pred_{label_names[i]}']=_preds.numpy()
+                    _result = _preds.numpy()
+                    if _result.ndim==0: _result=_result.reshape((1,))
+                    results[f'pred_{label_names[i]}']=_result
                 else: # classification
                     _p,_l = torch.topk(_preds,topk,dim=-1)
                     if topk==1:
