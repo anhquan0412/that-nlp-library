@@ -7,7 +7,6 @@ from transformers.models.gpt2.modeling_gpt2 import GPT2Model,GPT2PreTrainedModel
 from transformers.models.gpt2.configuration_gpt2 import GPT2Config
 from transformers.modeling_outputs import SequenceClassifierOutputWithPast
 from ...model_main import loss_for_classification
-from torch.nn import MSELoss
 from ...utils import *
 
 # %% auto 0
@@ -123,16 +122,12 @@ class GPT2BaseForSequenceClassification(GPT2PreTrainedModel):
         # Calculate losses
         if labels is None:
             loss=None
-        else:
-            if self.config.num_labels==1:
-                loss_fct = MSELoss()
-                loss = loss_fct(logits.squeeze(),labels.squeeze())
-            else:
-                loss = loss_for_classification(logits, labels, 
-                                       self.is_multilabel,
-                                       self.is_multihead, 
-                                       self.head_class_sizes,
-                                       self.head_weights)
+        else:            
+            loss = loss_for_classification(logits, labels, 
+                                   self.is_multilabel,
+                                   self.is_multihead, 
+                                   self.head_class_sizes,
+                                   self.head_weights)
             
         if not return_dict:
             output = (logits,) + outputs[1:]
@@ -260,15 +255,11 @@ class GPT2HiddenStateConcatForSequenceClassification(GPT2PreTrainedModel):
         if labels is None:
             loss=None
         else:
-            if self.config.num_labels==1:
-                loss_fct = MSELoss()
-                loss = loss_fct(logits.squeeze(),labels.squeeze())
-            else:
-                loss = loss_for_classification(logits, labels, 
-                                       self.is_multilabel,
-                                       self.is_multihead, 
-                                       self.head_class_sizes,
-                                       self.head_weights)
+            loss = loss_for_classification(logits, labels, 
+                                   self.is_multilabel,
+                                   self.is_multihead, 
+                                   self.head_class_sizes,
+                                   self.head_weights)
             
         if not return_dict:
             output = (logits,) + outputs[1:]

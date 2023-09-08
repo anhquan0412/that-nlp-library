@@ -9,7 +9,6 @@ from transformers.models.roberta.modeling_roberta import RobertaPreTrainedModel
 from transformers.modeling_outputs import SequenceClassifierOutput
 from transformers import AutoConfig
 from ...model_main import loss_for_classification
-from torch.nn import MSELoss
 from ...utils import *
 
 # %% auto 0
@@ -171,15 +170,11 @@ class RobertaBaseForSequenceClassification(RobertaPreTrainedModel):
         if labels is None:
             loss=None
         else:
-            if self.config.num_labels==1:
-                loss_fct = MSELoss()
-                loss = loss_fct(logits.squeeze(),labels.squeeze())
-            else:
-                loss = loss_for_classification(logits, labels, 
-                                       self.is_multilabel,
-                                       self.is_multihead, 
-                                       self.head_class_sizes,
-                                       self.head_weights)
+            loss = loss_for_classification(logits, labels, 
+                                   self.is_multilabel,
+                                   self.is_multihead, 
+                                   self.head_class_sizes,
+                                   self.head_weights)
         
         if not return_dict:
             output = (logits,) + outputs[2:]
@@ -264,16 +259,12 @@ class RobertaHiddenStateConcatForSequenceClassification(RobertaPreTrainedModel):
         # Calculate losses
         if labels is None:
             loss=None
-        else:
-            if self.config.num_labels==1:
-                loss_fct = MSELoss()
-                loss = loss_fct(logits.squeeze(),labels.squeeze())
-            else:
-                loss = loss_for_classification(logits, labels, 
-                                       self.is_multilabel,
-                                       self.is_multihead, 
-                                       self.head_class_sizes,
-                                       self.head_weights)
+        else:            
+            loss = loss_for_classification(logits, labels, 
+                                   self.is_multilabel,
+                                   self.is_multihead, 
+                                   self.head_class_sizes,
+                                   self.head_weights)
             
         if not return_dict:
             output = (logits,) + outputs[2:]
