@@ -60,6 +60,7 @@ def model_init_classification(
 # %% ../nbs/03_model_main.ipynb 7
 def compute_metrics(pred, # An EvalPrediction object from HuggingFace (which is a named tuple with ```predictions``` and ```label_ids``` attributes)
                     metric_funcs=[], # A list of metric functions to evaluate
+                    metric_types=[], # Type of metric ('classification' or 'regression') for each metric functions above
                     head_sizes=[], # Class size for each head. Regression head will have head size 1
                     label_names=[], # Names of the label (dependent variable) columns
                     is_multilabel=False, # Whether this is a multilabel classification
@@ -79,8 +80,11 @@ def compute_metrics(pred, # An EvalPrediction object from HuggingFace (which is 
         
     results={}
     metric_funcs = val2iterable(metric_funcs)
-    
+    metric_types = val2iterable(metric_types)
+    if len(metric_types):
+        assert len(metric_funcs)==len(metric_types),"The length of `metric_types` must equal to the length of `metric_funcs`"
     for i,(_size,_name) in enumerate(zip(head_sizes,label_names)):
+        sup_type='classification'
         start= 0 if i==0 else start+head_sizes[i-1]
         end = start + _size
         _pred = preds[:,start:end]
@@ -89,10 +93,18 @@ def compute_metrics(pred, # An EvalPrediction object from HuggingFace (which is 
             _pred = (sigmoid(_pred)>=multilabel_threshold).astype(int)
         elif _size>1: # classification
             _pred = _pred.argmax(-1)
+        else: # _size==1, regression
+            sup_type='regression'
+        
+        # set up default metric_types, assuming all heads are doing the same type
+        if len(metric_types)==0:
+            metric_types = val2iterable(sup_type,len(metric_funcs))
+        
         _label = labels[:,i] if len(head_sizes)>1 else labels
-        for m_func in metric_funcs:
-            m_name = callable_name(m_func)
-            results[f'{m_name}_{_name}']=m_func(_label,_pred)
+        for i,m_func in enumerate(metric_funcs):
+            if metric_types[i]==sup_type:
+                m_name = callable_name(m_func)
+                results[f'{m_name}_{_name}']=m_func(_label,_pred)
     return results
 
 # %% ../nbs/03_model_main.ipynb 9
@@ -124,7 +136,7 @@ def compute_metrics_separate_heads(pred, # An EvalPrediction object from Hugging
     
     return results
 
-# %% ../nbs/03_model_main.ipynb 13
+# %% ../nbs/03_model_main.ipynb 12
 def loss_for_classification(logits, # output of the last linear layer, before any softmax/sigmoid. Size: (bs,class_size)
                             labels, # determined by your datasetdict. Size: (bs,number_of_head)
                             is_multilabel=False, # Whether this is a multilabel classification
@@ -163,17 +175,17 @@ def loss_for_classification(logits, # output of the last linear layer, before an
             _logits = _logits.squeeze() if _size ==1 else _logits.view(-1,_size)
             
             _label = labels[:,i] if len(head_sizes)>1 else labels # (bs,) for 1 total 1 head size, (bs,num_head) otherwise
-            
-            loss = loss + _weight*loss_fct(_logits,_label.view(-1))
+            _label = _label.view(-1)
+            if isinstance(loss_fct,torch.nn.CrossEntropyLoss): _label = _label.long()
+            loss = loss + _weight*loss_fct(_logits,_label)
     else:
-        if not is_multihead:
-            loss_fct = torch.nn.BCEWithLogitsLoss()
-            loss = loss_fct(logits,
-                            labels.float())
+        loss_fct = torch.nn.BCEWithLogitsLoss()
+        loss = loss_fct(logits,
+                        labels.float())
                     
     return loss
 
-# %% ../nbs/03_model_main.ipynb 15
+# %% ../nbs/03_model_main.ipynb 14
 def finetune(lr, # Learning rate
              bs, # Batch size
              wd, # Weight decay
@@ -235,7 +247,7 @@ def finetune(lr, # Learning rate
     trainer.train()
     return trainer
 
-# %% ../nbs/03_model_main.ipynb 19
+# %% ../nbs/03_model_main.ipynb 18
 def _forward_pass_prediction(batch,
                              model=None, # NLP model
                              topk=1, # Number of labels to return for each head
@@ -320,7 +332,7 @@ def _forward_pass_prediction(batch,
     
     return results
 
-# %% ../nbs/03_model_main.ipynb 20
+# %% ../nbs/03_model_main.ipynb 19
 def _convert_pred_id_to_label(dset,
                               label_names,
                               label_lists,
@@ -362,7 +374,7 @@ def _convert_pred_id_to_label(dset,
     return dset
 
 
-# %% ../nbs/03_model_main.ipynb 21
+# %% ../nbs/03_model_main.ipynb 20
 class ModelController():
     def __init__(self,
                  model, # NLP model
@@ -377,7 +389,8 @@ class ModelController():
             epochs, # Number of epochs
             learning_rate, # Learning rate
             ddict=None, # DatasetDict to fit (will override data_store)
-            metric_funcs=[accuracy_score], # Metric function (can be from Sklearn)
+            metric_funcs=[accuracy_score], # A list of metric functions (can be from Sklearn)
+            metric_types=[], # A list of metric types (`classification` or `regression`) that matches with the metric function list
             batch_size=16, # Batch size
             weight_decay=0.01, # Weight decay
             lr_scheduler_type='cosine', # The scheduler type to use. Including: linear, cosine, cosine_with_restarts, polynomial, constant, constant_with_warmup
@@ -412,6 +425,7 @@ class ModelController():
 
         _compute_metrics = partial(compute_metrics,
                                    metric_funcs=metric_funcs,
+                                   metric_types=metric_types,
                                    head_sizes=head_sizes,
                                    label_names=label_names 
                                   )
