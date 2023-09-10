@@ -89,7 +89,7 @@ def evaluate_classification_model(df:pd.DataFrame, # The main dataframe containi
     evaluate_classification_model_metadata(df,metadatas,label_name,pred_name,metric_funcs)
     print()
     print_msg("Let's look at some wrong predictions with high confidence",15)
-    show_top_n_predictions(df_val,text_name,label_name,pred_name,prob_name,
+    show_top_n_predictions(df,text_name,label_name,pred_name,prob_name,
                            is_incorrect=True,
                            ascending=False,
-                          n_show=n_show)
+                           n_show=n_show)

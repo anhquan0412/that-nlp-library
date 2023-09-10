@@ -8,42 +8,10 @@
 pip install that_nlp_library
 ```
 
-## Index
+## What this library offers
 
-### Text preprocessing
+TODO
 
-- [Text
-  Augmentation](https://anhquan0412.github.io/that-nlp-library/text_augmentation.html)
-- [Text
-  Transformation](https://anhquan0412.github.io/that-nlp-library/text_transformation.html)
+## Tutorials
 
-### Text Controller
-
-- [Text
-  Main](https://anhquan0412.github.io/that-nlp-library/text_main.html)
-
-### Model Controller
-
-- [Model
-  Main](https://anhquan0412.github.io/that-nlp-library/model_main.html)
-
-### Roberta-based classification model + Detailed tutorials
-
-- [Classification Model Architectures, Metrics and Loss
-  Functions](https://anhquan0412.github.io/that-nlp-library/models.classifiers.html)
-  - [A simple example using EnviBert
-    model](https://anhquan0412.github.io/that-nlp-library/model_main_envibert.html)
-  - [Full tutorial on EnviBert Single-Head
-    model](https://anhquan0412.github.io/that-nlp-library/model_main_envibert_singlehead.html)
-  - [Full tutorial on EnviBert Multi-Head
-    model](https://anhquan0412.github.io/that-nlp-library/model_main_envibert_multihead.html)
-  - [Full tutorial on EnviBert Multi-Label
-    model](https://anhquan0412.github.io/that-nlp-library/model_main_envibert_multilabel.html)
-- [Deep Hierarchical Classification
-  Architecture](https://anhquan0412.github.io/that-nlp-library/models.deep_hierarchical_classifiers.html)
-  - [Full tutorial on EnviBert
-    DHC](https://anhquan0412.github.io/that-nlp-library/model_main_envibert_dhc.html)
-- [Conditional Probability Classification
-  Architecture](https://anhquan0412.github.io/that-nlp-library/models.conditional_prob_classifiers.html)
-  - [Full tutorial on EnviBert Conditional
-    Probability](https://anhquan0412.github.io/that-nlp-library/model_main_envibert_conditional_prob.html)
+Visit <https://anhquan0412.github.io/that-nlp-library/>

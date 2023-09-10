@@ -2,7 +2,7 @@ website:
   sidebar:
     contents:
       - index.ipynb
-      - section: Beginner Tutorials
+      - section: Begin here!
         contents:
         - 00_text_main.ipynb
         - 03_model_classification_tutorial.ipynb
@@ -15,6 +15,7 @@ website:
         - section: Text Controller
           contents:
           - 00_text_main.ipynb
+          - 00_text_main_streaming.ipynb
           - 00_text_main_benchmark.ipynb
       - section: Model
         contents:
@@ -36,17 +37,17 @@ website:
         contents:
         - section: Roberta-based models
           contents:
-          - 19_model_main_roberta_regression.ipynb
           - 20_model_main_roberta_singlehead.ipynb
           - 21_model_main_roberta_multihead.ipynb
-          - 22_model_main_roberta_multilabel.ipynb
-          - 23_model_main_roberta_conditional_prob.ipynb
-          - 24_model_main_roberta_dhc.ipynb
+          = 22_model_main_roberta_multihead_regression.ipynb
+          - 23_model_main_roberta_multilabel.ipynb
+          - 24_model_main_roberta_conditional_prob.ipynb
+          - 25_model_main_roberta_dhc.ipynb
         - section: GPT2-based models
           contents:
-          - 19_model_main_gpt2_regression.ipynb
           - 20_model_main_gpt2_singlehead.ipynb
           - 21_model_main_gpt2_multihead.ipynb
+          - 22_model_main_gpt2_multihead_regression.ipynb
       - section: Utility
         contents:
         - 07_utils.ipynb

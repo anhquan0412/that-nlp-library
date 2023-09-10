@@ -108,7 +108,7 @@ class GPT2BaseForSequenceClassification(GPT2PreTrainedModel):
                 )
             else:
                 sequence_lengths = -1
-                logger.warning(
+                print(
                     f"{self.__class__.__name__} will not detect padding tokens in `inputs_embeds`. Results may be "
                     "unexpected if using padding tokens in conjunction with `inputs_embeds.`"
                 )
@@ -240,7 +240,7 @@ class GPT2HiddenStateConcatForSequenceClassification(GPT2PreTrainedModel):
                                 )
             else:
                 sequence_lengths = -1
-                logger.warning(
+                print(
                     f"{self.__class__.__name__} will not detect padding tokens in `inputs_embeds`. Results may be "
                     "unexpected if using padding tokens in conjunction with `inputs_embeds.`"
                 )
