@@ -39,7 +39,7 @@ website:
           contents:
           - 20_model_main_roberta_singlehead.ipynb
           - 21_model_main_roberta_multihead.ipynb
-          = 22_model_main_roberta_multihead_regression.ipynb
+          - 22_model_main_roberta_multihead_regression.ipynb
           - 23_model_main_roberta_multilabel.ipynb
           - 24_model_main_roberta_conditional_prob.ipynb
           - 25_model_main_roberta_dhc.ipynb
