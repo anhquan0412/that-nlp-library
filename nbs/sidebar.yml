@@ -35,22 +35,18 @@ website:
         - 08_evaluations.ipynb
       - section: All use-cases
         contents:
-        - section: Roberta-based models for classification
+        - section: Roberta-based models
           contents:
           - 20_roberta_singlehead.ipynb
           - 21_roberta_multihead.ipynb
-          - 23_roberta_multilabel.ipynb
-          - 24_roberta_conditional_prob.ipynb
-          - 25_roberta_dhc.ipynb
-        - section: Roberta-based models for regression
-          contents:
           - 22_roberta_multihead_regression.ipynb
+          - 17_roberta_conditional_prob.ipynb
+          - 18_roberta_dhc.ipynb
+          - 19_roberta_multilabel.ipynb
         - section: GPT2-based models for classification
           contents:
           - 20_gpt2_singlehead.ipynb
           - 21_gpt2_multihead.ipynb
-        - section: GPT2-based models for regression
-          contents:
           - 22_gpt2_multihead_regression.ipynb
       - section: Utility
         contents:
