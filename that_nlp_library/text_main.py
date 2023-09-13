@@ -67,17 +67,34 @@ def tokenize_function(text,
                       tok,
                       max_length=None,
                       is_split_into_words=False,
-                      return_tensors=None
+                      return_tensors=None,
+                      return_special_tokens_mask=False
                      ):
     if max_length is None:
         # pad to model's default max sequence length
-        return tok(text, padding="max_length", truncation=True,is_split_into_words=is_split_into_words,return_tensors=return_tensors)
+        return tok(text, padding="max_length", 
+                   truncation=True,
+                   is_split_into_words=is_split_into_words,
+                   return_tensors=return_tensors,
+                   return_special_tokens_mask=return_special_tokens_mask
+                  )
     if isinstance(max_length,int) and max_length>0:
         # pad to the largest length of the current batch, and start truncating at max_length
-        return tok(text, padding=True, max_length=max_length,truncation=True,is_split_into_words=is_split_into_words,return_tensors=return_tensors)
+        return tok(text, padding=True, 
+                   max_length=max_length,
+                   truncation=True,
+                   is_split_into_words=is_split_into_words,
+                   return_tensors=return_tensors,
+                   return_special_tokens_mask=return_special_tokens_mask
+                  )
     
     # no padding (still truncate at model's default max sequence length)
-    return tok(text, truncation=True,is_split_into_words=is_split_into_words,return_tensors=return_tensors)
+    return tok(text, padding=False,
+               truncation=True,
+               is_split_into_words=is_split_into_words,
+               return_tensors=return_tensors,
+               return_special_tokens_mask=return_special_tokens_mask
+              )
 
 # %% ../nbs/00_text_main.ipynb 56
 def concat_metadatas(dset:dict, # HuggingFace Dataset
