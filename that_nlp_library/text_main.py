@@ -521,8 +521,8 @@ class TextDataController():
     def _do_augmentation(self):
         if len(self.aug_tfms):
             print_msg('Text Augmentation',20,verbose=self.verbose)
-
-            seed_everything(self.seed)   
+            if self.seed:
+                seed_everything(self.seed)   
             for tfm in self.aug_tfms:
                 print_msg(callable_name(tfm),verbose=self.verbose)
                 bs = self.batch_size
@@ -609,7 +609,7 @@ class TextDataController():
         
     def do_tokenization(self,
                         tokenizer, # Tokenizer (preferably from HuggingFace)
-                        max_length=None, # pad to model's allowed max length (default is max_sequence_length)
+                        max_length=None, # pad to model's allowed max length (default is max_sequence_length). Use -1 for no padding at all
                         trn_size=None, # The number of training data to be tokenized
                        ):
         print_msg('Tokenization',20,verbose=self.verbose)

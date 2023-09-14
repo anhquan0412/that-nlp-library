@@ -136,7 +136,7 @@ def compute_metrics_separate_heads(pred, # An EvalPrediction object from Hugging
     
     return results
 
-# %% ../nbs/03_model_main.ipynb 12
+# %% ../nbs/03_model_main.ipynb 11
 def loss_for_classification(logits, # output of the last linear layer, before any softmax/sigmoid. Size: (bs,class_size)
                             labels, # determined by your datasetdict. Size: (bs,number_of_head)
                             is_multilabel=False, # Whether this is a multilabel classification
@@ -185,7 +185,7 @@ def loss_for_classification(logits, # output of the last linear layer, before an
                     
     return loss
 
-# %% ../nbs/03_model_main.ipynb 14
+# %% ../nbs/03_model_main.ipynb 13
 def finetune(lr, # Learning rate
              bs, # Batch size
              wd, # Weight decay
@@ -247,7 +247,7 @@ def finetune(lr, # Learning rate
     trainer.train()
     return trainer
 
-# %% ../nbs/03_model_main.ipynb 18
+# %% ../nbs/03_model_main.ipynb 16
 def _forward_pass_prediction(batch,
                              model=None, # NLP model
                              topk=1, # Number of labels to return for each head
@@ -332,7 +332,7 @@ def _forward_pass_prediction(batch,
     
     return results
 
-# %% ../nbs/03_model_main.ipynb 19
+# %% ../nbs/03_model_main.ipynb 17
 def _convert_pred_id_to_label(dset,
                               label_names,
                               label_lists,
@@ -374,7 +374,7 @@ def _convert_pred_id_to_label(dset,
     return dset
 
 
-# %% ../nbs/03_model_main.ipynb 20
+# %% ../nbs/03_model_main.ipynb 18
 class ModelController():
     def __init__(self,
                  model, # NLP model

@@ -28,7 +28,7 @@ class TextDataControllerStreaming():
                  content_transformations=[], # A list of text transformations
                  content_augmentations=[], # A list of text augmentations
                  seed=None, # Random seed
-                 batch_size=100, # CPU batch size
+                 batch_size=1000, # CPU batch size
                  num_proc=1, # Number of process for multiprocessing. This will be applied on non-streamed validation set
                  cols_to_keep=None, # Columns to keep after all processings
                  verbose=True, # Whether to print processing information
@@ -258,8 +258,8 @@ class TextDataControllerStreaming():
         return dtrain
         
 
-    def _do_transformation_tokenization(self,dtrain,tokenizer,max_length,):
-        tok_func = partial(tokenize_function,tok=tokenizer,max_length=max_length)
+    def _do_transformation_tokenization(self,dtrain):
+        tok_func = partial(tokenize_function,tok=self.tokenizer,max_length=self.max_length)
         if len(self.content_tfms):            
             for tfm in self.content_tfms:
                 _func = partial(lambda_map_batch,
@@ -277,11 +277,12 @@ class TextDataControllerStreaming():
             
         return dtrain 
  
-    def _do_transformation_augmentation_tokenization(self,tokenizer,max_length):
-        tok_func = partial(tokenize_function,tok=tokenizer,max_length=max_length)
+    def _do_transformation_augmentation_tokenization(self):
+        tok_func = partial(tokenize_function,tok=self.tokenizer,max_length=self.max_length)
         all_tfms = self.content_tfms + self.aug_tfms
         all_tfms = partial(func_all,functions=all_tfms) if len(all_tfms) else None
-        seed_everything(self.seed)
+        if self.seed:
+            seed_everything(self.seed)
            
         self.main_ddict['train'] = IterableDataset.from_generator(aug_and_tok_stream_generator,
                                                    gen_kwargs={'dset': self.main_ddict['train'],
@@ -328,16 +329,13 @@ class TextDataControllerStreaming():
         
         # Content transformation + tokenization for validation
         if 'validation' in self.main_ddict.keys():
-            print_msg('Performing content transformation and tokenization on validation set',verbose=self.verbose)
-            self.main_ddict['validation'] = self._do_transformation_tokenization(self.main_ddict['validation'],
-                                                                                 tokenizer,
-                                                                                 max_length,
-                                                                                )
+            print_msg('Performing Content Transformation and Tokenization on validation set',verbose=self.verbose)
+            self.main_ddict['validation'] = self._do_transformation_tokenization(self.main_ddict['validation'])
             self.verboseprint('Done')
  
         # Content transformation + augmentation + tokenization for train
         print_msg('Creating a generator for content transformation, augmentation and tokenization on train set',verbose=self.verbose)
-        self._do_transformation_augmentation_tokenization(tokenizer,max_length)
+        self._do_transformation_augmentation_tokenization()
         self.verboseprint('Done')
         
         self._processed_call=True
@@ -419,8 +417,8 @@ class TextDataControllerStreaming():
         
         
         # Content transformation and tokenization
-        print_msg('Performing content transformation and tokenization on test set',verbose=self.verbose)
-        test_dset = self._do_transformation_tokenization(test_dset,self.tokenizer,self.max_length)
+        print_msg('Performing Content Transformation and Tokenization on test set',verbose=self.verbose)
+        test_dset = self._do_transformation_tokenization(test_dset)
         self.verboseprint('Done')
         
         return test_dset
