@@ -8,7 +8,9 @@ from pathlib import Path
 from .utils import *
 from .text_main import tokenize_function,concat_metadatas
 from functools import partial
+from collections import defaultdict
 import warnings
+from datasets.utils.logging import disable_progress_bar
 
 # %% auto 0
 __all__ = ['TextDataControllerStreaming']
@@ -28,7 +30,7 @@ class TextDataControllerStreaming():
                  content_transformations=[], # A list of text transformations
                  content_augmentations=[], # A list of text augmentations
                  seed=None, # Random seed
-                 batch_size=1000, # CPU batch size
+                 batch_size=1024, # CPU batch size
                  num_proc=1, # Number of process for multiprocessing. This will be applied on non-streamed validation set
                  cols_to_keep=None, # Columns to keep after all processings
                  verbose=True, # Whether to print processing information
@@ -58,7 +60,9 @@ class TextDataControllerStreaming():
         self.main_ddict=DatasetDict()
         self.verbose = verbose
         self.verboseprint = print if verbose else lambda *a, **k: None
-        
+        if not self.verbose:
+            disable_progress_bar() # turn off huggingface `map` progress bar
+            
         if hasattr(inp,'keys'): # is datasetdict
             if 'train' not in inp.keys(): 
                 raise ValueError('The given DatasetDict has no "train" split')
@@ -273,29 +277,90 @@ class TextDataControllerStreaming():
                         func=tok_func,
                         output_feature=None,
                         is_batched=self.is_batched)
-        dtrain = hf_map_dset(dtrain,_func,self.is_batched,self.batch_size,self.num_proc)
+        dtrain = hf_map_dset(dtrain,_func,self.is_batched,self.batch_size,self.tok_num_proc)
             
         return dtrain 
- 
-    def _do_transformation_augmentation_tokenization(self):
+
+    def _do_transformation_augmentation_tokenization(self,dtrain,tok_func,all_tfms):
+        if self.seed:
+            seed_everything(self.seed)  
+            
+        # Content transformation + augmentation
+        for tfm in all_tfms:
+            bs = self.batch_size
+            is_func_batched=False
+            num_proc=1 # high num_proc is not beneficial with each batch size (which is only around 1k)
+            is_batched = self.is_batched
+            if hasattr(tfm, "run_on_gpu") and getattr(tfm,'run_on_gpu')==True:
+                bs = min(32,self.batch_size) if not hasattr(tfm, "batch_size") else getattr(tfm,'batch_size')
+                is_func_batched=True
+                is_batched=True
+
+            _func = partial(lambda_map_batch,
+                            feature=self.main_text,
+                            func=tfm,
+                            is_batched=is_batched,
+                            is_func_batched=is_func_batched
+                            )
+            dtrain = hf_map_dset(dtrain,_func,
+                                 is_batched=is_batched,
+                                 batch_size=bs,
+                                 num_proc=num_proc
+                                )
+        # Tokenization
+        _func = partial(lambda_map_batch,
+                        feature=self.main_text,
+                        func=tok_func,
+                        output_feature=None,
+                        is_batched=self.is_batched)
+        dtrain = hf_map_dset(dtrain,_func,self.is_batched,self.batch_size,num_proc)
+            
+        return dtrain
+    
+    def _construct_generator_with_batch(self,dset,tok_func,all_tfms):        
+        def _get_generator(dset):
+            for v in dset: yield v
+            
+        final_dict = defaultdict(list)
+        for inp in dset: # dset is generator
+            # inp[text_name] will be a single item
+            for k,v in inp.items():
+                final_dict[k].append(v)
+            
+            if len(final_dict[self.main_text])==self.batch_size:
+                # a full batch (self.batch_size) is created
+                dtrain = Dataset.from_dict(final_dict)
+                dtrain = self._do_transformation_augmentation_tokenization(dtrain,tok_func,all_tfms)
+                yield from _get_generator(dtrain)
+                final_dict=defaultdict(list)            
+            
+        if len(final_dict[self.main_text]):
+            # hasn't reached batch_size (of last batch)
+            dtrain = Dataset.from_dict(final_dict)
+            dtrain = self._do_transformation_augmentation_tokenization(dtrain,tok_func,all_tfms)
+            yield from _get_generator(dtrain)
+            
+        
+            
+    def _do_transformation_augmentation_tokenization_generator(self):
         tok_func = partial(tokenize_function,tok=self.tokenizer,max_length=self.max_length)
         all_tfms = self.content_tfms + self.aug_tfms
-        all_tfms = partial(func_all,functions=all_tfms) if len(all_tfms) else None
+        one_tfm = partial(func_all,functions=all_tfms) if len(all_tfms) else lambda x: x
         if self.seed:
             seed_everything(self.seed)
-           
-        self.main_ddict['train'] = IterableDataset.from_generator(aug_and_tok_stream_generator,
+        
+        self.main_ddict['train'] = IterableDataset.from_generator(self._construct_generator_with_batch,
                                                    gen_kwargs={'dset': self.main_ddict['train'],
-                                                               'text_name':self.main_text,
                                                                'tok_func':tok_func,
-                                                               'func': all_tfms
+                                                               'all_tfms': all_tfms
                                                               }
                                                                  )
-        
+
         
     def process_and_tokenize(self,
                              tokenizer, # Tokenizer (preferably from HuggingFace)
                              max_length=None, # pad to model's allowed max length (default is max_sequence_length)
+                             tok_num_proc=None, # Number of processes for tokenization
                             ):
         if self._processed_call:
             warnings.warn('Your dataset has already been processed. Returning the previous processed DatasetDict...')
@@ -303,7 +368,8 @@ class TextDataControllerStreaming():
         
         self.tokenizer = tokenizer
         self.max_length = max_length
-                             
+        self.tok_num_proc = tok_num_proc if tok_num_proc else self.num_proc
+        
         # Filtering
         print_msg('Data Filtering',20,verbose=self.verbose)
         for k in self.main_ddict.keys():   
@@ -335,7 +401,7 @@ class TextDataControllerStreaming():
  
         # Content transformation + augmentation + tokenization for train
         print_msg('Creating a generator for content transformation, augmentation and tokenization on train set',verbose=self.verbose)
-        self._do_transformation_augmentation_tokenization()
+        self._do_transformation_augmentation_tokenization_generator()
         self.verboseprint('Done')
         
         self._processed_call=True
@@ -379,10 +445,14 @@ class TextDataControllerStreaming():
         test_dict = Dataset.from_dict(_dic)
         
         # set num_proc to 1 for small data processing
-        _tmp = self.num_proc
+        _tmp1 = self.num_proc
+        _tmp2 = self.tok_num_proc
         self.num_proc=1
+        self_tok_num_proc=1
         results = self.prepare_test_dataset(test_dict,do_filtering=False)
-        self.num_proc = _tmp
+        self.num_proc = _tmp1
+        self.tok_num_proc=_tmp2
+        
         return results
     
     def prepare_test_dataset(self,

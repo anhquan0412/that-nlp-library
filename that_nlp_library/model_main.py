@@ -465,7 +465,7 @@ class ModelController():
                                      topk=topk,
                                      are_heads_separated=are_heads_separated
                                     )
-        return results.to_pandas()
+        return results.to_dict()
     
     def predict_raw_dset(self,
                          dset, # A raw HuggingFace dataset

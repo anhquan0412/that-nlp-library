@@ -8,6 +8,7 @@ from pathlib import Path
 from .utils import *
 from functools import partial
 import warnings
+from datasets.utils.logging import disable_progress_bar
 
 # %% auto 0
 __all__ = ['tokenizer_explain', 'two_steps_tokenization_explain', 'tokenize_function', 'concat_metadatas', 'TextDataController']
@@ -138,8 +139,8 @@ class TextDataController():
                  upsampling_list={}, # A list of tuple. Each tuple: (feature,upsampling_function_based_on_the_feature)
                  content_augmentations=[], # A list of text augmentations
                  seed=None, # Random seed
-                 batch_size=1000, # CPU batch size
-                 num_proc=4, # Number of process for multiprocessing
+                 batch_size=1024, # CPU batch size
+                 num_proc=4, # Number of processes for multiprocessing
                  cols_to_keep=None, # Columns to keep after all processings
                  verbose=True, # Whether to prdint processing information
                 ):
@@ -173,6 +174,8 @@ class TextDataController():
         self.ddict_rest = DatasetDict()
         self.verbose = verbose
         self.verboseprint = print if verbose else lambda *a, **k: None
+        if not self.verbose:
+            disable_progress_bar() # turn off huggingface `map` progress bar
         
         if hasattr(inp,'keys'): # is datasetdict
             if 'train' in inp.keys(): 
@@ -530,7 +533,7 @@ class TextDataController():
                 num_proc = self.num_proc
                 is_batched = self.is_batched
                 if hasattr(tfm, "run_on_gpu") and getattr(tfm,'run_on_gpu')==True:
-                    bs = 32 if not hasattr(tfm, "batch_size") else getattr(tfm,'batch_size')
+                    bs = min(32,self.batch_size) if not hasattr(tfm, "batch_size") else getattr(tfm,'batch_size')
                     is_func_batched=True
                     is_batched=True
                     num_proc=1
@@ -611,10 +614,12 @@ class TextDataController():
                         tokenizer, # Tokenizer (preferably from HuggingFace)
                         max_length=None, # pad to model's allowed max length (default is max_sequence_length). Use -1 for no padding at all
                         trn_size=None, # The number of training data to be tokenized
+                        tok_num_proc=None, # Number of processes for tokenization
                        ):
         print_msg('Tokenization',20,verbose=self.verbose)
         self.tokenizer = tokenizer
         self.max_length = max_length
+        self.tok_num_proc = tok_num_proc if tok_num_proc else self.num_proc
         tok_func = partial(tokenize_function,tok=tokenizer,max_length=max_length)
         _func = partial(lambda_map_batch,
                         feature=self.main_text,
@@ -631,7 +636,7 @@ class TextDataController():
             self.main_ddict['train'] = self.main_ddict['train'].shard(num_shard,0)
         
         for k in self.main_ddict.keys():
-            self.main_ddict[k] = hf_map_dset(self.main_ddict[k],_func,self.is_batched,self.batch_size,self.num_proc)
+            self.main_ddict[k] = hf_map_dset(self.main_ddict[k],_func,self.is_batched,self.batch_size,self.tok_num_proc)
 
         self.verboseprint('Done')
         return self.main_ddict
@@ -640,13 +645,14 @@ class TextDataController():
                              tokenizer, # Tokenizer (preferably from HuggingFace)
                              max_length=None, # pad to model's allowed max length (default is max_sequence_length)
                              trn_size=None, # The number of training data to be tokenized
+                             tok_num_proc=None, # Number of processes for tokenization
                              shuffle_trn=True, # To shuffle the train set before tokenization
                             ):
         """
         This will perform `do_all_processing` then `do_tokenization`
         """
         _ = self.do_all_preprocessing(shuffle_trn)
-        _ = self.do_tokenization(tokenizer,max_length,trn_size)
+        _ = self.do_tokenization(tokenizer,max_length,trn_size,tok_num_proc)
         
     
     def set_data_collator(self,data_collator):
@@ -686,10 +692,14 @@ class TextDataController():
         test_dict = Dataset.from_dict(_dic)
         
         # set num_proc to 1 for small data processing
-        _tmp = self.num_proc
+        _tmp1 = self.num_proc
+        _tmp2 = self.tok_num_proc
         self.num_proc=1
+        self.tok_num_proc=1
         results = self.prepare_test_dataset(test_dict,do_filtering=False)
-        self.num_proc = _tmp
+        self.num_proc = _tmp1
+        self.tok_num_proc=_tmp2
+
         return results
     
     def prepare_test_dataset(self,
@@ -726,7 +736,7 @@ class TextDataController():
                         func=partial(tokenize_function,tok=self.tokenizer,max_length=self.max_length),
                         output_feature=None,
                         is_batched=self.is_batched)
-        test_dset = hf_map_dset(test_dset,_func,self.is_batched,self.batch_size,self.num_proc)
+        test_dset = hf_map_dset(test_dset,_func,self.is_batched,self.batch_size,self.tok_num_proc)
         
         self.verboseprint('Done')
         return test_dset

@@ -25,7 +25,7 @@ class TextDataLMController(TextDataController):
                  val_ratio:int|float|None=0.2, # Ratio of data for validation set
                  stratify_cols=[], # Column(s) needed to do stratified shuffle split
                  seed=None, # Random seed
-                 batch_size=1000, # CPU batch size
+                 batch_size=1024, # CPU batch size
                  num_proc=4, # Number of process for multiprocessing
                  cols_to_keep=None, # Columns to keep after all processings
                  verbose=True, # Whether to prdint processing information
@@ -94,9 +94,7 @@ class TextDataLMController(TextDataController):
 
         return result_all  
     
-    
-   
-        
+
     def do_all_preprocessing(self,
                              shuffle_trn=True # To shuffle the train set before tokenization
                             ):
@@ -141,6 +139,7 @@ class TextDataLMController(TextDataController):
                         line_by_line=True, # To whether tokenize each sentence separately, or concatenate them
                         stride=None, # option to do striding when line_by_line is False
                         trn_size=None, # The number of training data to be tokenized
+                        tok_num_proc=None, # Number of processes for tokenization
                        ):
         # References
 #         https://github.com/huggingface/transformers/blob/main/examples/pytorch/language-modeling/run_mlm.py
@@ -151,6 +150,7 @@ class TextDataLMController(TextDataController):
         self.max_length = max_length
         self.line_by_line = line_by_line
         self.stride = stride
+        self.tok_num_proc = tok_num_proc if tok_num_proc else self.num_proc
         
         tok_func = partial(tokenize_function,tok=self.tokenizer,
                            max_length=max_length if line_by_line else -1,
@@ -172,7 +172,7 @@ class TextDataLMController(TextDataController):
             self.main_ddict['train'] = self.main_ddict['train'].shard(num_shard,0)
         
         for k in self.main_ddict.keys():
-            self.main_ddict[k] = hf_map_dset(self.main_ddict[k],_func,self.is_batched,self.batch_size,self.num_proc)
+            self.main_ddict[k] = hf_map_dset(self.main_ddict[k],_func,self.is_batched,self.batch_size,self.tok_num_proc)
             self.main_ddict[k] = self.main_ddict[k].remove_columns(self.cols_to_keep)
         
         if not line_by_line: # token concatenation
@@ -180,8 +180,8 @@ class TextDataLMController(TextDataController):
                 self.main_ddict[k] = hf_map_dset(self.main_ddict[k],
                                                  self._group_texts_with_stride,
                                                  is_batched=True,
-                                                 batch_size=self.batch_size if self.batch_size>1 else 1000,
-                                                 num_proc=self.num_proc)
+                                                 batch_size=self.batch_size if self.batch_size>1 else 1024,
+                                                 num_proc=self.tok_num_proc)
                 
         
         self.verboseprint('Done')
@@ -193,13 +193,14 @@ class TextDataLMController(TextDataController):
                              line_by_line=True, # To whether tokenize each sentence separately, or concatenate them and then tokenize
                              stride=None, # option to do striding when line_by_line is False
                              trn_size=None, # The number of training data to be tokenized
+                             tok_num_proc=None, # Number of processes for tokenization
                              shuffle_trn=True, # To shuffle the train set before tokenization
                             ):
         """
         This will perform `do_all_processing` then `do_tokenization`
         """
         _ = self.do_all_preprocessing(shuffle_trn)
-        _ = self.do_tokenization(tokenizer,max_length,line_by_line,stride,trn_size)
+        _ = self.do_tokenization(tokenizer,max_length,line_by_line,stride,trn_size,tok_num_proc)
         
     
     def set_data_collator(self,
