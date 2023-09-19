@@ -286,12 +286,12 @@ class TextDataControllerStreaming():
     def _do_transformation_augmentation_tokenization(self,dtrain,tok_func,all_tfms):
         if self.seed:
             seed_everything(self.seed)  
-            
+        
+        num_proc=1 # high num_proc is not beneficial with each batch size (which is only around 1k)
         # Content transformation + augmentation
         for tfm in all_tfms:
             bs = self.batch_size
             is_func_batched=False
-            num_proc=1 # high num_proc is not beneficial with each batch size (which is only around 1k)
             is_batched = self.is_batched
             if hasattr(tfm, "run_on_gpu") and getattr(tfm,'run_on_gpu')==True:
                 bs = min(32,self.batch_size) if not hasattr(tfm, "batch_size") else getattr(tfm,'batch_size')
@@ -356,12 +356,37 @@ class TextDataControllerStreaming():
                                                                'all_tfms': all_tfms
                                                               }
                                                                  )
+    
+    def _do_transformation_augmentation_tokenization_generator_linebyline(self):
+        def _get_generator(dset,tok_func,all_tfms):
+            for inp in dset:
+                # inp[text_name] will be a single item
+                inp[self.main_text]=all_tfms(inp[self.main_text])
+                result_dict = tok_func(inp[self.main_text])
+                for k,v in result_dict.items():
+                    inp[k]=v
+                yield inp
+        
+        # no padding for tokenization
+        tok_func = partial(tokenize_function,tok=self.tokenizer,max_length=-1) 
+        all_tfms = self.content_tfms + self.aug_tfms
+        all_tfms = partial(func_all,functions=all_tfms) if len(all_tfms) else lambda x: x
+        if self.seed:
+            seed_everything(self.seed)
+           
+        self.main_ddict['train'] = IterableDataset.from_generator(_get_generator,
+                                                   gen_kwargs={'dset': self.main_ddict['train'],
+                                                               'tok_func':tok_func,
+                                                               'all_tfms': all_tfms
+                                                              }
+                                                                 )
 
         
     def process_and_tokenize(self,
                              tokenizer, # Tokenizer (preferably from HuggingFace)
                              max_length=None, # pad to model's allowed max length (default is max_sequence_length)
                              tok_num_proc=None, # Number of processes for tokenization
+                             line_by_line=False, # To whether process + tokenize each sentence separately. Faster, but no padding applied
                             ):
         if self._processed_call:
             warnings.warn('Your dataset has already been processed. Returning the previous processed DatasetDict...')
@@ -402,7 +427,10 @@ class TextDataControllerStreaming():
  
         # Content transformation + augmentation + tokenization for train
         print_msg('Creating a generator for content transformation, augmentation and tokenization on train set',verbose=self.verbose)
-        self._do_transformation_augmentation_tokenization_generator()
+        if line_by_line:
+            self._do_transformation_augmentation_tokenization_generator_linebyline()
+        else:
+            self._do_transformation_augmentation_tokenization_generator()
         self.verboseprint('Done')
         
         self._processed_call=True

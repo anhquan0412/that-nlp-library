@@ -144,37 +144,6 @@ class TextDataLMControllerStreaming(TextDataControllerStreaming):
             dtrain = self._do_transformation_tokenization(dtrain)
             yield from _get_generator(dtrain)
 
-#     def _construct_generator_with_batch(self,dset,text_name,tok_func,func):        
-#         def _get_generator(d):
-#             num_iterations = len(next(iter(d.values())))
-#             for i in range(num_iterations):
-#                 yield {key: value[i] for key, value in d.items()}
-            
-#         batch_size = self.batch_size if self.batch_size>1 else 1024
-#         str_list=[] 
-#         for inp in dset: # dset is generator
-#             # inp[text_name] will be a single item
-#             str_list.append(func(inp[text_name]))
-#             if len(str_list)==batch_size:
-#                 # tokenize
-#                 result_dict = tok_func(str_list)
-#                 if not self.line_by_line:
-#                     # token concatenation
-#                     result_dict = self._group_texts_with_stride(result_dict)
-#                 str_list=[]
-#                 yield from _get_generator(result_dict)
-                
-            
-#         if len(str_list):
-#             # str_list length hasn't reached batch_size (last batch)
-#             # tokenize
-#             result_dict = tok_func(str_list)
-#             if not self.line_by_line:
-#                 # token concatenation
-#                 result_dict = self._group_texts_with_stride(result_dict)
-#             str_list=[]
-#             yield from _get_generator(result_dict)
-
     def _do_transformation_tokenization_generator(self):
         _tmp1 = self.num_proc
         _tmp2 = self.tok_num_proc
@@ -243,14 +212,13 @@ class TextDataLMControllerStreaming(TextDataControllerStreaming):
         if not hasattr(self,'max_length'):
             raise ValueError("Please call `process_and_tokenize' or `do_tokenization` to tokenize your dataset")
             
-        pad_to_multiple_of_8 = (self.max_length<0) # get data collator to pad
+        pad_to_multiple_of_8 = (self.max_length<0) # get data collator to pad when tokenizer does not apply padding
         self.data_collator = DataCollatorForLanguageModeling(tokenizer=self.tokenizer,
                                                              mlm=is_mlm,
                                                              mlm_probability=mlm_prob,
                                                              pad_to_multiple_of=8 if pad_to_multiple_of_8 else None
                                                             )
                                                
-        
     def prepare_test_dataset(self,
                              test_dset, # The HuggingFace Dataset as Test set
                              do_filtering=False, # whether to perform data filtering on this test set
