@@ -10,7 +10,7 @@ from .text_main import tokenize_function,concat_metadatas
 from functools import partial
 from collections import defaultdict
 import warnings
-from datasets.utils.logging import disable_progress_bar
+from datasets.utils.logging import disable_progress_bar, enable_progress_bar
 
 # %% auto 0
 __all__ = ['TextDataControllerStreaming']
@@ -62,6 +62,8 @@ class TextDataControllerStreaming():
         self.verboseprint = print if verbose else lambda *a, **k: None
         if not self.verbose:
             disable_progress_bar() # turn off huggingface `map` progress bar
+        else:
+            enable_progress_bar()
             
         if hasattr(inp,'keys'): # is datasetdict
             if 'train' not in inp.keys(): 
@@ -345,7 +347,6 @@ class TextDataControllerStreaming():
     def _do_transformation_augmentation_tokenization_generator(self):
         tok_func = partial(tokenize_function,tok=self.tokenizer,max_length=self.max_length)
         all_tfms = self.content_tfms + self.aug_tfms
-        one_tfm = partial(func_all,functions=all_tfms) if len(all_tfms) else lambda x: x
         if self.seed:
             seed_everything(self.seed)
         

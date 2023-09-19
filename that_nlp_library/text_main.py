@@ -8,7 +8,7 @@ from pathlib import Path
 from .utils import *
 from functools import partial
 import warnings
-from datasets.utils.logging import disable_progress_bar
+from datasets.utils.logging import disable_progress_bar,enable_progress_bar
 
 # %% auto 0
 __all__ = ['tokenizer_explain', 'two_steps_tokenization_explain', 'tokenize_function', 'concat_metadatas', 'TextDataController']
@@ -176,7 +176,8 @@ class TextDataController():
         self.verboseprint = print if verbose else lambda *a, **k: None
         if not self.verbose:
             disable_progress_bar() # turn off huggingface `map` progress bar
-        
+        else:
+            enable_progress_bar()
         if hasattr(inp,'keys'): # is datasetdict
             if 'train' in inp.keys(): 
                 self.ddict_rest = inp

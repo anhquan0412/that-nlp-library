@@ -8,6 +8,7 @@ from .utils import *
 from .text_main import tokenize_function
 from .text_main_streaming import *
 from functools import partial
+from collections import defaultdict
 import warnings
 from transformers import DataCollatorForLanguageModeling
 
@@ -99,6 +100,8 @@ class TextDataLMControllerStreaming(TextDataControllerStreaming):
                            max_length=self.max_length if self.line_by_line else -1,
                            return_special_tokens_mask=True
                           )
+        
+        # Tokenization
         _func = partial(lambda_map_batch,
                         feature=self.main_text,
                         func=tok_func,
@@ -108,71 +111,86 @@ class TextDataLMControllerStreaming(TextDataControllerStreaming):
         dtrain = hf_map_dset(dtrain,_func,self.is_batched,self.batch_size,self.tok_num_proc)
         dtrain = dtrain.remove_columns(self.cols_to_keep)   
         
-        if not self.line_by_line: # string concatenation
+        # Token concatenation
+        if not self.line_by_line: 
             dtrain = hf_map_dset(dtrain,
                                  self._group_texts_with_stride,
                                  is_batched=True,
-                                 batch_size=self.batch_size if self.batch_size>1 else 1024,
+                                 batch_size=self.batch_size,
                                  num_proc=self.tok_num_proc)
         return dtrain
     
-
-    def _construct_generator_with_batch(self,dset,text_name,tok_func,func):        
-        def _get_generator(d):
-            num_iterations = len(next(iter(d.values())))
-            for i in range(num_iterations):
-                yield {key: value[i] for key, value in d.items()}
+    
+    def _construct_generator_with_batch(self,dset):        
+        def _get_generator(dset):
+            for v in dset: yield v
             
-        batch_size = self.batch_size if self.batch_size>1 else 1024
-        str_list=[] 
+        final_dict = defaultdict(list)
         for inp in dset: # dset is generator
             # inp[text_name] will be a single item
-            str_list.append(func(inp[text_name]))
-            if len(str_list)==batch_size:
-                # tokenize
-                result_dict = tok_func(str_list)
-                if not self.line_by_line:
-                    # token concatenation
-                    result_dict = self._group_texts_with_stride(result_dict)
-                str_list=[]
-                yield from _get_generator(result_dict)
+            for k,v in inp.items():
+                final_dict[k].append(v)
+            
+            if len(final_dict[self.main_text])==self.batch_size:
+                # a full batch (self.batch_size) is created
+                dtrain = Dataset.from_dict(final_dict)
+                dtrain = self._do_transformation_tokenization(dtrain)
+                yield from _get_generator(dtrain)
+                final_dict=defaultdict(list)            
+            
+        if len(final_dict[self.main_text]):
+            # hasn't reached batch_size (of last batch)
+            dtrain = Dataset.from_dict(final_dict)
+            dtrain = self._do_transformation_tokenization(dtrain)
+            yield from _get_generator(dtrain)
+
+#     def _construct_generator_with_batch(self,dset,text_name,tok_func,func):        
+#         def _get_generator(d):
+#             num_iterations = len(next(iter(d.values())))
+#             for i in range(num_iterations):
+#                 yield {key: value[i] for key, value in d.items()}
+            
+#         batch_size = self.batch_size if self.batch_size>1 else 1024
+#         str_list=[] 
+#         for inp in dset: # dset is generator
+#             # inp[text_name] will be a single item
+#             str_list.append(func(inp[text_name]))
+#             if len(str_list)==batch_size:
+#                 # tokenize
+#                 result_dict = tok_func(str_list)
+#                 if not self.line_by_line:
+#                     # token concatenation
+#                     result_dict = self._group_texts_with_stride(result_dict)
+#                 str_list=[]
+#                 yield from _get_generator(result_dict)
                 
             
-        if len(str_list):
-            # str_list length hasn't reached batch_size (last batch)
-            # tokenize
-            result_dict = tok_func(str_list)
-            if not self.line_by_line:
-                # token concatenation
-                result_dict = self._group_texts_with_stride(result_dict)
-            str_list=[]
-            yield from _get_generator(result_dict)
-            
+#         if len(str_list):
+#             # str_list length hasn't reached batch_size (last batch)
+#             # tokenize
+#             result_dict = tok_func(str_list)
+#             if not self.line_by_line:
+#                 # token concatenation
+#                 result_dict = self._group_texts_with_stride(result_dict)
+#             str_list=[]
+#             yield from _get_generator(result_dict)
+
     def _do_transformation_tokenization_generator(self):
-        tok_func = partial(tokenize_function,
-                           tok=self.tokenizer,
-                           max_length=self.max_length if self.line_by_line else -1,
-                           return_special_tokens_mask=True
-                          )
-    
-        all_tfms = self.content_tfms
-        all_tfms = partial(func_all,functions=all_tfms) if len(all_tfms) else lambda x: x
-        if self.seed:
-            seed_everything(self.seed)
-           
+        _tmp1 = self.num_proc
+        _tmp2 = self.tok_num_proc
+        self.num_proc=1
+        self_tok_num_proc=1
         self.main_ddict['train'] = IterableDataset.from_generator(self._construct_generator_with_batch,
-                                                   gen_kwargs={'dset': self.main_ddict['train'],
-                                                               'text_name':self.main_text,
-                                                               'tok_func':tok_func,
-                                                               'func': all_tfms
-                                                              }
+                                                                  gen_kwargs={'dset': self.main_ddict['train']}
                                                                  )
+        self.num_proc = _tmp1
+        self.tok_num_proc = _tmp2
 
     
     def process_and_tokenize(self,
                              tokenizer, # Tokenizer (preferably from HuggingFace)
                              max_length=None, # pad to model's allowed max length (default is max_sequence_length). Use -1 for no padding at all
-                             num_proc=None, # Number of processes for tokenization
+                             tok_num_proc=None, # Number of processes for tokenization
                              line_by_line=True, # To whether tokenize each sentence separately, or concatenate them
                              stride=None, # option to do striding when line_by_line is False
                             ):
@@ -183,8 +201,10 @@ class TextDataLMControllerStreaming(TextDataControllerStreaming):
         self.tokenizer = tokenizer
         self.max_length = max_length
         self.line_by_line = line_by_line
+        if not self.line_by_line and self.batch_size==1:
+            raise ValueError('Cannot perform token concatenation with batch size of 1')
         self.stride = stride        
-        self.tok_num_proc = num_proc if num_proc else self.num_proc
+        self.tok_num_proc = tok_num_proc if tok_num_proc else self.num_proc
         
         # Filtering
         print_msg('Data Filtering',20,verbose=self.verbose)
