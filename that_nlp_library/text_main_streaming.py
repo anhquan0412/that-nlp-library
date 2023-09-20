@@ -464,7 +464,7 @@ class TextDataControllerStreaming():
     def prepare_test_dataset_from_raws(self,
                                        content, # Either a single sentence, list of sentence or a dictionary with keys are metadata columns and values are list
                                       ):
-        if len(self.metadatas)!=0 and not isinstance(content,dict):
+        if len(self.metadatas) and not isinstance(content,dict):
             raise ValueError(f'There is/are metadatas in the preprocessing step. Please include a dictionary including these keys for metadatas: {self.metadatas}, and texture content: {self.main_text}')
             
         _dic = {self.main_text:[content]} if isinstance(content,str) else content

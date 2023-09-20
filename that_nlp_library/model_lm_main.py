@@ -12,6 +12,9 @@ from functools import partial
 import evaluate
 import numpy as np
 from .utils import *
+from .text_main_lm import TextDataLMController
+from .text_main_lm_streaming import TextDataLMControllerStreaming
+from transformers import pipeline
 
 # %% auto 0
 __all__ = ['language_model_init', 'compute_lm_accuracy', 'preprocess_lm_logits_for_metrics', 'finetune_lm', 'ModelLMController']
@@ -214,3 +217,36 @@ class ModelLMController():
         
         self.trainer = trainer
         
+    def predict_raw_text(self,
+                         content:dict|list|str, # Either a single sentence, list of sentence or a dictionary where keys are metadata, values are list
+                         print_result=True, # To whether print the result in readable format, or get the result returned
+                         **kwargs, # keyword arguments for HuggingFace's text-generation (for clm) or fill-mask (for mlm)
+                        ):
+        # Example of kwargs for text-generation:
+        # https://huggingface.co/docs/transformers/v4.33.2/en/main_classes/text_generation#transformers.GenerationMixin.generate
+        
+        if not isinstance(self.data_store,(TextDataLMController,TextDataLMControllerStreaming)) or not self.data_store._processed_call:
+            raise ValueError('This functionality needs a TextDataController object which has processed some training data')
+        test_dset = self.data_store.prepare_test_dataset_from_raws(content)
+        result = self.predict_ddict(test_dset,**kwargs)
+        if print_result:
+            is_mlm = check_and_get_attribute(self.data_store,'is_mlm')
+            if is_mlm:
+                for pred in result:
+                    print(f"Score: {pred['score']:.3f} >>> {pred['sequence']}")
+            else:
+                for pred in result:
+                    print(f">>> {pred['generated_text']}")
+        else:
+            return result
+    
+    def predict_ddict(self,
+                      dset:Dataset, # A processed and tokenized Dataset
+                      **kwargs, # keyword arguments for HuggingFace's text-generation (for clm) or fill-mask (for mlm)
+                     ):
+        is_mlm = check_and_get_attribute(self.data_store,'is_mlm')
+        tokenizer=check_and_get_attribute(self.data_store,'tokenizer')
+        main_text=check_and_get_attribute(self.data_store,'main_text')
+        _task = 'fill-mask' if is_mlm else 'text-generation'
+        pipeline_obj = pipeline(_task,model=self.model,tokenizer = tokenizer)
+        return [pipeline_obj(s,**kwargs) for s in dset[main_text]]

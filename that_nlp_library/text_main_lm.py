@@ -218,9 +218,48 @@ class TextDataLMController(TextDataController):
                                                              pad_to_multiple_of=8 if pad_to_multiple_of_8 else None
                                                             )
                                                
+    
+    def prepare_test_dataset_from_raws(self,
+                                       content, # Either a single sentence, list of sentence or a dictionary with keys are metadata columns and values are list
+                                      ):
+        if len(self.metadatas) and not isinstance(content,dict):
+            raise ValueError(f'There is/are metadatas in the preprocessing step. Please include a dictionary including these keys for metadatas: {self.metadatas}, and texture content: {self.main_text}')
+            
+        _dic = {self.main_text:[content]} if isinstance(content,str) else content
+        for k in _dic.keys():
+            _dic[k] = val2iterable(_dic[k])
+        
+        test_dict = Dataset.from_dict(_dic)
+        
+        # set num_proc to 1 for small data processing
+        _tmp1 = self.num_proc
+        _tmp2 = self.tok_num_proc
+        self.num_proc=1
+        self.tok_num_proc=1
+        results = self.prepare_test_dataset(test_dict)
+        self.num_proc = _tmp1
+        self.tok_num_proc=_tmp2
+        return results
         
     def prepare_test_dataset(self,
                              test_dset, # The HuggingFace Dataset as Test set
-                             do_filtering=False, # whether to perform data filtering on this test set
                             ):
-        raise NotImplementedError("There's no test set preparation for Language Model")
+        test_cols = set(get_dset_col_names(test_dset))
+        missing_cols = set(self.cols_to_keep) - test_cols
+        if len(missing_cols):
+            raise ValueError(f'Test set does not have these columns required for preprocessings: {missing_cols}')
+            
+        print_msg('Start Test Set Transformation',20,verbose=self.verbose)
+        
+        # Process metadatas
+        test_dset = self._process_metadatas(test_dset)
+        
+        # Content transformation
+        test_dset = self._do_transformation(test_dset)
+        
+        # Drop every columns except for main_text
+        cols_to_remove = {c for c in test_cols if c!=self.main_text}
+        test_dset=test_dset.remove_columns(list(cols_to_remove))
+        
+        self.verboseprint('Done')
+        return test_dset
