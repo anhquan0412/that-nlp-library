@@ -209,7 +209,8 @@ class TextDataLMController(TextDataController):
                          ):
         if not hasattr(self,'max_length'):
             raise ValueError("Please call `process_and_tokenize' or `do_tokenization` to tokenize your dataset")
-            
+        
+        self.is_mlm = is_mlm
         pad_to_multiple_of_8 = (self.max_length<0) # get data collator to pad
         self.data_collator = DataCollatorForLanguageModeling(tokenizer=self.tokenizer,
                                                              mlm=is_mlm,

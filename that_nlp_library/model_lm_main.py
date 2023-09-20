@@ -3,21 +3,20 @@
 # %% ../nbs/03_model_lm_main.ipynb 3
 from __future__ import annotations
 import os, sys
-from transformers import Trainer, TrainingArguments, AutoConfig, AutoModelForCausalLM, AutoModelForMaskedLM
+from transformers import Trainer, TrainingArguments, AutoConfig
 from datasets import DatasetDict,Dataset
 import torch
 import gc
 import math
 from functools import partial
+import evaluate
 import numpy as np
 from .utils import *
-from .text_main_lm import TextDataLMController
-from .text_main_lm_streaming import TextDataLMControllerStreaming
 
 # %% auto 0
 __all__ = ['language_model_init', 'compute_lm_accuracy', 'preprocess_lm_logits_for_metrics', 'finetune_lm', 'ModelLMController']
 
-# %% ../nbs/03_model_lm_main.ipynb 4
+# %% ../nbs/03_model_lm_main.ipynb 5
 def language_model_init(model_class, # Model's class object, e.g. AutoModelForMaskedLM
                         cpoint_path=None, # Either model string name on HuggingFace, or the path to model checkpoint. Put `None` to train from scratch
                         config=None, # Model config. If not provided, AutoConfig is used to load config from cpoint_path                        
@@ -45,7 +44,7 @@ def language_model_init(model_class, # Model's class object, e.g. AutoModelForMa
     
     return model
 
-# %% ../nbs/03_model_lm_main.ipynb 10
+# %% ../nbs/03_model_lm_main.ipynb 11
 def compute_lm_accuracy(eval_preds, # An EvalPrediction object from HuggingFace 
                         is_mlm, # if this is masked language model, set to `True`. If this is casual language model, set to `False`
                      ):
@@ -70,7 +69,7 @@ def compute_lm_accuracy(eval_preds, # An EvalPrediction object from HuggingFace
         preds = preds[:, :-1].reshape(-1)
         return metric.compute(predictions=preds, references=labels)
 
-# %% ../nbs/03_model_lm_main.ipynb 11
+# %% ../nbs/03_model_lm_main.ipynb 12
 def preprocess_lm_logits_for_metrics(logits, labels):
     if isinstance(logits, tuple):
         # Depending on the model and config, logits may contain extra tensors,
@@ -78,7 +77,7 @@ def preprocess_lm_logits_for_metrics(logits, labels):
         logits = logits[0]
     return logits.argmax(dim=-1) 
 
-# %% ../nbs/03_model_lm_main.ipynb 12
+# %% ../nbs/03_model_lm_main.ipynb 13
 def finetune_lm(lr, # Learning rate
                 bs, # Batch size
                 wd, # Weight decay
@@ -105,9 +104,7 @@ def finetune_lm(lr, # Learning rate
     
     if seed:
         seed_everything(seed)
-    if compute_metrics is None:
-        compute_metrics=compute_lm_accuracy
-    
+        
     training_args = TrainingArguments(o_dir, 
                                      learning_rate=lr, 
                                      warmup_ratio=warmup_ratio,
@@ -144,7 +141,7 @@ def finetune_lm(lr, # Learning rate
     trainer.train()
     return trainer
 
-# %% ../nbs/03_model_lm_main.ipynb 14
+# %% ../nbs/03_model_lm_main.ipynb 15
 class ModelLMController():
     def __init__(self,
                  model, # NLP language model
@@ -170,12 +167,17 @@ class ModelLMController():
             grad_accum_steps=2, # Gradient will be accumulated over gradient_accumulation_steps steps.
             tokenizer=None, # Tokenizer (to override one in ```data_store```)
             data_collator=None, # Data Collator (to override one in ```data_store```)
+            is_mlm=None, # Whether this is masked LM or casual LM
             trainer_class=None, # You can include the class name of your custom trainer here
            ):
         
         if tokenizer is None: tokenizer=check_and_get_attribute(self.data_store,'tokenizer')
-        if data_collator is None: data_collator=getattr(self.data_store,'data_collator',None)
+        if data_collator is None: data_collator=check_and_get_attribute(self.data_store,'data_collator')
         if ddict is None: ddict = check_and_get_attribute(self.data_store,'main_ddict')
+        if is_mlm is None: is_mlm = check_and_get_attribute(self.data_store,'is_mlm')
+            
+        if compute_metrics is None:
+            compute_metrics=partial(compute_lm_accuracy,is_mlm=is_mlm)
         
         if len(set(ddict.keys()) & set(['train','training']))==0:
             raise ValueError("Missing the following key for DatasetDict: train/training")
