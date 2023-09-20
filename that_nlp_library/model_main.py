@@ -43,11 +43,12 @@ def model_init_classification(
     else:
         config.output_hidden_states=output_hidden_states
     
-    
-    seed_everything(seed)
+    if seed:
+        seed_everything(seed)
+        
     if body_model is not None:
         model = model_class(config=config,**model_kwargs)
-        layers = list(model.children())
+#         layers = list(model.children())
         print('Loading body weights. This assumes the body is the very first block of your custom architecture')
         body_name, _ = next(iter(model.named_children()))
         setattr(model, body_name, body_model)
@@ -55,6 +56,10 @@ def model_init_classification(
         
     else:
         model = model_class.from_pretrained(cpoint_path,config=config,**model_kwargs).to(device)
+    
+    print(f'Total parameters: {sum(param.numel() for param in model.parameters())}')
+    print(f'Total trainable parameters: {sum(param.numel() for param in model.parameters() if p.requires_grad)}')
+    
     return model
 
 # %% ../nbs/03_model_main.ipynb 7
@@ -209,8 +214,10 @@ def finetune(lr, # Learning rate
     "The main model training/finetuning function"
     torch.cuda.empty_cache()
     gc.collect()
-
-    seed_everything(seed)
+    
+    if seed:
+        seed_everything(seed)
+        
     training_args = TrainingArguments(o_dir, 
                                 learning_rate=lr, 
                                 warmup_ratio=warmup_ratio,
@@ -240,9 +247,8 @@ def finetune(lr, # Learning rate
         eval_dataset=ddict['validation'] if not no_valid else None,
         data_collator=data_collator,
         tokenizer=tokenizer,
-        compute_metrics=compute_metrics,
+        compute_metrics=compute_metrics if not no_valid else None
     )
-    
     
     trainer.train()
     return trainer

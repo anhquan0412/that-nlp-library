@@ -19,7 +19,7 @@ import warnings
 __all__ = ['HiddenPrints', 'val2iterable', 'create_dir', 'check_and_get_attribute', 'callable_name', 'print_msg', 'seed_notorch',
            'seed_everything', 'save_to_pickle', 'load_pickle', 'check_input_validation', 'check_text_leaking',
            'none2emptystr', 'lambda_batch', 'lambda_map_batch', 'augmentation_stream_generator', 'func_all',
-           'get_dset_col_names', 'hf_map_dset', 'hf_filter_dset', 'sigmoid']
+           'get_dset_col_names', 'hf_map_dset', 'hf_filter_dset', 'resize_model_embeddings', 'sigmoid']
 
 # %% ../nbs/07_utils.ipynb 4
 class HiddenPrints:
@@ -211,6 +211,13 @@ def hf_filter_dset(dset,func,
                       )
 
 # %% ../nbs/07_utils.ipynb 18
+def resize_model_embeddings(model,tokenizer):
+    embedding_size = model.get_input_embeddings().weight.shape[0]
+    if len(tokenizer) > embedding_size:
+        model.resize_token_embeddings(len(tokenizer))
+    return model
+
+# %% ../nbs/07_utils.ipynb 19
 def sigmoid(x):
     """
     A numerically stable version of the logistic sigmoid function.
