@@ -525,8 +525,6 @@ class TextDataController():
     def _do_augmentation(self):
         if len(self.aug_tfms):
             print_msg('Text Augmentation',20,verbose=self.verbose)
-            if self.seed:
-                seed_everything(self.seed)   
             for tfm in self.aug_tfms:
                 print_msg(callable_name(tfm),verbose=self.verbose)
                 bs = self.batch_size
@@ -652,6 +650,8 @@ class TextDataController():
         """
         This will perform `do_all_processing` then `do_tokenization`
         """
+        if self.seed:
+            seed_everything(self.seed) 
         _ = self.do_all_preprocessing(shuffle_trn)
         _ = self.do_tokenization(tokenizer,max_length,trn_size,tok_num_proc)
         

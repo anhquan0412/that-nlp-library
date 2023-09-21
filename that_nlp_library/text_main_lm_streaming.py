@@ -154,6 +154,29 @@ class TextDataLMControllerStreaming(TextDataControllerStreaming):
                                                                  )
         self.num_proc = _tmp1
         self.tok_num_proc = _tmp2
+    
+    def _do_transformation_tokenization_generator_fast(self):
+        # only use for line-by-line tokenization with no padding
+        def _get_generator(dset,tok_func,all_tfms):
+            for inp in dset:
+                # inp[text_name] will be a single item
+                yield tok_func(all_tfms(inp[self.main_text]))
+        
+        # no padding for tokenization
+        tok_func = partial(tokenize_function,
+                           tok=self.tokenizer,
+                           max_length=-1,
+                           return_special_tokens_mask=True
+                          )
+        all_tfms = self.content_tfms 
+        all_tfms = partial(func_all,functions=all_tfms) if len(all_tfms) else lambda x: x
+           
+        self.main_ddict['train'] = IterableDataset.from_generator(_get_generator,
+                                                   gen_kwargs={'dset': self.main_ddict['train'],
+                                                               'tok_func':tok_func,
+                                                               'all_tfms': all_tfms
+                                                              }
+                                                                 )
 
     
     def process_and_tokenize(self,
@@ -191,7 +214,9 @@ class TextDataLMControllerStreaming(TextDataControllerStreaming):
         # Dropping unused columns
         self._simplify_ddict()
 
-           
+        if self.seed:
+            seed_everything(self.seed)
+            
         # Content transformation + tokenization for validation
         if 'validation' in self.main_ddict.keys():
             print_msg('Performing Content Transformation and Tokenization on Validation Set',verbose=self.verbose)
@@ -200,7 +225,10 @@ class TextDataLMControllerStreaming(TextDataControllerStreaming):
         
         # Content transformation + tokenization for train
         print_msg('Creating a generator for content transformation and tokenization on Train set',verbose=self.verbose)
-        self._do_transformation_tokenization_generator()
+        if line_by_line and max_length is not None and max_length<0: # line-by-line tokenization with no padding
+            self._do_transformation_tokenization_generator_fast()
+        else:
+            self._do_transformation_tokenization_generator()
         self.verboseprint('Done')
         
         self._processed_call=True
@@ -221,6 +249,7 @@ class TextDataLMControllerStreaming(TextDataControllerStreaming):
                                                
     def prepare_test_dataset_from_raws(self,
                                        content, # Either a single sentence, list of sentence or a dictionary with keys are metadata columns and values are list
+                                       do_tokenize=False, # Whether to tokenize text
                                       ):
         if len(self.metadatas) and not isinstance(content,dict):
             raise ValueError(f'There is/are metadatas in the preprocessing step. Please include a dictionary including these keys for metadatas: {self.metadatas}, and texture content: {self.main_text}')
@@ -236,13 +265,14 @@ class TextDataLMControllerStreaming(TextDataControllerStreaming):
         _tmp2 = self.tok_num_proc
         self.num_proc=1
         self.tok_num_proc=1
-        results = self.prepare_test_dataset(test_dict)
+        results = self.prepare_test_dataset(test_dict,do_tokenize)
         self.num_proc = _tmp1
         self.tok_num_proc=_tmp2
         return results
         
     def prepare_test_dataset(self,
                              test_dset, # The HuggingFace Dataset as Test set
+                             do_tokenize, # Whether to tokenize text
                             ):
         test_cols = set(get_dset_col_names(test_dset))
         missing_cols = set(self.cols_to_keep) - test_cols
@@ -257,9 +287,28 @@ class TextDataLMControllerStreaming(TextDataControllerStreaming):
         # Content transformation
         test_dset = self._do_transformation(test_dset)
         
-        # Drop every columns except for main_text
-        cols_to_remove = {c for c in test_cols if c!=self.main_text}
-        test_dset=test_dset.remove_columns(list(cols_to_remove))
-        
+        if not do_tokenize:
+            # Drop every columns except for main_text
+            cols_to_remove = {c for c in test_cols if c!=self.main_text}
+            test_dset = test_dset.remove_columns(list(cols_to_remove))
+        else:
+            # Drop unused columns
+            cols_to_remove = test_cols - set(self.cols_to_keep)
+            test_dset = test_dset.remove_columns(list(cols_to_remove))
+            
+            print_msg('Tokenization',20,verbose=self.verbose)
+            tok_func = partial(tokenize_function,
+                           tok=self.tokenizer,
+                           max_length=self.max_length if self.line_by_line else -1,
+                           return_special_tokens_mask=True
+                          )
+            
+            _func = partial(lambda_map_batch,
+                        feature=self.main_text,
+                        func=tok_func,
+                        output_feature=None,
+                        is_batched=self.is_batched)
+            test_dset = hf_map_dset(test_dset,_func,self.is_batched,self.batch_size,self.tok_num_proc)
+            
         self.verboseprint('Done')
         return test_dset

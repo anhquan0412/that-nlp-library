@@ -284,9 +284,7 @@ class TextDataControllerStreaming():
         return dtrain 
 
     def _do_transformation_augmentation_tokenization(self,dtrain,tok_func,all_tfms):
-        if self.seed:
-            seed_everything(self.seed)  
-        
+
         num_proc=1 # high num_proc is not beneficial with each batch size (which is only around 1k)
         # Content transformation + augmentation
         for tfm in all_tfms:
@@ -347,8 +345,6 @@ class TextDataControllerStreaming():
     def _do_transformation_augmentation_tokenization_generator(self):
         tok_func = partial(tokenize_function,tok=self.tokenizer,max_length=self.max_length)
         all_tfms = self.content_tfms + self.aug_tfms
-        if self.seed:
-            seed_everything(self.seed)
         
         self.main_ddict['train'] = IterableDataset.from_generator(self._construct_generator_with_batch,
                                                    gen_kwargs={'dset': self.main_ddict['train'],
@@ -371,8 +367,6 @@ class TextDataControllerStreaming():
         tok_func = partial(tokenize_function,tok=self.tokenizer,max_length=-1) 
         all_tfms = self.content_tfms + self.aug_tfms
         all_tfms = partial(func_all,functions=all_tfms) if len(all_tfms) else lambda x: x
-        if self.seed:
-            seed_everything(self.seed)
            
         self.main_ddict['train'] = IterableDataset.from_generator(_get_generator,
                                                    gen_kwargs={'dset': self.main_ddict['train'],
@@ -418,7 +412,9 @@ class TextDataControllerStreaming():
         # Dropping unused columns
         self._simplify_ddict()
 
-        
+        if self.seed:
+            seed_everything(self.seed)
+            
         # Content transformation + tokenization for validation
         if 'validation' in self.main_ddict.keys():
             print_msg('Performing Content Transformation and Tokenization on validation set',verbose=self.verbose)

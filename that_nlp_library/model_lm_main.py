@@ -145,6 +145,59 @@ def finetune_lm(lr, # Learning rate
     return trainer
 
 # %% ../nbs/03_model_lm_main.ipynb 15
+def _extract_hidden_states(batch,
+                           model=None, # NLP model
+                           model_input_names=['input_ids', 'token_type_ids', 'attention_mask'], # Model required inputs, from tokenizer.model_input_names
+                           data_collator=None, # HuggingFace data collator
+                           state_name='last_hidden_state', # Name of the state to get
+                           state_idx=0, # The index (or indices) of the state to get
+                           device = None, # device that the model is trained on
+                           ):
+    state_idx = val2iterable(state_idx)
+    
+    if data_collator is not None:    
+# --- Convert from  
+# {'input_ids': [tensor([    0, 10444,   244, 14585,   125,  2948,  5925,   368,     2]), 
+#                tensor([    0, 16098,  2913,   244,   135,   198, 34629,  6356,     2])]
+# 'attention_mask': [tensor([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]), 
+#                    tensor([1, 1, 1, 1, 1, 1, 1, 1, 1])]
+#                    }
+# --- to
+# [{'input_ids': tensor([    0, 10444,   244, 14585,   125,  2948,  5925,   368,     2]),
+#   'attention_mask': tensor([1, 1, 1, 1, 1, 1, 1, 1, 1])},
+#  {'input_ids': tensor([    0, 16098,  2913,   244,   135,   198, 34629,  6356,     2]),
+#   'attention_mask': tensor([1, 1, 1, 1, 1, 1, 1, 1, 1])}]
+
+        # remove string text, due to transformer new version       
+        collator_inp = []
+        ks = [k for k in batch.keys() if k in model_input_names]
+        vs = [batch[k] for k in ks]
+        for pair in zip(*vs):
+            collator_inp.append({k:v for k,v in zip(ks,pair)})
+        
+        batch = data_collator(collator_inp)
+    
+    inputs = {k:v.to(device) for k,v in batch.items()
+              if k in model_input_names}
+            
+    # switch to eval mode for evaluation
+    if model.training:
+        model.eval()
+    with torch.no_grad():
+        outputs = model(**inputs)
+        states = outputs[state_name]
+        for i in state_idx:
+            if isinstance(states,tuple):
+                states = states[i]
+            else:
+                states = states[:,i]
+    # Switch back to train mode
+    if not model.training:
+        model.train()
+
+    return {state_name:states.cpu().numpy()}
+
+# %% ../nbs/03_model_lm_main.ipynb 16
 class ModelLMController():
     def __init__(self,
                  model, # NLP language model
@@ -231,12 +284,13 @@ class ModelLMController():
         result = self.predict_ddict(test_dset,**kwargs)
         if print_result:
             is_mlm = check_and_get_attribute(self.data_store,'is_mlm')
-            if is_mlm:
-                for pred in result:
-                    print(f"Score: {pred['score']:.3f} >>> {pred['sequence']}")
-            else:
-                for pred in result:
-                    print(f">>> {pred['generated_text']}")
+            for preds in result:
+                for pred in preds:
+                    if is_mlm:
+                        print(f"Score: {pred['score']:.3f} >>> {pred['sequence']}")
+                    else:
+                        print(f">>> {pred['generated_text']}")
+                print('-'*20)
         else:
             return result
     
@@ -248,5 +302,11 @@ class ModelLMController():
         tokenizer=check_and_get_attribute(self.data_store,'tokenizer')
         main_text=check_and_get_attribute(self.data_store,'main_text')
         _task = 'fill-mask' if is_mlm else 'text-generation'
-        pipeline_obj = pipeline(_task,model=self.model,tokenizer = tokenizer)
-        return [pipeline_obj(s,**kwargs) for s in dset[main_text]]
+        pipeline_obj = pipeline(_task,model=self.model,tokenizer=tokenizer,device=self.model.device)
+        str_list = dset[main_text]
+        if _task=='fill-mask':
+            all_tfms = self.data_store.content_tfms 
+            all_tfms = partial(func_all,functions=all_tfms) if len(all_tfms) else lambda x: x
+            mask_str = all_tfms(tokenizer.mask_token)
+            str_list = [str(s).replace(mask_str,tokenizer.mask_token) for s in str_list]
+        return [pipeline_obj(s,**kwargs) for s in str_list]
