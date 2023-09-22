@@ -453,7 +453,6 @@ class ModelController():
         
     def predict_raw_text(self,
                          content:dict|list|str, # Either a single sentence, list of sentence or a dictionary where keys are metadata, values are list
-                         batch_size=1, # Batch size. For a small amount of texts, you might want to keep this small
                          is_multilabel=None, # Is this a multilabel classification?
                          multilabel_threshold=0.5, # Threshold for multilabel classification
                          topk=1, # Number of labels to return for each head
@@ -465,7 +464,7 @@ class ModelController():
         test_dset = self.data_store.prepare_test_dataset_from_raws(content)
 
         results = self.predict_ddict(ddict=test_dset,
-                                     batch_size=batch_size,
+                                     batch_size=1,
                                      is_multilabel=is_multilabel,
                                      multilabel_threshold=multilabel_threshold,
                                      topk=topk,
@@ -475,7 +474,7 @@ class ModelController():
     
     def predict_raw_dset(self,
                          dset, # A raw HuggingFace dataset
-                         batch_size=16, # Batch size. For a small amount of texts, you might want to keep this small
+                         batch_size=16, # GPU batch size. For a small amount of texts, you might want to keep this small
                          do_filtering=False, # Whether to perform data filtering on this test set
                          is_multilabel=None, # Is this a multilabel classification?
                          multilabel_threshold=0.5, # Threshold for multilabel classification
@@ -510,7 +509,7 @@ class ModelController():
                       device=None, # Device that the model is trained on
                       are_heads_separated=False # Are outputs (of model) separate heads?
                      ):
-        if device is None: device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        if device is None: device = self.model.device
         if is_multilabel is None: is_multilabel=getattr(self.model,'is_multilabel',False)
         label_lists = class_names_predefined
         if tokenizer is None: tokenizer=check_and_get_attribute(self.data_store,'tokenizer')

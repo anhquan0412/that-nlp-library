@@ -17,7 +17,8 @@ from .text_main_lm_streaming import TextDataLMControllerStreaming
 from transformers import pipeline
 
 # %% auto 0
-__all__ = ['language_model_init', 'compute_lm_accuracy', 'preprocess_lm_logits_for_metrics', 'finetune_lm', 'ModelLMController']
+__all__ = ['language_model_init', 'compute_lm_accuracy', 'preprocess_lm_logits_for_metrics', 'finetune_lm',
+           'extract_hidden_states', 'ModelLMController']
 
 # %% ../nbs/03_model_lm_main.ipynb 5
 def language_model_init(model_class, # Model's class object, e.g. AutoModelForMaskedLM
@@ -145,14 +146,14 @@ def finetune_lm(lr, # Learning rate
     return trainer
 
 # %% ../nbs/03_model_lm_main.ipynb 15
-def _extract_hidden_states(batch,
-                           model=None, # NLP model
-                           model_input_names=['input_ids', 'token_type_ids', 'attention_mask'], # Model required inputs, from tokenizer.model_input_names
-                           data_collator=None, # HuggingFace data collator
-                           state_name='last_hidden_state', # Name of the state to get
-                           state_idx=0, # The index (or indices) of the state to get
-                           device = None, # device that the model is trained on
-                           ):
+def extract_hidden_states(batch,
+                          model=None, # NLP model
+                          model_input_names=['input_ids', 'token_type_ids', 'attention_mask'], # Model required inputs, from tokenizer.model_input_names
+                          data_collator=None, # HuggingFace data collator
+                          state_name='last_hidden_state', # Name of the state to extract
+                          state_idx=0, # The index (or indices) of the state to extract
+                          device = None, # device that the model is trained on
+                          ):
     state_idx = val2iterable(state_idx)
     
     if data_collator is not None:    
@@ -310,3 +311,65 @@ class ModelLMController():
             mask_str = all_tfms(tokenizer.mask_token)
             str_list = [str(s).replace(mask_str,tokenizer.mask_token) for s in str_list]
         return [pipeline_obj(s,**kwargs) for s in str_list]
+    
+    def get_hidden_states_from_raw_text(self,
+                                        content:dict|list|str, # Either a single sentence, list of sentence or a dictionary where keys are metadata, values are list
+                                        state_name, # Name of the (hidden) state to extract
+                                        state_idx=0, # The index (or indices) of the state to extract. For `hidden_states`, accept multiple values
+                                       ):
+        if not isinstance(self.data_store,(TextDataLMController,TextDataLMControllerStreaming)) or not self.data_store._processed_call:
+            raise ValueError('This functionality needs a TextDataController object which has processed some training data')
+        dset = self.data_store.prepare_test_dataset_from_raws(content,do_tokenize=True)
+        return self.get_hidden_states(dset,
+                                      state_name=state_name,
+                                      state_idx=state_idx,
+                                      batch_size=1
+                                     )
+
+        
+    def get_hidden_states_from_raw_dset(self,
+                                        dset: Dataset, # A raw HuggingFace dataset
+                                        state_name, # Name of the (hidden) state to extract
+                                        state_idx=0, # The index (or indices) of the state to extract. For `hidden_states`, accept multiple values
+                                        batch_size=16, # GPU batch size
+                                       ):
+        if not isinstance(self.data_store,(TextDataLMController,TextDataLMControllerStreaming)) or not self.data_store._processed_call:
+            raise ValueError('This functionality needs a TextDataController object which has processed some training data')
+        dset = self.data_store.prepare_test_dataset(dset,do_tokenize=True)
+        return self.get_hidden_states(dset,
+                                      state_name=state_name,
+                                      state_idx=state_idx,
+                                      batch_size=batch_size
+                                     )
+        
+        
+    def get_hidden_states(self,
+                          ddict:DatasetDict|Dataset=None, # A processed and tokenized DatasetDict/Dataset (will override one in ```data_store```)
+                          ds_type='test', # The split of DatasetDict to predict
+                          state_name='last_hidden_state', # Name of the (hidden) state to extract
+                          state_idx=0, # The index (or indices) of the state to extract. For `hidden_states`, accept multiple values
+                          batch_size=16, # GPU batch size
+                         ):
+        
+        tokenizer=check_and_get_attribute(self.data_store,'tokenizer')
+        if ddict is None: ddict = check_and_get_attribute(self.data_store,'main_ddict')
+        if isinstance(ddict,DatasetDict):
+            if ds_type not in ddict.keys():
+                raise ValueError(f'{ds_type} is not in the given DatasetDict')
+            ddict = ddict[ds_type]
+        
+        ddict.set_format("torch",
+                        columns=tokenizer.model_input_names)
+        
+        results = ddict.map(partial(extract_hidden_states,
+                                 model=self.model,
+                                 model_input_names = tokenizer.model_input_names,
+                                 state_name=state_name,
+                                 state_idx=state_idx,
+                                 device = self.model.device),
+                           batched=True,
+                           batch_size=batch_size
+                          )
+        results.set_format('numpy')
+        return results
+
