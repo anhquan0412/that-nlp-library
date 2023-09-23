@@ -2,10 +2,11 @@ website:
   sidebar:
     contents:
       - index.ipynb
-      - section: Begin here!
+      - section: Quick Starts
         contents:
         - 00_text_main.ipynb
         - 03_model_classification_tutorial.ipynb
+        - 03_model_lm_roberta_tutorial.ipynb
       - section: Text
         contents:
         - section: Text Process
@@ -26,17 +27,23 @@ website:
         - section: Model Controller For Supervised Learning
           contents:
           - 03_model_main.ipynb
-        - section: Roberta-based model definitions
+        - section: Model Controller for Language Modeling
+          contents:
+          - 03_model_lm_main.ipynb
+        - section: Roberta-based classification model definitions
           contents:
           - 04_models.roberta.classifiers.ipynb
           - 05_models.roberta.deep_hierarchical_classifiers.ipynb
           - 06_models.roberta.conditional_prob_classifiers.ipynb
-        - section: GPT2-based model definitions
+        - section: GPT2-based classification model definitions
           contents:
           - 09_models.gpt2.classifiers.ipynb
       - section: Evaluations For Supervised Learning
         contents:
         - 08_evaluations.ipynb
+      - section: Hidden States Utilization
+        contents:
+        - 08_hidden_states.ipynb
       - section: All use-cases
         contents:
         - section: Roberta-based models for Supervised Learning
@@ -52,6 +59,12 @@ website:
           - 20_gpt2_singlehead.ipynb
           - 21_gpt2_multihead.ipynb
           - 22_gpt2_multihead_regression.ipynb
+        - section: Masked Language Model Training
+          contents:
+          - 03_model_lm_roberta_tutorial.ipynb
+        - section: Causal Language Model Training
+          contents:
+          - 03_model_lm_gpt2_tutorial.ipynb
       - section: Utility
         contents:
         - 07_utils.ipynb
