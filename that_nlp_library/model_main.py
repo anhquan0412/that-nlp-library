@@ -2,7 +2,7 @@
 
 # %% ../nbs/03_model_main.ipynb 3
 from __future__ import annotations
-import os, sys
+import os
 from transformers import Trainer, TrainingArguments, AutoConfig
 from datasets import DatasetDict,Dataset
 import torch

@@ -2,8 +2,7 @@
 
 # %% ../nbs/00_text_main_lm_streaming.ipynb 3
 from __future__ import annotations
-from datasets import DatasetDict,Dataset,IterableDataset
-from pathlib import Path
+from datasets import Dataset,IterableDataset
 from .utils import *
 from .text_main import tokenize_function
 from .text_main_streaming import *

@@ -2,8 +2,7 @@
 
 # %% ../nbs/00_text_main_lm.ipynb 3
 from __future__ import annotations
-from datasets import DatasetDict,Dataset,IterableDataset
-from pathlib import Path
+from datasets import Dataset
 from .utils import *
 from .text_main import *
 from functools import partial

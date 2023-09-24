@@ -2,16 +2,13 @@
 
 # %% ../../../nbs/06_models.roberta.conditional_prob_classifiers.ipynb 3
 from __future__ import annotations
-from collections import defaultdict
 import numpy as np
 import torch
 from transformers.models.roberta.configuration_roberta import RobertaConfig
 from transformers.models.roberta.modeling_roberta import RobertaModel
-from .classifiers import ConcatHeadSimple
 from sklearn.preprocessing import MultiLabelBinarizer
 from transformers.modeling_outputs import SequenceClassifierOutput
 from transformers.models.roberta.modeling_roberta import RobertaPreTrainedModel
-from ...model_main import loss_for_classification
 
 # %% auto 0
 __all__ = ['build_standard_condition_mask', 'RobertaHSCCProbSequenceClassification']

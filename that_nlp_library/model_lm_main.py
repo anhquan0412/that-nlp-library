@@ -2,7 +2,7 @@
 
 # %% ../nbs/03_model_lm_main.ipynb 3
 from __future__ import annotations
-import os, sys
+import os
 from transformers import Trainer, TrainingArguments, AutoConfig
 from datasets import DatasetDict,Dataset
 import torch
@@ -10,7 +10,6 @@ import gc
 import math
 from functools import partial
 import evaluate
-import numpy as np
 from .utils import *
 from .text_main_lm import TextDataLMController
 from .text_main_lm_streaming import TextDataLMControllerStreaming
