@@ -506,10 +506,9 @@ class ModelController():
                       data_collator=None, # Data Collator (to override one in ```data_store```)
                       label_names=None, # Names of the label (dependent variable) columns (to override one in ```data_store```)
                       class_names_predefined=None, # List of names associated with the labels (same index order) (to override one in ```data_store```)
-                      device=None, # Device that the model is trained on
                       are_heads_separated=False # Are outputs (of model) separate heads?
                      ):
-        if device is None: device = self.model.device
+        device = self.model.device
         if is_multilabel is None: is_multilabel=getattr(self.model,'is_multilabel',False)
         label_lists = class_names_predefined
         if tokenizer is None: tokenizer=check_and_get_attribute(self.data_store,'tokenizer')
