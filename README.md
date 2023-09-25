@@ -105,19 +105,27 @@ non-streamed version, visit the benchmark
 
 ### **Model and [`ModelController`](https://anhquan0412.github.io/that-nlp-library/model_main.html#modelcontroller)**
 
-The library can perform the following: - **Classification ([simple
-tutorial](https://anhquan0412.github.io/that-nlp-library/model_classification_tutorial.html))** -
-**[Regression](https://anhquan0412.github.io/that-nlp-library/roberta_multihead_regression.html)** -
-**[Multilabel
-classification](https://anhquan0412.github.io/that-nlp-library/roberta_multilabel.html)** -
-**[Multiheads](https://anhquan0412.github.io//that-nlp-library/roberta_multihead.html)**,
-where each head can be either classification or regression - “Multihead”
-is when your model needs to predict multiple outputs at once, for
-example, given a sentence (e.g. a review on an e-commerce site), you
-have to predict what category the sentence is about, and the sentiment
-of the sentence, and maybe the rating of the sentence. - For the above
-example, this is a 3-head problem: classification (for category),
-classification (for sentiment), and regression (for rating from 1 to 5)
+The library can perform the following:
+
+- **Classification ([simple
+  tutorial](https://anhquan0412.github.io/that-nlp-library/model_classification_tutorial.html))**
+
+- **[Regression](https://anhquan0412.github.io/that-nlp-library/roberta_multihead_regression.html)**
+
+- **[Multilabel
+  classification](https://anhquan0412.github.io/that-nlp-library/roberta_multilabel.html)**
+
+- **[Multiheads](https://anhquan0412.github.io//that-nlp-library/roberta_multihead.html)**,
+  where each head can be either classification or regression
+
+  - “Multihead” is when your model needs to predict multiple outputs at
+    once, for example, given a sentence (e.g. a review on an e-commerce
+    site), you have to predict what category the sentence is about, and
+    the sentiment of the sentence, and maybe the rating of the sentence.
+
+  - For the above example, this is a 3-head problem: classification (for
+    category), classification (for sentiment), and regression (for
+    rating from 1 to 5)
 
 - For 2-head classification where there’s hierarchical relationship
   between the first output and the second output (e.g. the first output
