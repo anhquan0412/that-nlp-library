@@ -14,7 +14,7 @@ pip install that_nlp_library
 
 For supervised learning, the main pipeline contains 2 parts:
 
-### **[`TextDataController`](https://anhquan0412.github.io/that-nlp-library/text_main.html#textdatacontroller) (for text processing)**
+### **Text Data Controller: [`TextDataController`](https://anhquan0412.github.io/that-nlp-library/text_main.html#textdatacontroller) (for text processing)**
 
 Here is a list of processings that you can use (in order). You also can
 skip any processing if you want to.
@@ -152,7 +152,7 @@ for training your data. There’s a quick tutorial on this decoupling
 
 For language modeling, the main pipeline also contains 2 parts
 
-### TextDataLMController (for text processing)
+### Text Data Controlelr for Language Model: [`TextDataLMController`](https://anhquan0412.github.io/that-nlp-library/text_main_lm.html#textdatalmcontroller)
 
 Similarly to `TextDatController`,
 [`TextDataLMController`](https://anhquan0412.github.io/that-nlp-library/text_main_lm.html#textdatalmcontroller)
@@ -164,7 +164,7 @@ tokenization line-by-line or by token concatenation. Visit the tutorial
 There’s also a streamed version
 ([`TextDataLMControllerStreaming`](https://anhquan0412.github.io/that-nlp-library/text_main_lm_streaming.html#textdatalmcontrollerstreaming))
 
-### [`ModelLMController`](https://anhquan0412.github.io/that-nlp-library/model_lm_main.html#modellmcontroller)
+### Language Model Controller: [`ModelLMController`](https://anhquan0412.github.io/that-nlp-library/model_lm_main.html#modellmcontroller)
 
 The library can train a [masked language
 modeling](https://anhquan0412.github.io/that-nlp-library/model_lm_roberta_tutorial.html)
