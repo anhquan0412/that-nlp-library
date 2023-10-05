@@ -58,7 +58,7 @@ def model_init_classification(
         model = model_class.from_pretrained(cpoint_path,config=config,**model_kwargs).to(device)
     
     print(f'Total parameters: {sum(param.numel() for param in model.parameters())}')
-    print(f'Total trainable parameters: {sum(param.numel() for param in model.parameters() if p.requires_grad)}')
+    print(f'Total trainable parameters: {sum(param.numel() for param in model.parameters() if param.requires_grad)}')
     
     return model
 
