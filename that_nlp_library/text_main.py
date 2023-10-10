@@ -172,12 +172,8 @@ class TextDataController():
         self.cols_to_keep = cols_to_keep
         
         self.ddict_rest = DatasetDict()
-        self.verbose = verbose
-        self.verboseprint = print if verbose else lambda *a, **k: None
-        if not self.verbose:
-            disable_progress_bar() # turn off huggingface `map` progress bar
-        else:
-            enable_progress_bar()
+        self.set_verbose(verbose)
+        
         if hasattr(inp,'keys'): # is datasetdict
             if 'train' in inp.keys(): 
                 self.ddict_rest = inp
@@ -223,6 +219,10 @@ class TextDataController():
     def set_verbose(self,verbose):
         self.verbose = verbose
         self.verboseprint = print if verbose else lambda *a, **k: None
+        if not self.verbose:
+            disable_progress_bar() # turn off huggingface `map` progress bar
+        else:
+            enable_progress_bar()
     
     def _convert_regression_to_float(self):
         if len(self.sup_types)==0: return

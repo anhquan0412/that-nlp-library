@@ -47,7 +47,7 @@ def language_model_init(model_class, # Model's class object, e.g. AutoModelForMa
     
     return model
 
-# %% ../nbs/03_model_lm_main.ipynb 11
+# %% ../nbs/03_model_lm_main.ipynb 10
 def compute_lm_accuracy(eval_preds, # An EvalPrediction object from HuggingFace 
                         is_mlm, # if this is masked language model, set to `True`. If this is casual language model, set to `False`
                      ):
@@ -72,7 +72,7 @@ def compute_lm_accuracy(eval_preds, # An EvalPrediction object from HuggingFace
         preds = preds[:, :-1].reshape(-1)
         return metric.compute(predictions=preds, references=labels)
 
-# %% ../nbs/03_model_lm_main.ipynb 12
+# %% ../nbs/03_model_lm_main.ipynb 11
 def preprocess_lm_logits_for_metrics(logits, labels):
     if isinstance(logits, tuple):
         # Depending on the model and config, logits may contain extra tensors,
@@ -80,7 +80,7 @@ def preprocess_lm_logits_for_metrics(logits, labels):
         logits = logits[0]
     return logits.argmax(dim=-1) 
 
-# %% ../nbs/03_model_lm_main.ipynb 13
+# %% ../nbs/03_model_lm_main.ipynb 12
 def finetune_lm(lr, # Learning rate
                 bs, # Batch size
                 wd, # Weight decay
@@ -146,7 +146,7 @@ def finetune_lm(lr, # Learning rate
     trainer.train()
     return trainer
 
-# %% ../nbs/03_model_lm_main.ipynb 15
+# %% ../nbs/03_model_lm_main.ipynb 14
 def extract_hidden_states(batch,
                           model=None, # NLP model
                           model_input_names=['input_ids', 'token_type_ids', 'attention_mask'], # Model required inputs, from tokenizer.model_input_names
@@ -199,7 +199,7 @@ def extract_hidden_states(batch,
 
     return {state_name:states.cpu().numpy()}
 
-# %% ../nbs/03_model_lm_main.ipynb 16
+# %% ../nbs/03_model_lm_main.ipynb 15
 class ModelLMController():
     def __init__(self,
                  model, # NLP language model
