@@ -97,6 +97,7 @@ def finetune_lm(lr, # Learning rate
                 lr_scheduler_type='cosine',  # The scheduler type to use. Including: linear, cosine, cosine_with_restarts, polynomial, constant, constant_with_warmup
                 warmup_ratio=0.1, # The warmup ratio for some lr scheduler
                 no_valid=False, # Whether there is a validation set or not
+                val_bs=None, # Validation batch size
                 seed=None, # Random seed
                 report_to='none', # The list of integrations to report the results and logs to. Supported platforms are "azure_ml", "comet_ml", "mlflow", "neptune", "tensorboard","clearml" and "wandb". Use "all" to report to all integrations installed, "none" for no integrations.
                 trainer_class=None, # You can include the class name of your custom trainer here
@@ -104,7 +105,8 @@ def finetune_lm(lr, # Learning rate
     "The main model training/finetuning function"
     torch.cuda.empty_cache()
     gc.collect()
-    
+    if val_bs is None: val_bs = bs
+
     if seed:
         seed_everything(seed)
         
@@ -120,7 +122,7 @@ def finetune_lm(lr, # Learning rate
                                      overwrite_output_dir=True,
                                      gradient_accumulation_steps=grad_accum_steps,
                                      per_device_train_batch_size=bs, 
-                                     per_device_eval_batch_size=bs,
+                                     per_device_eval_batch_size=val_bs,
                                      num_train_epochs=epochs, weight_decay=wd,
                                      report_to=report_to,
                                      logging_dir=os.path.join(o_dir, 'log') if report_to!='none' else None,
@@ -214,6 +216,7 @@ class ModelLMController():
             ddict=None, # DatasetDict to fit (will override data_store)
             compute_metrics=None, # A function to compute metric, default to `compute_lm_accuracy`
             batch_size=16, # Batch size
+            val_batch_size=None, # Validation batch size. Set to batch_size if None
             weight_decay=0.01, # Weight decay
             lr_scheduler_type='cosine', # The scheduler type to use. Including: linear, cosine, cosine_with_restarts, polynomial, constant, constant_with_warmup
             warmup_ratio=0.1, # The warmup ratio for some lr scheduler
@@ -231,7 +234,10 @@ class ModelLMController():
         if data_collator is None: data_collator=check_and_get_attribute(self.data_store,'data_collator')
         if ddict is None: ddict = check_and_get_attribute(self.data_store,'main_ddict')
         if is_mlm is None: is_mlm = check_and_get_attribute(self.data_store,'is_mlm')
-            
+        
+        if val_batch_size is None: val_batch_size=batch_size
+
+                
         if compute_metrics is None:
             compute_metrics=partial(compute_lm_accuracy,is_mlm=is_mlm)
         
@@ -254,6 +260,7 @@ class ModelLMController():
                               lr_scheduler_type=lr_scheduler_type,
                               warmup_ratio=warmup_ratio,
                               no_valid=no_valid,
+                              val_bs=val_batch_size,
                               seed=self.seed,
                               trainer_class=trainer_class,
                               report_to=hf_report_to)

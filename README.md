@@ -8,6 +8,15 @@
 pip install that_nlp_library
 ```
 
+It is advised that you manually install torch (with your compatible cuda
+version if you GPU). Typically it’s
+
+``` sh
+pip3 install torch --index-url https://download.pytorch.org/whl/cu118
+```
+
+Visit [Pytorch page](https://pytorch.org/) for more information
+
 # High-Level Overview
 
 ## Supervised Learning
