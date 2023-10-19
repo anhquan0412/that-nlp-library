@@ -102,7 +102,7 @@ def concat_metadatas(dset:dict, # HuggingFace Dataset
                      main_text, # Text feature name
                      metadatas, # Metadata (or a list of metadatas)
                      process_metas=True, # Whether apply simple metadata processing, i.e. space strip and lowercase
-                     sep='.', # separator for contatenating to main_text
+                     sep='.', # Separator, for multiple metadatas concatenation
                      is_batched=True, # whether batching is applied
                     ):
     """
@@ -133,6 +133,7 @@ class TextDataController():
                  label_tfm_dict={}, # A dictionary: {label_name: transform_function_for_that_label}
                  metadatas=[], # Names of the metadata columns
                  process_metas=True, # Whether to do simple text processing on the chosen metadatas
+                 metas_sep='.', # Separator, for multiple metadatas concatenation
                  content_transformations=[], # A list of text transformations
                  val_ratio:int|float|None=0.2, # Ratio of data for validation set
                  stratify_cols=[], # Column(s) needed to do stratified shuffle split
@@ -156,6 +157,7 @@ class TextDataController():
         self.label_tfm_dict = label_tfm_dict
         self.metadatas = val2iterable(metadatas)
         self.process_metas = process_metas
+        self.metas_sep = metas_sep
         
         self.content_tfms = val2iterable(content_transformations)
         
@@ -307,6 +309,7 @@ class TextDataController():
                                main_text=self.main_text,
                                metadatas=self.metadatas,
                                process_metas=self.process_metas,
+                               sep=metas_sep,
                                is_batched=self.is_batched)
             dset = hf_map_dset(dset,map_func,self.is_batched,self.batch_size,self.num_proc)
             if ddict_rest is not None:

@@ -20,6 +20,7 @@ class TextDataLMController(TextDataController):
                  filter_dict={}, # A dictionary: {feature: filtering_function_for_that_feature}
                  metadatas=[], # Names of the metadata columns
                  process_metas=True, # Whether to do simple text processing on the chosen metadatas
+                 metas_sep='.', # Separator, for multiple metadatas concatenation
                  content_transformations=[], # A list of text transformations
                  val_ratio:int|float|None=0.2, # Ratio of data for validation set
                  stratify_cols=[], # Column(s) needed to do stratified shuffle split
@@ -34,6 +35,7 @@ class TextDataLMController(TextDataController):
                          filter_dict=filter_dict,
                          metadatas=metadatas,
                          process_metas=process_metas,
+                         metas_sep=metas_sep,
                          content_transformations=content_transformations,
                          val_ratio=val_ratio,
                          stratify_cols=stratify_cols,
