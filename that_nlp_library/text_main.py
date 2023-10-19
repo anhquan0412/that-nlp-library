@@ -309,7 +309,7 @@ class TextDataController():
                                main_text=self.main_text,
                                metadatas=self.metadatas,
                                process_metas=self.process_metas,
-                               sep=metas_sep,
+                               sep=self.metas_sep,
                                is_batched=self.is_batched)
             dset = hf_map_dset(dset,map_func,self.is_batched,self.batch_size,self.num_proc)
             if ddict_rest is not None:
