@@ -406,7 +406,7 @@ class ModelController():
             o_dir = './tmp_weights', # Directory to save weights
             save_checkpoint=False, # Whether to save weights (checkpoints) to o_dir
             hf_report_to='none', # The list of HuggingFace-allowed integrations to report the results and logs to
-            compute_metrics=None, # A function to compute metric, e.g. `compute_metrics` which utilizes the given ```metric_funcs``` 
+            compute_metrics=compute_metrics, # A function to compute metric, e.g. `compute_metrics` which utilizes the given ```metric_funcs``` 
             grad_accum_steps=2, # Gradient will be accumulated over gradient_accumulation_steps steps.
             tokenizer=None, # Tokenizer (to override one in ```data_store```)
             data_collator=None, # Data Collator (to override one in ```data_store```)
@@ -432,7 +432,7 @@ class ModelController():
         if len(set(ddict.keys()) & set(['train','training']))==0:
             raise ValueError("Missing the following key for DatasetDict: train/training")
         no_valid = len(set(ddict.keys()) & set(['validation','val','valid']))==0
-
+                    
         _compute_metrics = partial(compute_metrics,
                                    metric_funcs=metric_funcs,
                                    metric_types=metric_types,
