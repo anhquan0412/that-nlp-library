@@ -220,7 +220,9 @@ class RobertaHSCDHCSequenceClassification(RobertaPreTrainedModel):
         self.body_model = RobertaModel(config, add_pooling_layer=False)
         self.root_representation = RobertaConcatHeadDHCRoot(config=config,
                                                             classifier_dropout=classifier_dropout,
-                                                            last_hidden_size=last_hidden_size)
+                                                            last_hidden_size=last_hidden_size,
+                                                            layer2concat=layer2concat
+                                                           )
         
         self.linear_L1 = torch.nn.Linear(last_hidden_size, linear_l1_size)
         self.linear_L2 = torch.nn.Linear(last_hidden_size, linear_l2_size)
