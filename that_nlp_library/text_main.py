@@ -297,7 +297,7 @@ class TextDataController():
         self.verboseprint('Filtering leaked data out of training set...')
         _func = partial(lambda_batch,
                         feature=self.main_text,
-                        func=lambda x: x.strip().lower() not in val_txt_leaked,
+                        func=lambda x: x.strip() not in val_txt_leaked,
                         is_batched=self.is_batched)
         self.main_ddict['train'] = hf_filter_dset(self.main_ddict['train'],_func,self.is_batched,self.batch_size,self.num_proc)   
         self.verboseprint('Done')

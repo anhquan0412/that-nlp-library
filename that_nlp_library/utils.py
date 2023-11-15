@@ -123,7 +123,7 @@ def check_input_validation(df:pd.DataFrame,verbose=True):
 def check_text_leaking(trn_txt:list,
                        test_txt:list,verbose=True):
     verboseprint = print if verbose else lambda *a, **k: None
-    test_txt_leaked = {i.strip().lower() for i in trn_txt} & {j.strip().lower() for j in test_txt}
+    test_txt_leaked = {i.strip() for i in trn_txt} & {j.strip() for j in test_txt}
     len_leaked = len(test_txt_leaked)
     verboseprint(f'- Number of rows leaked: {len_leaked}, which is {100*len_leaked/len(trn_txt):.2f}% of training set')
     return test_txt_leaked
