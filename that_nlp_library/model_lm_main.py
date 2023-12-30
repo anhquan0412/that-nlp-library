@@ -353,12 +353,15 @@ class ModelLMController():
                           ddict:DatasetDict|Dataset=None, # A processed and tokenized DatasetDict/Dataset (will override one in ```data_store```)
                           ds_type='test', # The split of DatasetDict to predict
                           state_name='last_hidden_state', # Name of the (hidden) state to extract
+                          data_collator=None, # HuggingFace data collator (will override one in ```data_store```)
                           state_idx=0, # The index (or indices) of the state to extract. For `hidden_states`, accept multiple values
                           batch_size=16, # GPU batch size
                          ):
         
         tokenizer=check_and_get_attribute(self.data_store,'tokenizer')
         if ddict is None: ddict = check_and_get_attribute(self.data_store,'main_ddict')
+        if data_collator is None: data_collator = check_and_get_attribute(self.data_store,'data_collator')
+            
         if isinstance(ddict,DatasetDict):
             if ds_type not in ddict.keys():
                 raise ValueError(f'{ds_type} is not in the given DatasetDict')
@@ -370,6 +373,7 @@ class ModelLMController():
         results = ddict.map(partial(extract_hidden_states,
                                  model=self.model,
                                  model_input_names = tokenizer.model_input_names,
+                                 data_collator=data_collator,
                                  state_name=state_name,
                                  state_idx=state_idx,
                                  device = self.model.device),
