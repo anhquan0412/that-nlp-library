@@ -143,7 +143,7 @@ class TextDataController():
                  batch_size=1024, # CPU batch size
                  num_proc=4, # Number of processes for multiprocessing
                  cols_to_keep=None, # Columns to keep after all processings
-                 verbose=True, # Whether to prdint processing information
+                 verbose=True, # Whether to print processing information
                 ):
             
         self.main_text = main_text
