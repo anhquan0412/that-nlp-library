@@ -34,7 +34,7 @@ def tokenizer_explain(inp, # Input sentence
     print(tokenizer.decode(tok))
     print()
 
-# %% ../nbs/00_text_main.ipynb 20
+# %% ../nbs/00_text_main.ipynb 13
 def two_steps_tokenization_explain(inp, # Input sentence
                                    tokenizer, # Tokenizer (preferably from HuggingFace)
                                    content_tfms=[], # A list of text transformations
@@ -63,7 +63,7 @@ def two_steps_tokenization_explain(inp, # Input sentence
     print()
     tokenizer_explain(inp,tokenizer)
 
-# %% ../nbs/00_text_main.ipynb 41
+# %% ../nbs/00_text_main.ipynb 34
 def tokenize_function(text,
                       tok,
                       max_length=None,
@@ -97,7 +97,7 @@ def tokenize_function(text,
                return_special_tokens_mask=return_special_tokens_mask
               )
 
-# %% ../nbs/00_text_main.ipynb 56
+# %% ../nbs/00_text_main.ipynb 51
 def concat_metadatas(dset:dict, # HuggingFace Dataset
                      main_text, # Text feature name
                      metadatas, # Metadata (or a list of metadatas)
@@ -121,7 +121,7 @@ def concat_metadatas(dset:dict, # HuggingFace Dataset
             results[main_text] = f'{m_data} {sep} {results[main_text]}'
     return results
 
-# %% ../nbs/00_text_main.ipynb 59
+# %% ../nbs/00_text_main.ipynb 54
 class TextDataController():
     def __init__(self,
                  inp, # HuggingFainpce Dataset or DatasetDict

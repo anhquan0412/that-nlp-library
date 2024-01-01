@@ -228,8 +228,6 @@ class TextDataLMController(TextDataController):
                                       ):
         if len(self.metadatas) and not isinstance(content,dict):
             raise ValueError(f'There is/are metadatas in the preprocessing step. Please include a dictionary including these keys for metadatas: {self.metadatas}, and texture content: {self.main_text}')
-        if not self.line_by_line:
-            raise ValueError(f'This TextDataLMController does not tokenize text line-by-line, thus no test set processing is provided)')
         
         _dic = {self.main_text:[content]} if isinstance(content,str) else content
         for k in _dic.keys():
@@ -251,9 +249,7 @@ class TextDataLMController(TextDataController):
                              test_dset, # The HuggingFace Dataset as Test set
                              do_tokenize, # Whether to tokenize text
                             ):
-        if not self.line_by_line:
-            raise ValueError(f'This TextDataLMController does not tokenize text line-by-line, thus no test set processing is provided)')
-            
+        
         test_cols = set(get_dset_col_names(test_dset))
         missing_cols = set(self.cols_to_keep) - test_cols
         if len(missing_cols):
@@ -271,7 +267,7 @@ class TextDataLMController(TextDataController):
         cols_to_remove = test_cols - set(self.cols_to_keep)
         test_dset = test_dset.remove_columns(list(cols_to_remove))
         
-        if do_tokenize:         
+        if do_tokenize:   
             print_msg('Tokenization',20,verbose=self.verbose)
             tok_func = partial(tokenize_function,
                            tok=self.tokenizer,

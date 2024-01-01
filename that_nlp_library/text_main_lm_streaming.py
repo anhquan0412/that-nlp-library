@@ -108,7 +108,7 @@ class TextDataLMControllerStreaming(TextDataControllerStreaming):
                         is_batched=self.is_batched)
         
         dtrain = hf_map_dset(dtrain,_func,self.is_batched,self.batch_size,self.tok_num_proc)
-        dtrain = dtrain.remove_columns(self.cols_to_keep)   
+        if not self.line_by_line: dtrain = dtrain.remove_columns(self.cols_to_keep)   
         
         # Token concatenation
         if not self.line_by_line: 
@@ -159,7 +159,10 @@ class TextDataLMControllerStreaming(TextDataControllerStreaming):
         def _get_generator(dset,tok_func,all_tfms):
             for inp in dset:
                 # inp[text_name] will be a single item
-                yield tok_func(all_tfms(inp[self.main_text]))
+                results = tok_func(all_tfms(inp[self.main_text]))
+                # add back cols_to_keep in inp
+                results = dict(inp,**results)
+                yield results
         
         # no padding for tokenization
         tok_func = partial(tokenize_function,
@@ -273,6 +276,7 @@ class TextDataLMControllerStreaming(TextDataControllerStreaming):
                              test_dset, # The HuggingFace Dataset as Test set
                              do_tokenize, # Whether to tokenize text
                             ):
+            
         test_cols = set(get_dset_col_names(test_dset))
         missing_cols = set(self.cols_to_keep) - test_cols
         if len(missing_cols):
@@ -286,15 +290,11 @@ class TextDataLMControllerStreaming(TextDataControllerStreaming):
         # Content transformation
         test_dset = self._do_transformation(test_dset)
         
-        if not do_tokenize:
-            # Drop every columns except for main_text
-            cols_to_remove = {c for c in test_cols if c!=self.main_text}
-            test_dset = test_dset.remove_columns(list(cols_to_remove))
-        else:
-            # Drop unused columns
-            cols_to_remove = test_cols - set(self.cols_to_keep)
-            test_dset = test_dset.remove_columns(list(cols_to_remove))
-            
+        # Drop unused columns
+        cols_to_remove = test_cols - set(self.cols_to_keep)
+        test_dset = test_dset.remove_columns(list(cols_to_remove))
+        
+        if do_tokenize:
             print_msg('Tokenization',20,verbose=self.verbose)
             tok_func = partial(tokenize_function,
                            tok=self.tokenizer,
