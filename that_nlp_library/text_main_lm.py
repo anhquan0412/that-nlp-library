@@ -97,7 +97,8 @@ class TextDataLMController(TextDataController):
     
 
     def do_all_preprocessing(self,
-                             shuffle_trn=True # To shuffle the train set before tokenization
+                             shuffle_trn=True, # To shuffle the train set before tokenization
+                             check_val_leak=True # To check (and remove) training data which is leaked to validation set
                             ):
         if self._processed_call:
             warnings.warn('Your dataset has already been processed. Returning the previous processed DatasetDict...')
@@ -123,7 +124,8 @@ class TextDataLMController(TextDataController):
         self._simplify_ddict()
         
         # Check validation leaking
-        self._check_validation_leaking()
+        if check_val_leak:
+            self._check_validation_leaking()
         
         # Shuffle train
         if shuffle_trn:
@@ -196,13 +198,14 @@ class TextDataLMController(TextDataController):
                              trn_size=None, # The number of training data to be tokenized
                              tok_num_proc=None, # Number of processes for tokenization
                              shuffle_trn=True, # To shuffle the train set before tokenization
+                             check_val_leak=True # To check (and remove) training data which is leaked to validation set
                             ):
         """
         This will perform `do_all_processing` then `do_tokenization`
         """
         if self.seed:
             seed_everything(self.seed)
-        _ = self.do_all_preprocessing(shuffle_trn)
+        _ = self.do_all_preprocessing(shuffle_trn,check_val_leak)
         _ = self.do_tokenization(tokenizer,max_length,line_by_line,stride,trn_size,tok_num_proc)
         
     
