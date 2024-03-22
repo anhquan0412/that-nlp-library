@@ -101,6 +101,7 @@ def finetune_lm(lr, # Learning rate
                 seed=None, # Random seed
                 report_to='none', # The list of integrations to report the results and logs to. Supported platforms are "azure_ml", "comet_ml", "mlflow", "neptune", "tensorboard","clearml" and "wandb". Use "all" to report to all integrations installed, "none" for no integrations.
                 trainer_class=None, # You can include the class name of your custom trainer here
+                len_train=None, # length of training steps (for streaming dataset)
             ):
     "The main model training/finetuning function"
     torch.cuda.empty_cache()
@@ -111,23 +112,25 @@ def finetune_lm(lr, # Learning rate
         seed_everything(seed)
         
     training_args = TrainingArguments(o_dir, 
-                                     learning_rate=lr, 
-                                     warmup_ratio=warmup_ratio,
-                                     lr_scheduler_type=lr_scheduler_type, 
-                                     fp16=True,
-                                     do_train=True,
-                                     do_eval= not no_valid,
-                                     evaluation_strategy="no" if no_valid else "epoch", 
-                                     save_strategy="epoch" if save_checkpoint else 'no',
-                                     overwrite_output_dir=True,
-                                     gradient_accumulation_steps=grad_accum_steps,
-                                     per_device_train_batch_size=bs, 
-                                     per_device_eval_batch_size=val_bs,
-                                     num_train_epochs=epochs, weight_decay=wd,
-                                     report_to=report_to,
-                                     logging_dir=os.path.join(o_dir, 'log') if report_to!='none' else None,
-                                     logging_steps = len(ddict["train"]) // bs,
-                                     )
+                                      learning_rate=lr, 
+                                      warmup_ratio=warmup_ratio,
+                                      lr_scheduler_type=lr_scheduler_type, 
+                                      fp16=True,
+                                      do_train=True,
+                                      do_eval= not no_valid,
+                                      evaluation_strategy="no" if no_valid else "epoch", 
+                                      save_strategy="epoch" if save_checkpoint else 'no',
+                                      overwrite_output_dir=True,
+                                      gradient_accumulation_steps=grad_accum_steps,
+                                      per_device_train_batch_size=bs, 
+                                      per_device_eval_batch_size=val_bs,
+                                      num_train_epochs=epochs,
+                                      max_steps=epochs*(len_train//bs) if len_train else -1,
+                                      weight_decay=wd,
+                                      report_to=report_to,
+                                      logging_dir=os.path.join(o_dir, 'log') if report_to!='none' else None,
+                                      logging_steps = len_train//bs if len_train else len(ddict["train"]) // bs
+                                      )
 
     # instantiate trainer
     trainer_class = Trainer if trainer_class is None else trainer_class
@@ -228,6 +231,7 @@ class ModelLMController():
             data_collator=None, # Data Collator (to override one in ```data_store```)
             is_mlm=None, # Whether this is masked LM or casual LM
             trainer_class=None, # You can include the class name of your custom trainer here
+            len_train=None, # length of training steps (for streaming dataset)
            ):
         
         if tokenizer is None: tokenizer=check_and_get_attribute(self.data_store,'tokenizer')
@@ -263,7 +267,9 @@ class ModelLMController():
                               val_bs=val_batch_size,
                               seed=self.seed,
                               trainer_class=trainer_class,
-                              report_to=hf_report_to)
+                              report_to=hf_report_to,
+                              len_train=len_train,
+                             )
         
         if not no_valid:
             eval_results = trainer.evaluate()
