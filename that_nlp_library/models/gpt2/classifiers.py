@@ -157,7 +157,7 @@ class GPT2HiddenStateConcatForSequenceClassification(GPT2PreTrainedModel):
                  is_multihead=False, # Whether this is a multihead (multi-level) classification
                  head_class_sizes=[], # Class size for each head
                  head_weights=[], # loss weight for each head. This will be multiplied to the loss of each head's output
-                 head_class=None, # The class object of the head
+                 head_class=None, # The class object of the head. You can use ConcatHeadSimple or ConcatHeadExtended
                  **head_class_kwargs, # Keyword arguments for the head class
                 ):
         super().__init__(config)

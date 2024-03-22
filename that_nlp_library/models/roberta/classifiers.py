@@ -90,8 +90,8 @@ class RobertaClassificationHeadCustom(torch.nn.Module):
         num_labels=num_labels if num_labels is not None else config.num_labels
         self.out_proj = torch.nn.Linear(config.hidden_size, num_labels)
 
-    def forward(self, features, **kwargs):
-        x = self.dropout(x)
+    def forward(self, inp, **kwargs):
+        x = self.dropout(inp)
         x = self.dense(x)
         x = torch.tanh(x)
         x = self.dropout(x)
@@ -198,7 +198,7 @@ class RobertaHiddenStateConcatForSequenceClassification(RobertaPreTrainedModel):
                  is_multihead=False, # Whether this is a multihead (multi-level) classification
                  head_class_sizes=[], # Class size for each head
                  head_weights=[], # loss weight for each head. This will be multiplied to the loss of each head's output
-                 head_class=None, # The class object of the head. You can use RobertaClassificationHeadCustom as default
+                 head_class=None, # The class object of the head. You can use ConcatHeadSimple or ConcatHeadExtended
                  **head_class_kwargs, # Keyword arguments for the head class
                 ):
         super().__init__(config)
