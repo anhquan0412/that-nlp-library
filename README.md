@@ -163,7 +163,7 @@ for training your data. There’s a quick tutorial on this decoupling
 
 For language modeling, the main pipeline also contains 2 parts
 
-### Text Data Controlelr for Language Model: [`TextDataLMController`](https://anhquan0412.github.io/that-nlp-library/text_main_lm.html#textdatalmcontroller)
+### Text Data Controller for Language Model: [`TextDataLMController`](https://anhquan0412.github.io/that-nlp-library/text_main_lm.html#textdatalmcontroller)
 
 Similarly to `TextDatController`,
 [`TextDataLMController`](https://anhquan0412.github.io/that-nlp-library/text_main_lm.html#textdatalmcontroller)
