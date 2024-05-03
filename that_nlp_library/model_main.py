@@ -3,7 +3,7 @@
 # %% ../nbs/03_model_main.ipynb 3
 from __future__ import annotations
 import os
-from transformers import Trainer, TrainingArguments, AutoConfig
+from transformers import Trainer, TrainingArguments, AutoConfig, DataCollatorWithPadding
 from datasets import DatasetDict,Dataset
 import torch
 import gc
@@ -211,7 +211,7 @@ def finetune(lr, # Learning rate
              seed=None, # Random seed
              report_to='none', # The list of integrations to report the results and logs to. Supported platforms are "azure_ml", "comet_ml", "mlflow", "neptune", "tensorboard","clearml" and "wandb". Use "all" to report to all integrations installed, "none" for no integrations.
              trainer_class=None, # You can include the class name of your custom trainer here
-             len_train=None, # length of training steps (for streaming dataset)
+             len_train=None, # estimated number of samples in the whole training set (for streaming dataset only)
             ):
     "The main model training/finetuning function"
     torch.cuda.empty_cache()
@@ -234,12 +234,14 @@ def finetune(lr, # Learning rate
                                       per_device_train_batch_size=bs, 
                                       per_device_eval_batch_size=val_bs,
                                       num_train_epochs=epochs,
-                                      max_steps=epochs*(len_train//bs) if len_train else -1,
+                                      max_steps=epochs*((len_train//bs)//grad_accum_steps) if len_train else -1,
                                       weight_decay=wd,
                                       report_to=report_to,
                                       logging_dir=os.path.join(o_dir, 'log') if report_to!='none' else None,
                                       logging_steps = len_train//bs if len_train else len(ddict["train"]) // bs 
                                      )
+    # reference for max_steps:
+#     https://stackoverflow.com/questions/76011298/huggingface-trainer-max-step-to-set-for-streaming-dataset
 
     # instantiate trainer
     trainer_class = Trainer if trainer_class is None else trainer_class
@@ -270,7 +272,8 @@ def _forward_pass_prediction(batch,
                              device = None, # device that the model is trained on
                              are_heads_separated=False, # is this multi-head, but each head has a separated logit?
                              ):
-    if data_collator is not None:
+    
+    if 'input_ids' in batch and isinstance(batch['input_ids'],list):
         
 # --- Convert from  
 # {'input_ids': [tensor([    0, 10444,   244, 14585,   125,  2948,  5925,   368,     2]), 
@@ -283,15 +286,18 @@ def _forward_pass_prediction(batch,
 #   'attention_mask': tensor([1, 1, 1, 1, 1, 1, 1, 1, 1])},
 #  {'input_ids': tensor([    0, 16098,  2913,   244,   135,   198, 34629,  6356,     2]),
 #   'attention_mask': tensor([1, 1, 1, 1, 1, 1, 1, 1, 1])}]
+# --- so that you can apply data_collator to add padding
 
         # remove string text, due to transformer new version       
         collator_inp = []
         ks = [k for k in batch.keys() if k in model_input_names+['label']]
         vs = [batch[k] for k in ks]
+        
         for pair in zip(*vs):
             collator_inp.append({k:v for k,v in zip(ks,pair)})
         
         batch = data_collator(collator_inp)
+        
     
     inputs = {k:v.to(device) for k,v in batch.items()
               if k in model_input_names}
@@ -412,17 +418,19 @@ class ModelController():
             compute_metrics=compute_metrics, # A function to compute metric, e.g. `compute_metrics` which utilizes the given ```metric_funcs``` 
             grad_accum_steps=2, # Gradient will be accumulated over gradient_accumulation_steps steps.
             tokenizer=None, # Tokenizer (to override one in ```data_store```)
-            data_collator=None, # Data Collator (to override one in ```data_store```)
             label_names=None, # Names of the label (dependent variable) columns (to override one in ```data_store```)
             head_sizes=None, # Class size for each head (to override one in ```model```)
             trainer_class=None, # You can include the class name of your custom trainer here
-            len_train=None, # Length of training steps (for streaming dataset)
+            len_train=None, # Number of samples in the whole training set (for streaming dataset only)
            ):
         
         if tokenizer is None: tokenizer=check_and_get_attribute(self.data_store,'tokenizer')
-        if data_collator is None: data_collator=getattr(self.data_store,'data_collator',None)
-        if ddict is None: ddict = check_and_get_attribute(self.data_store,'main_ddict')
             
+        # define data collator if no padding is added during preprocess (aka when max_length is -1)
+        max_length = getattr(self.data_store,'max_length',-1) 
+        data_collator= DataCollatorWithPadding(tokenizer,padding=True,pad_to_multiple_of=8) if max_length==-1 else None
+        
+        if ddict is None: ddict = check_and_get_attribute(self.data_store,'main_ddict')    
         if label_names is None: label_names=check_and_get_attribute(self.data_store,'label_names')
         label_names = val2iterable(label_names)
         
@@ -444,8 +452,13 @@ class ModelController():
                                    label_names=label_names 
                                   )
         
-        trainer = finetune(learning_rate,batch_size,weight_decay,epochs,
-                           ddict,tokenizer,o_dir,
+        trainer = finetune(learning_rate,
+                           batch_size,
+                           weight_decay,
+                           epochs,
+                           ddict,
+                           tokenizer,
+                           o_dir,
                            save_checkpoint=save_checkpoint,
                            model=self.model,
                            data_collator=data_collator,
@@ -514,7 +527,6 @@ class ModelController():
                       multilabel_threshold=0.5, # Threshold for multilabel classification
                       topk=1, # Number of labels to return for each head
                       tokenizer=None, # Tokenizer (to override one in ```data_store```)
-                      data_collator=None, # Data Collator (to override one in ```data_store```)
                       label_names=None, # Names of the label (dependent variable) columns (to override one in ```data_store```)
                       class_names_predefined=None, # List of names associated with the labels (same index order) (to override one in ```data_store```)
                       are_heads_separated=False # Are outputs (of model) separate heads?
@@ -522,9 +534,12 @@ class ModelController():
         device = self.model.device
         if is_multilabel is None: is_multilabel=getattr(self.model,'is_multilabel',False)
         label_lists = class_names_predefined
-        if tokenizer is None: tokenizer=check_and_get_attribute(self.data_store,'tokenizer')
-        if data_collator is None: data_collator=getattr(self.data_store,'data_collator',None)
-        if label_names is None: label_names=check_and_get_attribute(self.data_store,'label_names')
+        if tokenizer is None: tokenizer = check_and_get_attribute(self.data_store,'tokenizer')
+            
+        # use data collator to pad any batch of tokenized texts that have not been padded
+        data_collator = DataCollatorWithPadding(tokenizer,padding=True,pad_to_multiple_of=8)
+    
+        if label_names is None: label_names = check_and_get_attribute(self.data_store,'label_names')
         if label_lists is None: label_lists = check_and_get_attribute(self.data_store,'label_lists')
         label_names = val2iterable(label_names)
         if not isinstance(label_lists[0],list):

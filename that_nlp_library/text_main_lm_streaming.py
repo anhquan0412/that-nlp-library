@@ -22,6 +22,7 @@ class TextDataLMControllerStreaming(TextDataControllerStreaming):
                  filter_dict={}, # A dictionary: {feature: filtering_function_for_that_feature}
                  metadatas=[], # Names of the metadata columns
                  process_metas=True, # Whether to do simple text processing on the chosen metadatas
+                 metas_sep='.', # Separator, for multiple metadatas concatenation
                  content_transformations=[], # A list of text transformations
                  seed=None, # Random seed
                  batch_size=1024, # Transformation + Tokenization batch size
@@ -35,6 +36,7 @@ class TextDataLMControllerStreaming(TextDataControllerStreaming):
                          filter_dict=filter_dict,
                          metadatas=metadatas,
                          process_metas=process_metas,
+                         metas_sep=metas_sep,
                          content_transformations=content_transformations,
                          seed=seed,
                          batch_size=batch_size,
@@ -241,21 +243,26 @@ class TextDataLMControllerStreaming(TextDataControllerStreaming):
                          ):
         if not hasattr(self,'max_length'):
             raise ValueError("Please call `process_and_tokenize' or `do_tokenization` to tokenize your dataset")
-            
-        pad_to_multiple_of_8 = (self.max_length<0) # get data collator to pad when tokenizer does not apply padding
+        
+        self.is_mlm = is_mlm
+        
+        # get data collator to pad
+        pad_to_multiple_of_8 = True if self.max_length is not None and self.max_length<0 else False
+
         self.data_collator = DataCollatorForLanguageModeling(tokenizer=self.tokenizer,
                                                              mlm=is_mlm,
                                                              mlm_probability=mlm_prob,
                                                              pad_to_multiple_of=8 if pad_to_multiple_of_8 else None
                                                             )
                                                
+    
     def prepare_test_dataset_from_raws(self,
                                        content, # Either a single sentence, list of sentence or a dictionary with keys are metadata columns and values are list
                                        do_tokenize=False, # Whether to tokenize text
                                       ):
         if len(self.metadatas) and not isinstance(content,dict):
             raise ValueError(f'There is/are metadatas in the preprocessing step. Please include a dictionary including these keys for metadatas: {self.metadatas}, and texture content: {self.main_text}')
-            
+        
         _dic = {self.main_text:[content]} if isinstance(content,str) else content
         for k in _dic.keys():
             _dic[k] = val2iterable(_dic[k])
@@ -276,7 +283,7 @@ class TextDataLMControllerStreaming(TextDataControllerStreaming):
                              test_dset, # The HuggingFace Dataset as Test set
                              do_tokenize, # Whether to tokenize text
                             ):
-            
+        
         test_cols = set(get_dset_col_names(test_dset))
         missing_cols = set(self.cols_to_keep) - test_cols
         if len(missing_cols):
@@ -294,7 +301,7 @@ class TextDataLMControllerStreaming(TextDataControllerStreaming):
         cols_to_remove = test_cols - set(self.cols_to_keep)
         test_dset = test_dset.remove_columns(list(cols_to_remove))
         
-        if do_tokenize:
+        if do_tokenize:   
             print_msg('Tokenization',20,verbose=self.verbose)
             tok_func = partial(tokenize_function,
                            tok=self.tokenizer,

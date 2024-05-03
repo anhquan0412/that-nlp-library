@@ -217,7 +217,10 @@ class TextDataLMController(TextDataController):
             raise ValueError("Please call `process_and_tokenize' or `do_tokenization` to tokenize your dataset")
         
         self.is_mlm = is_mlm
-        pad_to_multiple_of_8 = (self.max_length<0) # get data collator to pad
+        
+        # get data collator to pad
+        pad_to_multiple_of_8 = True if self.max_length is not None and self.max_length<0 else False
+
         self.data_collator = DataCollatorForLanguageModeling(tokenizer=self.tokenizer,
                                                              mlm=is_mlm,
                                                              mlm_probability=mlm_prob,

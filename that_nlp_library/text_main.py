@@ -81,6 +81,7 @@ def tokenize_function(text,
                   )
     if isinstance(max_length,int) and max_length>0:
         # pad to the largest length of the current batch, and start truncating at max_length
+        # Note: that means it does not always pad to max length
         return tok(text, padding=True, 
                    max_length=max_length,
                    truncation=True,
@@ -624,6 +625,7 @@ class TextDataController():
         self.tokenizer = tokenizer
         self.max_length = max_length
         self.tok_num_proc = tok_num_proc if tok_num_proc else self.num_proc
+        
         tok_func = partial(tokenize_function,tok=tokenizer,max_length=max_length)
         _func = partial(lambda_map_batch,
                         feature=self.main_text,
@@ -641,7 +643,7 @@ class TextDataController():
         
         for k in self.main_ddict.keys():
             self.main_ddict[k] = hf_map_dset(self.main_ddict[k],_func,self.is_batched,self.batch_size,self.tok_num_proc)
-
+        
         self.verboseprint('Done')
         return self.main_ddict
         
@@ -661,9 +663,6 @@ class TextDataController():
         _ = self.do_all_preprocessing(shuffle_trn,check_val_leak)
         _ = self.do_tokenization(tokenizer,max_length,trn_size,tok_num_proc)
         
-    
-    def set_data_collator(self,data_collator):
-        self.data_collator = data_collator
         
     
     def prepare_test_dataset_from_csv(self,

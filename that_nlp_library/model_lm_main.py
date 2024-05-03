@@ -101,7 +101,7 @@ def finetune_lm(lr, # Learning rate
                 seed=None, # Random seed
                 report_to='none', # The list of integrations to report the results and logs to. Supported platforms are "azure_ml", "comet_ml", "mlflow", "neptune", "tensorboard","clearml" and "wandb". Use "all" to report to all integrations installed, "none" for no integrations.
                 trainer_class=None, # You can include the class name of your custom trainer here
-                len_train=None, # length of training steps (for streaming dataset)
+                len_train=None, # estimated number of samples in the whole training set (for streaming dataset only)
             ):
     "The main model training/finetuning function"
     torch.cuda.empty_cache()
@@ -125,7 +125,7 @@ def finetune_lm(lr, # Learning rate
                                       per_device_train_batch_size=bs, 
                                       per_device_eval_batch_size=val_bs,
                                       num_train_epochs=epochs,
-                                      max_steps=epochs*(len_train//bs) if len_train else -1,
+                                      max_steps=epochs*((len_train//bs)//grad_accum_steps) if len_train else -1,
                                       weight_decay=wd,
                                       report_to=report_to,
                                       logging_dir=os.path.join(o_dir, 'log') if report_to!='none' else None,
@@ -160,7 +160,7 @@ def extract_hidden_states(batch,
                           ):
     state_idx = val2iterable(state_idx)
     
-    if data_collator is not None:    
+    if 'input_ids' in batch and isinstance(batch['input_ids'],list):
 # --- Convert from  
 # {'input_ids': [tensor([    0, 10444,   244, 14585,   125,  2948,  5925,   368,     2]), 
 #                tensor([    0, 16098,  2913,   244,   135,   198, 34629,  6356,     2])]
@@ -172,6 +172,8 @@ def extract_hidden_states(batch,
 #   'attention_mask': tensor([1, 1, 1, 1, 1, 1, 1, 1, 1])},
 #  {'input_ids': tensor([    0, 16098,  2913,   244,   135,   198, 34629,  6356,     2]),
 #   'attention_mask': tensor([1, 1, 1, 1, 1, 1, 1, 1, 1])}]
+# --- so that you can apply data_collator to add padding
+
 
         # remove string text, due to transformer new version       
         collator_inp = []
@@ -231,7 +233,7 @@ class ModelLMController():
             data_collator=None, # Data Collator (to override one in ```data_store```)
             is_mlm=None, # Whether this is masked LM or casual LM
             trainer_class=None, # You can include the class name of your custom trainer here
-            len_train=None, # length of training steps (for streaming dataset)
+            len_train=None, # estimated number of samples in the whole training set (for streaming dataset only)
            ):
         
         if tokenizer is None: tokenizer=check_and_get_attribute(self.data_store,'tokenizer')
@@ -315,7 +317,7 @@ class ModelLMController():
         tokenizer=check_and_get_attribute(self.data_store,'tokenizer')
         main_text=check_and_get_attribute(self.data_store,'main_text')
         _task = 'fill-mask' if is_mlm else 'text-generation'
-        pipeline_obj = pipeline(_task,model=self.model,tokenizer=tokenizer,device=self.model.device)
+        pipeline_obj = pipeline(task=_task,model=self.model,tokenizer=tokenizer,device=self.model.device)
         str_list = dset[main_text]
         if _task=='fill-mask':
             all_tfms = self.data_store.content_tfms 

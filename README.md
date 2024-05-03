@@ -105,8 +105,10 @@ drive. You can still perform all the processings in the non-streamed
 version, except for **Train/Validation split** (which means you have to
 define your validation set beforehand), and **Upsampling**.
 
-For more details on **streaming**, visit
-[here](https://anhquan0412.github.io/that-nlp-library/text_main_streaming.html).
+For more details on **streaming**, visit [how to create a streamed
+dataset](https://anhquan0412.github.io/that-nlp-library/text_main_streaming.html)
+and [how to train a model with a streamed
+dataset](https://anhquan0412.github.io/that-nlp-library/roberta_singlehead_for_streaming)
 
 If you are curious on the time and space efficiency between streamed and
 non-streamed version, visit the benchmark

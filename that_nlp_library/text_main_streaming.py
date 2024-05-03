@@ -27,6 +27,7 @@ class TextDataControllerStreaming():
                  label_tfm_dict={}, # A dictionary: {label_name: transform_function_for_that_label}
                  metadatas=[], # Names of the metadata columns
                  process_metas=True, # Whether to do simple text processing on the chosen metadatas
+                 metas_sep='.', # Separator, for multiple metadatas concatenation
                  content_transformations=[], # A list of text transformations
                  content_augmentations=[], # A list of text augmentations
                  seed=None, # Random seed
@@ -47,6 +48,7 @@ class TextDataControllerStreaming():
         self.label_tfm_dict = label_tfm_dict
         self.metadatas = val2iterable(metadatas)
         self.process_metas = process_metas
+        self.metas_sep = metas_sep
 
         self.content_tfms = val2iterable(content_transformations)
         self.aug_tfms = val2iterable(content_augmentations)
@@ -58,12 +60,7 @@ class TextDataControllerStreaming():
         self.cols_to_keep = cols_to_keep
 
         self.main_ddict=DatasetDict()
-        self.verbose = verbose
-        self.verboseprint = print if verbose else lambda *a, **k: None
-        if not self.verbose:
-            disable_progress_bar() # turn off huggingface `map` progress bar
-        else:
-            enable_progress_bar()
+        self.set_verbose(verbose)
             
         if hasattr(inp,'keys'): # is datasetdict
             if 'train' not in inp.keys(): 
@@ -100,6 +97,10 @@ class TextDataControllerStreaming():
     def set_verbose(self,verbose):
         self.verbose = verbose
         self.verboseprint = print if verbose else lambda *a, **k: None
+        if not self.verbose:
+            disable_progress_bar() # turn off huggingface `map` progress bar
+        else:
+            enable_progress_bar()
     
     def _convert_regression_to_float(self):
         if len(self.sup_types)==0: return
@@ -150,6 +151,7 @@ class TextDataControllerStreaming():
                                main_text=self.main_text,
                                metadatas=self.metadatas,
                                process_metas=self.process_metas,
+                               sep=self.metas_sep,
                                is_batched=self.is_batched)
             dtrain = hf_map_dset(dtrain,map_func,self.is_batched,self.batch_size,self.num_proc)
         return dtrain
@@ -263,7 +265,17 @@ class TextDataControllerStreaming():
                     dtrain = hf_filter_dset(dtrain,_func,self.is_batched,self.batch_size,self.num_proc)
         return dtrain
         
-
+    def _do_transformation(self,dset):
+        if len(self.content_tfms):
+            for tfm in self.content_tfms:
+                _func = partial(lambda_map_batch,
+                               feature=self.main_text,
+                               func=tfm,
+                               is_batched=self.is_batched)
+                dset = hf_map_dset(dset,_func,self.is_batched,self.batch_size,self.num_proc)
+                
+        return dset
+    
     def _do_transformation_tokenization(self,dtrain):
         tok_func = partial(tokenize_function,tok=self.tokenizer,max_length=self.max_length)
         if len(self.content_tfms):            
@@ -340,17 +352,16 @@ class TextDataControllerStreaming():
             dtrain = self._do_transformation_augmentation_tokenization(dtrain,tok_func,all_tfms)
             yield from _get_generator(dtrain)
             
-        
-            
+         
     def _do_transformation_augmentation_tokenization_generator(self):
         tok_func = partial(tokenize_function,tok=self.tokenizer,max_length=self.max_length)
         all_tfms = self.content_tfms + self.aug_tfms
         
         self.main_ddict['train'] = IterableDataset.from_generator(self._construct_generator_with_batch,
-                                                   gen_kwargs={'dset': self.main_ddict['train'],
-                                                               'tok_func':tok_func,
-                                                               'all_tfms': all_tfms
-                                                              }
+                                                                  gen_kwargs={'dset': self.main_ddict['train'],
+                                                                              'tok_func':tok_func,
+                                                                              'all_tfms': all_tfms
+                                                                             }
                                                                  )
     
     def _do_transformation_augmentation_tokenization_generator_linebyline(self):
@@ -369,10 +380,10 @@ class TextDataControllerStreaming():
         all_tfms = partial(func_all,functions=all_tfms) if len(all_tfms) else lambda x: x
            
         self.main_ddict['train'] = IterableDataset.from_generator(_get_generator,
-                                                   gen_kwargs={'dset': self.main_ddict['train'],
-                                                               'tok_func':tok_func,
-                                                               'all_tfms': all_tfms
-                                                              }
+                                                                  gen_kwargs={'dset': self.main_ddict['train'],
+                                                                              'tok_func':tok_func,
+                                                                              'all_tfms': all_tfms
+                                                                             }
                                                                  )
 
         
@@ -409,7 +420,7 @@ class TextDataControllerStreaming():
         # Process labels
         self._encode_labels()
 
-        # Dropping unused columns
+        # Drop unused columns
         self._simplify_ddict()
 
         if self.seed:
