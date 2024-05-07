@@ -13,7 +13,7 @@ from datasets.utils.logging import disable_progress_bar,enable_progress_bar
 # %% auto 0
 __all__ = ['tokenizer_explain', 'two_steps_tokenization_explain', 'tokenize_function', 'concat_metadatas', 'TextDataController']
 
-# %% ../nbs/00_text_main.ipynb 6
+# %% ../nbs/00_text_main.ipynb 7
 def tokenizer_explain(inp, # Input sentence
                       tokenizer, # Tokenizer (preferably from HuggingFace)
                       split_word=False # Is input `inp` split into list or not
@@ -34,7 +34,7 @@ def tokenizer_explain(inp, # Input sentence
     print(tokenizer.decode(tok))
     print()
 
-# %% ../nbs/00_text_main.ipynb 13
+# %% ../nbs/00_text_main.ipynb 17
 def two_steps_tokenization_explain(inp, # Input sentence
                                    tokenizer, # Tokenizer (preferably from HuggingFace)
                                    content_tfms=[], # A list of text transformations
@@ -63,7 +63,7 @@ def two_steps_tokenization_explain(inp, # Input sentence
     print()
     tokenizer_explain(inp,tokenizer)
 
-# %% ../nbs/00_text_main.ipynb 34
+# %% ../nbs/00_text_main.ipynb 39
 def tokenize_function(text,
                       tok,
                       max_length=None,
@@ -98,7 +98,7 @@ def tokenize_function(text,
                return_special_tokens_mask=return_special_tokens_mask
               )
 
-# %% ../nbs/00_text_main.ipynb 51
+# %% ../nbs/00_text_main.ipynb 57
 def concat_metadatas(dset:dict, # HuggingFace Dataset
                      main_text, # Text feature name
                      metadatas, # Metadata (or a list of metadatas)
@@ -122,7 +122,7 @@ def concat_metadatas(dset:dict, # HuggingFace Dataset
             results[main_text] = f'{m_data} {sep} {results[main_text]}'
     return results
 
-# %% ../nbs/00_text_main.ipynb 54
+# %% ../nbs/00_text_main.ipynb 61
 class TextDataController():
     def __init__(self,
                  inp, # HuggingFainpce Dataset or DatasetDict
