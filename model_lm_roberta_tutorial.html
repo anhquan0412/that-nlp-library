@@ -1,0 +1,1917 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.554">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="This notebook contains an end-to-end process of preprocess + tokenizing your text, and build language models based on Roberta architecture">
+
+<title>that-nlp-library - Model Controller Tutorial: Training a Roberta Language Model</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script><script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="that-nlp-library - Model Controller Tutorial: Training a Roberta Language Model">
+<meta property="og:description" content="This notebook contains an end-to-end process of preprocess + tokenizing your text, and build language models based on Roberta architecture">
+<meta property="og:site_name" content="that-nlp-library">
+<meta name="twitter:title" content="that-nlp-library - Model Controller Tutorial: Training a Roberta Language Model">
+<meta name="twitter:description" content="This notebook contains an end-to-end process of preprocess + tokenizing your text, and build language models based on Roberta architecture">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-sidebar floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">that-nlp-library</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools tools-end">
+</div>
+          <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./text_main.html">1. Quick Starts</a></li><li class="breadcrumb-item"><a href="./model_lm_roberta_tutorial.html">Model Controller Tutorial: Training a Roberta Language Model</a></li></ol></nav>
+        <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Welcome to that-nlp-library</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true">
+ <span class="menu-text">1. Quick Starts</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_main.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Main</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_classification_tutorial.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Controller Tutorial: Classification</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_lm_roberta_tutorial.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Model Controller Tutorial: Training a Roberta Language Model</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
+ <span class="menu-text">2. All Use Cases</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="false">
+ <span class="menu-text">a. Roberta-based models for Supervised Learning</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_singlehead.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model (Custom Single Head)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_multihead.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model (Multi Head)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_multihead_regression.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model (Regression)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_conditional_prob.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model with Conditional Probability</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_dhc.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model with Deep Hierarchical Classification</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_multilabel.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model (Multi-Label)</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="false">
+ <span class="menu-text">b. GPT2-based models for Supervised Learning</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./gpt2_singlehead.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">GPT2 model (Custom Single Head)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./gpt2_multihead.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">GPT2 model (Multi Head)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./gpt2_multihead_regression.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">GPT2 model (Regression)</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="false">
+ <span class="menu-text">c.&nbsp;Masked Language Model Training</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_lm_roberta_tutorial.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Controller Tutorial: Training a Roberta Language Model</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="false">
+ <span class="menu-text">d.&nbsp;Causal Language Model Training</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_lm_gpt2_tutorial.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Controller Tutorial: Training a GPT2 Language Model</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" aria-expanded="false">
+ <span class="menu-text">e. Training A Streamed Dataset</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_singlehead_for_streaming.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model with a streamed dataset (Custom Single Head)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_lm_for_streaming.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta Language Model for a streamed dataset</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" aria-expanded="true">
+ <span class="menu-text">3. Evaluations For Supervised Learning</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./evaluations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Evaluations</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" aria-expanded="true">
+ <span class="menu-text">4. Hidden States Extraction</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-9" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./hidden_states.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Feature Extraction From Hidden States</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" aria-expanded="true">
+ <span class="menu-text">5. Text Classes</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-10" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" aria-expanded="false">
+ <span class="menu-text">a. Text Processing</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-11" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_augmentation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Augmentation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_transformation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Transformation</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-12" aria-expanded="false">
+ <span class="menu-text">b. Text Controller For Supervised Learning</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-12" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-12" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_main.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Main</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_main_streaming.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Main Streaming</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_main_benchmark.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Processing Benchmark</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-13" aria-expanded="false">
+ <span class="menu-text">c.&nbsp;Text Controller For Language Modeling</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-13" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-13" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_main_lm.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Main For Language Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_main_lm_streaming.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Main For Language Model - Streaming</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-14" aria-expanded="true">
+ <span class="menu-text">6. Model Classes</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-14" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-14" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-15" aria-expanded="false">
+ <span class="menu-text">a. Model Controller For Supervised Learning</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-15" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-15" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_main.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Main Functions and Controller</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-16" aria-expanded="false">
+ <span class="menu-text">b. Model Controller for Language Modeling</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-16" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-16" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_lm_main.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Language Model Main Functions and Controller</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-17" aria-expanded="false">
+ <span class="menu-text">c.&nbsp;Roberta-based classification Model</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-17" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-17" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./models.roberta.classifiers.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta Classifiers</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./models.roberta.deep_hierarchical_classifiers.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Deep Hierarchical Classifiers</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./models.roberta.conditional_prob_classifiers.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Conditional Probability Classifiers</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-18" aria-expanded="false">
+ <span class="menu-text">d.&nbsp;GPT2-based classification Model</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-18" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-18" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./models.gpt2.classifiers.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">GPT2 Classifiers</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-19" aria-expanded="true">
+ <span class="menu-text">7. Utility</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-19" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-19" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./utils.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">utils</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#train-a-roberta-language-model-from-scratch-with-line-by-line-tokenization" id="toc-train-a-roberta-language-model-from-scratch-with-line-by-line-tokenization" class="nav-link active" data-scroll-target="#train-a-roberta-language-model-from-scratch-with-line-by-line-tokenization">1. Train a Roberta Language Model From Scratch (with line-by-line tokenization)</a>
+  <ul class="collapse">
+  <li><a href="#a-create-a-textdatalmcontroller-object" id="toc-a-create-a-textdatalmcontroller-object" class="nav-link" data-scroll-target="#a-create-a-textdatalmcontroller-object">a) Create a TextDataLMController object</a></li>
+  <li><a href="#b-initialize-and-train-roberta-language-model-from-scratch" id="toc-b-initialize-and-train-roberta-language-model-from-scratch" class="nav-link" data-scroll-target="#b-initialize-and-train-roberta-language-model-from-scratch">b) Initialize and train Roberta Language Model from scratch</a></li>
+  <li><a href="#c-fill-mask-using-model" id="toc-c-fill-mask-using-model" class="nav-link" data-scroll-target="#c-fill-mask-using-model">c) Fill mask using model</a></li>
+  </ul></li>
+  <li><a href="#finetune-a-roberta-language-model-with-line-by-line-tokenization" id="toc-finetune-a-roberta-language-model-with-line-by-line-tokenization" class="nav-link" data-scroll-target="#finetune-a-roberta-language-model-with-line-by-line-tokenization">2. Finetune a Roberta Language Model (with line-by-line tokenization)</a>
+  <ul class="collapse">
+  <li><a href="#a-create-a-textdatalmcontroller-object-1" id="toc-a-create-a-textdatalmcontroller-object-1" class="nav-link" data-scroll-target="#a-create-a-textdatalmcontroller-object-1">a) Create a TextDataLMController object</a></li>
+  <li><a href="#b-initialize-and-train-roberta-language-model" id="toc-b-initialize-and-train-roberta-language-model" class="nav-link" data-scroll-target="#b-initialize-and-train-roberta-language-model">b) Initialize and train Roberta Language Model</a></li>
+  <li><a href="#c-fill-mask-using-model-1" id="toc-c-fill-mask-using-model-1" class="nav-link" data-scroll-target="#c-fill-mask-using-model-1">c) Fill mask using model</a></li>
+  <li><a href="#d-extract-hidden-states-from-model" id="toc-d-extract-hidden-states-from-model" class="nav-link" data-scroll-target="#d-extract-hidden-states-from-model">d) Extract hidden states from model</a>
+  <ul class="collapse">
+  <li><a href="#from-raw-texts" id="toc-from-raw-texts" class="nav-link" data-scroll-target="#from-raw-texts">From raw texts</a></li>
+  <li><a href="#from-validation-or-even-train-set" id="toc-from-validation-or-even-train-set" class="nav-link" data-scroll-target="#from-validation-or-even-train-set">From validation (or even train) set</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#finetune-a-roberta-language-model-with-token-concatenation" id="toc-finetune-a-roberta-language-model-with-token-concatenation" class="nav-link" data-scroll-target="#finetune-a-roberta-language-model-with-token-concatenation">3. Finetune a Roberta Language Model (with token concatenation)</a>
+  <ul class="collapse">
+  <li><a href="#a-create-a-textdatalmcontroller-object-2" id="toc-a-create-a-textdatalmcontroller-object-2" class="nav-link" data-scroll-target="#a-create-a-textdatalmcontroller-object-2">a) Create a TextDataLMController object</a></li>
+  <li><a href="#b-initialize-and-train-roberta-language-model-1" id="toc-b-initialize-and-train-roberta-language-model-1" class="nav-link" data-scroll-target="#b-initialize-and-train-roberta-language-model-1">b) Initialize and train Roberta Language Model</a></li>
+  <li><a href="#c-fill-mask-using-model-2" id="toc-c-fill-mask-using-model-2" class="nav-link" data-scroll-target="#c-fill-mask-using-model-2">c) Fill mask using model</a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/anhquan0412/that-nlp-library/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./text_main.html">1. Quick Starts</a></li><li class="breadcrumb-item"><a href="./model_lm_roberta_tutorial.html">Model Controller Tutorial: Training a Roberta Language Model</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">Model Controller Tutorial: Training a Roberta Language Model</h1>
+</div>
+
+<div>
+  <div class="description">
+    This notebook contains an end-to-end process of preprocess + tokenizing your text, and build language models based on Roberta architecture
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<div id="cell-3" class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-4" class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">#This will specify a (or a list) of GPUs for training</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>os.environ[<span class="st">'CUDA_VISIBLE_DEVICES'</span>] <span class="op">=</span> <span class="st">"0"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-5" class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> that_nlp_library.text_transformation <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> that_nlp_library.text_augmentation <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> that_nlp_library.text_main_lm <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> that_nlp_library.utils <span class="im">import</span> seed_everything</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> that_nlp_library.model_lm_main <span class="im">import</span> <span class="op">*</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-6" class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> underthesea <span class="im">import</span> text_normalize</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> functools <span class="im">import</span> partial</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> transformers <span class="im">import</span> AutoTokenizer, AutoConfig, AutoModelForMaskedLM</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> datasets <span class="im">import</span> load_dataset</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> transformers <span class="im">import</span> DataCollatorForLanguageModeling</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="train-a-roberta-language-model-from-scratch-with-line-by-line-tokenization" class="level1">
+<h1>1. Train a Roberta Language Model From Scratch (with line-by-line tokenization)</h1>
+<section id="a-create-a-textdatalmcontroller-object" class="level2">
+<h2 class="anchored" data-anchor-id="a-create-a-textdatalmcontroller-object">a) Create a TextDataLMController object</h2>
+<p>We will reuse the data and the preprocessings in <a href="https://anhquan0412.github.io/that-nlp-library/text_main_lm.html">this tutorial</a></p>
+<div id="cell-10" class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>dset <span class="op">=</span> load_dataset(<span class="st">'sample_data'</span>,data_files<span class="op">=</span>[<span class="st">'Womens_Clothing_Reviews.csv'</span>],split<span class="op">=</span><span class="st">'train'</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>tdc <span class="op">=</span> TextDataLMController(dset,</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>                         main_text<span class="op">=</span><span class="st">'Review Text'</span>,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>                         filter_dict<span class="op">=</span>{<span class="st">'Review Text'</span>: <span class="kw">lambda</span> x: x <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>},</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>                         metadatas<span class="op">=</span><span class="st">'Title'</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>                         content_transformations<span class="op">=</span>[text_normalize,<span class="bu">str</span>.lower],</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>                         cols_to_keep<span class="op">=</span>[<span class="st">'Clothing ID'</span>,<span class="st">'Review Text'</span>],</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>                         seed<span class="op">=</span><span class="dv">42</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>                         verbose<span class="op">=</span><span class="va">False</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>                        )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Define our tokenizer for Roberta</p>
+<div id="cell-12" class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>_tokenizer <span class="op">=</span> AutoTokenizer.from_pretrained(<span class="st">'roberta-base'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/home/quan/anaconda3/envs/nlp_dev/lib/python3.10/site-packages/huggingface_hub/file_download.py:1132: FutureWarning: `resume_download` is deprecated and will be removed in version 1.0.0. Downloads always resume when possible. If you want to force a new download, use `force_download=True`.
+  warnings.warn(</code></pre>
+</div>
+</div>
+<p>Process and tokenize our dataset (using line-by-line tokenization)</p>
+<div id="cell-14" class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>block_size<span class="op">=</span><span class="dv">112</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>tdc.process_and_tokenize(_tokenizer,line_by_line<span class="op">=</span><span class="va">True</span>,max_length<span class="op">=</span>block_size) </span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co"># set max_length=-1 if you want the data collator (instead of the tokenizer) to pad</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-15" class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>tdc.main_ddict</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>DatasetDict({
+    train: Dataset({
+        features: ['Clothing ID', 'Review Text', 'input_ids', 'attention_mask', 'special_tokens_mask'],
+        num_rows: 18112
+    })
+    validation: Dataset({
+        features: ['Clothing ID', 'Review Text', 'input_ids', 'attention_mask', 'special_tokens_mask'],
+        num_rows: 4529
+    })
+})</code></pre>
+</div>
+</div>
+<p>And set the data collator</p>
+<div id="cell-17" class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>tdc.set_data_collator(is_mlm<span class="op">=</span><span class="va">True</span>,mlm_prob<span class="op">=</span><span class="fl">0.15</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="b-initialize-and-train-roberta-language-model-from-scratch" class="level2">
+<h2 class="anchored" data-anchor-id="b-initialize-and-train-roberta-language-model-from-scratch">b) Initialize and train Roberta Language Model from scratch</h2>
+<div id="cell-19" class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>_config <span class="op">=</span> AutoConfig.from_pretrained(<span class="st">'roberta-base'</span>,</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>                                     <span class="co"># just in case...</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>                                     vocab_size<span class="op">=</span><span class="bu">len</span>(_tokenizer),</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>                                     bos_token_id<span class="op">=</span>_tokenizer.bos_token_id,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>                                     eos_token_id<span class="op">=</span>_tokenizer.eos_token_id,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>                                     )</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>_config</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>RobertaConfig {
+  "_name_or_path": "roberta-base",
+  "architectures": [
+    "RobertaForMaskedLM"
+  ],
+  "attention_probs_dropout_prob": 0.1,
+  "bos_token_id": 0,
+  "classifier_dropout": null,
+  "eos_token_id": 2,
+  "hidden_act": "gelu",
+  "hidden_dropout_prob": 0.1,
+  "hidden_size": 768,
+  "initializer_range": 0.02,
+  "intermediate_size": 3072,
+  "layer_norm_eps": 1e-05,
+  "max_position_embeddings": 514,
+  "model_type": "roberta",
+  "num_attention_heads": 12,
+  "num_hidden_layers": 12,
+  "pad_token_id": 1,
+  "position_embedding_type": "absolute",
+  "transformers_version": "4.40.1",
+  "type_vocab_size": 1,
+  "use_cache": true,
+  "vocab_size": 50265
+}</code></pre>
+</div>
+</div>
+<div id="cell-20" class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># _config = AutoConfig.from_pretrained('roberta-base',</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co">#                                      # just in case...</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co">#                                      vocab_size=len(_tokenizer),</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co">#                                      bos_token_id=_tokenizer.bos_token_id,</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="co">#                                      eos_token_id=_tokenizer.eos_token_id</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="co">#                                      )</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="co"># _config</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-21" class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>_model <span class="op">=</span> language_model_init(AutoModelForMaskedLM,</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>                             config<span class="op">=</span>_config,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>                             cpoint_path<span class="op">=</span><span class="va">None</span>, <span class="co"># leave this as None to get a non-pretrained model</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>                             seed<span class="op">=</span><span class="dv">42</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>                            )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Initiate a new language model from scratch
+Total parameters: 124697433
+Total trainable parameters: 124697433</code></pre>
+</div>
+</div>
+<p>Create a model controller</p>
+<div id="cell-23" class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>controller <span class="op">=</span> ModelLMController(_model,data_store<span class="op">=</span>tdc,seed<span class="op">=</span><span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>And we can start training our model</p>
+<div id="cell-25" class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>lr <span class="op">=</span> <span class="fl">1e-4</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>bs<span class="op">=</span><span class="dv">32</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>wd<span class="op">=</span><span class="fl">0.01</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>epochs<span class="op">=</span> <span class="dv">4</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>warmup_ratio<span class="op">=</span><span class="fl">0.25</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>controller.fit(epochs,lr,</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>               batch_size<span class="op">=</span>bs,</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>               weight_decay<span class="op">=</span>wd,</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>               warmup_ratio<span class="op">=</span>warmup_ratio,</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>               save_checkpoint<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>              )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+    <div>
+      
+      <progress value="1132" max="1132" style="width:300px; height:20px; vertical-align: middle;"></progress>
+      [1132/1132 05:16, Epoch 4/4]
+    </div>
+    
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th">Epoch</th>
+<th data-quarto-table-cell-role="th">Training Loss</th>
+<th data-quarto-table-cell-role="th">Validation Loss</th>
+<th data-quarto-table-cell-role="th">Accuracy</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>No log</td>
+<td>5.603508</td>
+<td>0.132908</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>6.342900</td>
+<td>5.404186</td>
+<td>0.153836</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>6.342900</td>
+<td>5.259489</td>
+<td>0.169787</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>5.286800</td>
+<td>5.232296</td>
+<td>0.178328</td>
+</tr>
+</tbody>
+</table>
+<p>
+</p></div>
+</div>
+<div class="cell-output cell-output-display">
+
+    <div>
+      
+      <progress value="142" max="142" style="width:300px; height:20px; vertical-align: middle;"></progress>
+      [142/142 00:07]
+    </div>
+    
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Perplexity on validation set: 187.860</code></pre>
+</div>
+</div>
+<div id="cell-26" class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>controller.trainer.model.save_pretrained(<span class="st">'./sample_weights/lm_model'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="c-fill-mask-using-model" class="level2">
+<h2 class="anchored" data-anchor-id="c-fill-mask-using-model">c) Fill mask using model</h2>
+<div id="cell-28" class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>trained_model <span class="op">=</span> language_model_init(AutoModelForMaskedLM,</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>                                    cpoint_path<span class="op">=</span><span class="st">'./sample_weights/lm_model'</span>,</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>                                   )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Total parameters: 124697433
+Total trainable parameters: 124697433</code></pre>
+</div>
+</div>
+<div id="cell-29" class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>controller2 <span class="op">=</span> ModelLMController(trained_model,data_store<span class="op">=</span>tdc,seed<span class="op">=</span><span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-30" class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>controller2.data_store.tokenizer.mask_token</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>'&lt;mask&gt;'</code></pre>
+</div>
+</div>
+<div id="cell-31" class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>inp1 <span class="op">=</span> {<span class="st">'Clothing ID'</span>:<span class="dv">1</span>,</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Title'</span>:<span class="st">'Flattering'</span>,</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Review Text'</span>: <span class="st">"Love this &lt;mask&gt;. The detail is amazing. Runs small I ordered a 12 I'm usually a 10, but still a little snug"</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>       }</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-32" class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>controller2.predict_raw_text(inp1,print_result<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Score: 0.160 &gt;&gt;&gt; flattering. love this top. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.113 &gt;&gt;&gt; flattering. love this dress. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.050 &gt;&gt;&gt; flattering. love this!. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.040 &gt;&gt;&gt; flattering. love this is. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.027 &gt;&gt;&gt; flattering. love this sweater. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+--------------------</code></pre>
+</div>
+</div>
+<p>You can input several raw texts</p>
+<div id="cell-34" class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>inp2 <span class="op">=</span> {<span class="st">'Clothing ID'</span>:[<span class="dv">1</span>,<span class="dv">2</span>],</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Title'</span>:[<span class="st">'Flattering'</span>,<span class="st">'Lovely, but small'</span>],</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Review Text'</span>: [<span class="st">"Love this &lt;mask&gt;. The detail is amazing. Runs small I ordered a 12 I'm usually a 10, but still a little snug"</span>,</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>                        <span class="st">"Love this skirt. The detail is amazing. Runs &lt;mask&gt;, I ordered a 12 I'm usually a 10, but still a little snug"</span>]</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>       }</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-35" class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>controller2.predict_raw_text(inp2,print_result<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Score: 0.160 &gt;&gt;&gt; flattering. love this top. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.113 &gt;&gt;&gt; flattering. love this dress. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.050 &gt;&gt;&gt; flattering. love this!. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.040 &gt;&gt;&gt; flattering. love this is. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.027 &gt;&gt;&gt; flattering. love this sweater. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+--------------------
+Score: 0.071 &gt;&gt;&gt; lovely, but small. love this skirt. the detail is amazing. runs it, i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.052 &gt;&gt;&gt; lovely, but small. love this skirt. the detail is amazing. runs the, i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.050 &gt;&gt;&gt; lovely, but small. love this skirt. the detail is amazing. runs and, i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.048 &gt;&gt;&gt; lovely, but small. love this skirt. the detail is amazing. runs., i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.046 &gt;&gt;&gt; lovely, but small. love this skirt. the detail is amazing. runs,, i ordered a 12 i'm usually a 10, but still a little snug
+--------------------</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="finetune-a-roberta-language-model-with-line-by-line-tokenization" class="level1">
+<h1>2. Finetune a Roberta Language Model (with line-by-line tokenization)</h1>
+<section id="a-create-a-textdatalmcontroller-object-1" class="level2">
+<h2 class="anchored" data-anchor-id="a-create-a-textdatalmcontroller-object-1">a) Create a TextDataLMController object</h2>
+<p>We will reuse the data and the preprocessings in <a href="https://anhquan0412.github.io/that-nlp-library/text_main_lm.html">this tutorial</a></p>
+<div id="cell-40" class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>dset <span class="op">=</span> load_dataset(<span class="st">'sample_data'</span>,data_files<span class="op">=</span>[<span class="st">'Womens_Clothing_Reviews.csv'</span>],split<span class="op">=</span><span class="st">'train'</span>)</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>tdc <span class="op">=</span> TextDataLMController(dset,</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>                         main_text<span class="op">=</span><span class="st">'Review Text'</span>,</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>                         filter_dict<span class="op">=</span>{<span class="st">'Review Text'</span>: <span class="kw">lambda</span> x: x <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>},</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>                         metadatas<span class="op">=</span><span class="st">'Title'</span>,</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>                         content_transformations<span class="op">=</span>[text_normalize,<span class="bu">str</span>.lower],</span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>                         cols_to_keep<span class="op">=</span>[<span class="st">'Clothing ID'</span>,<span class="st">'Review Text'</span>],</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>                         seed<span class="op">=</span><span class="dv">42</span>,</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>                         verbose<span class="op">=</span><span class="va">False</span></span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>                        )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Define our tokenizer for Roberta</p>
+<div id="cell-42" class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>_tokenizer <span class="op">=</span> AutoTokenizer.from_pretrained(<span class="st">'roberta-base'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/home/quan/anaconda3/envs/nlp_dev/lib/python3.10/site-packages/huggingface_hub/file_download.py:1132: FutureWarning: `resume_download` is deprecated and will be removed in version 1.0.0. Downloads always resume when possible. If you want to force a new download, use `force_download=True`.
+  warnings.warn(</code></pre>
+</div>
+</div>
+<p>Process and tokenize our dataset (using line-by-line tokenization)</p>
+<div id="cell-44" class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>block_size<span class="op">=</span><span class="dv">112</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>tdc.process_and_tokenize(_tokenizer,line_by_line<span class="op">=</span><span class="va">True</span>,max_length<span class="op">=</span>block_size) </span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="co"># set max_length=-1 if you want the data collator to pad</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-45" class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>tdc.main_ddict</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>DatasetDict({
+    train: Dataset({
+        features: ['Clothing ID', 'Review Text', 'input_ids', 'attention_mask', 'special_tokens_mask'],
+        num_rows: 18112
+    })
+    validation: Dataset({
+        features: ['Clothing ID', 'Review Text', 'input_ids', 'attention_mask', 'special_tokens_mask'],
+        num_rows: 4529
+    })
+})</code></pre>
+</div>
+</div>
+<p>And set the data collator</p>
+<div id="cell-47" class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>tdc.set_data_collator(is_mlm<span class="op">=</span><span class="va">True</span>,mlm_prob<span class="op">=</span><span class="fl">0.15</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="b-initialize-and-train-roberta-language-model" class="level2">
+<h2 class="anchored" data-anchor-id="b-initialize-and-train-roberta-language-model">b) Initialize and train Roberta Language Model</h2>
+<div id="cell-49" class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>_config <span class="op">=</span> AutoConfig.from_pretrained(<span class="st">'roberta-base'</span>,</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>                                    vocab_size<span class="op">=</span><span class="bu">len</span>(_tokenizer))</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>_config</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>RobertaConfig {
+  "_name_or_path": "roberta-base",
+  "architectures": [
+    "RobertaForMaskedLM"
+  ],
+  "attention_probs_dropout_prob": 0.1,
+  "bos_token_id": 0,
+  "classifier_dropout": null,
+  "eos_token_id": 2,
+  "hidden_act": "gelu",
+  "hidden_dropout_prob": 0.1,
+  "hidden_size": 768,
+  "initializer_range": 0.02,
+  "intermediate_size": 3072,
+  "layer_norm_eps": 1e-05,
+  "max_position_embeddings": 514,
+  "model_type": "roberta",
+  "num_attention_heads": 12,
+  "num_hidden_layers": 12,
+  "pad_token_id": 1,
+  "position_embedding_type": "absolute",
+  "transformers_version": "4.40.1",
+  "type_vocab_size": 1,
+  "use_cache": true,
+  "vocab_size": 50265
+}</code></pre>
+</div>
+</div>
+<div id="cell-50" class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>_model <span class="op">=</span> language_model_init(AutoModelForMaskedLM,</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>                             config<span class="op">=</span>_config,</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>                             cpoint_path<span class="op">=</span><span class="st">'roberta-base'</span>,</span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>                             seed<span class="op">=</span><span class="dv">42</span></span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>                            )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Total parameters: 124697433
+Total trainable parameters: 124697433</code></pre>
+</div>
+</div>
+<p>Create a model controller</p>
+<div id="cell-52" class="cell">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>controller <span class="op">=</span> ModelLMController(_model,data_store<span class="op">=</span>tdc,seed<span class="op">=</span><span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>And we can start training our model</p>
+<div id="cell-54" class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>lr <span class="op">=</span> <span class="fl">1e-4</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>bs<span class="op">=</span><span class="dv">32</span></span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>wd<span class="op">=</span><span class="fl">0.01</span></span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>epochs<span class="op">=</span> <span class="dv">4</span></span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>warmup_ratio<span class="op">=</span><span class="fl">0.25</span></span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>controller.fit(epochs,lr,</span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>               batch_size<span class="op">=</span>bs,</span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>               weight_decay<span class="op">=</span>wd,</span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>               warmup_ratio<span class="op">=</span>warmup_ratio,</span>
+<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a>               save_checkpoint<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>              )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+    <div>
+      
+      <progress value="1132" max="1132" style="width:300px; height:20px; vertical-align: middle;"></progress>
+      [1132/1132 05:36, Epoch 4/4]
+    </div>
+    
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th">Epoch</th>
+<th data-quarto-table-cell-role="th">Training Loss</th>
+<th data-quarto-table-cell-role="th">Validation Loss</th>
+<th data-quarto-table-cell-role="th">Accuracy</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>No log</td>
+<td>1.559132</td>
+<td>0.650172</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>1.682400</td>
+<td>1.451852</td>
+<td>0.667497</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>1.682400</td>
+<td>1.360187</td>
+<td>0.684915</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>1.405600</td>
+<td>1.331839</td>
+<td>0.688361</td>
+</tr>
+</tbody>
+</table>
+<p>
+</p></div>
+</div>
+<div class="cell-output cell-output-display">
+
+    <div>
+      
+      <progress value="142" max="142" style="width:300px; height:20px; vertical-align: middle;"></progress>
+      [142/142 00:07]
+    </div>
+    
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Perplexity on validation set: 3.779</code></pre>
+</div>
+</div>
+<p>Finetuning from a pretrained model results in a massive improvement in terms of metrics</p>
+<div id="cell-56" class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>controller.trainer.model.save_pretrained(<span class="st">'./sample_weights/lm_model'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="c-fill-mask-using-model-1" class="level2">
+<h2 class="anchored" data-anchor-id="c-fill-mask-using-model-1">c) Fill mask using model</h2>
+<div id="cell-58" class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>trained_model <span class="op">=</span> language_model_init(AutoModelForMaskedLM,</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>                                    cpoint_path<span class="op">=</span><span class="st">'./sample_weights/lm_model'</span>,</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>                                   )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Total parameters: 124697433
+Total trainable parameters: 124697433</code></pre>
+</div>
+</div>
+<div id="cell-59" class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>controller2 <span class="op">=</span> ModelLMController(trained_model,data_store<span class="op">=</span>tdc,seed<span class="op">=</span><span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-60" class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>controller2.data_store.tokenizer.mask_token</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>'&lt;mask&gt;'</code></pre>
+</div>
+</div>
+<div id="cell-61" class="cell">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>inp1 <span class="op">=</span> {<span class="st">'Clothing ID'</span>:<span class="dv">1</span>,</span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Title'</span>:<span class="st">'Flattering'</span>,</span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Review Text'</span>: <span class="st">"Love this &lt;mask&gt;. The detail is amazing. Runs small I ordered a 12 I'm usually a 10, but still a little snug"</span></span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a>       }</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-62" class="cell">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>controller2.predict_raw_text(inp1,print_result<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Score: 0.285 &gt;&gt;&gt; flattering. love this dress. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.244 &gt;&gt;&gt; flattering. love this top. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.187 &gt;&gt;&gt; flattering. love this shirt. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.070 &gt;&gt;&gt; flattering. love this sweater. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.068 &gt;&gt;&gt; flattering. love this skirt. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+--------------------</code></pre>
+</div>
+</div>
+<p>You can input several raw texts</p>
+<div id="cell-64" class="cell">
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>inp2 <span class="op">=</span> {<span class="st">'Clothing ID'</span>:[<span class="dv">1</span>,<span class="dv">2</span>],</span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Title'</span>:[<span class="st">'Flattering'</span>,<span class="st">'Lovely, but small'</span>],</span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Review Text'</span>: [<span class="st">"Love this &lt;mask&gt;. The detail is amazing. Runs small I ordered a 12 I'm usually a 10, but still a little snug"</span>,</span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a>                        <span class="st">"Love this skirt. The detail is amazing. Runs &lt;mask&gt;, I ordered a 12 I'm usually a 10, but still a little snug"</span>]</span>
+<span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a>       }</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-65" class="cell">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>controller2.predict_raw_text(inp2,print_result<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Score: 0.285 &gt;&gt;&gt; flattering. love this dress. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.244 &gt;&gt;&gt; flattering. love this top. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.187 &gt;&gt;&gt; flattering. love this shirt. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.070 &gt;&gt;&gt; flattering. love this sweater. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.068 &gt;&gt;&gt; flattering. love this skirt. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+--------------------
+Score: 0.893 &gt;&gt;&gt; lovely, but small. love this skirt. the detail is amazing. runs small, i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.051 &gt;&gt;&gt; lovely, but small. love this skirt. the detail is amazing. runs large, i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.022 &gt;&gt;&gt; lovely, but small. love this skirt. the detail is amazing. runs big, i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.006 &gt;&gt;&gt; lovely, but small. love this skirt. the detail is amazing. runs short, i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.005 &gt;&gt;&gt; lovely, but small. love this skirt. the detail is amazing. runs tiny, i ordered a 12 i'm usually a 10, but still a little snug
+--------------------</code></pre>
+</div>
+</div>
+<div id="cell-66" class="cell">
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>controller2.predict_raw_text(inp2,print_result<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[[{'score': 0.28502416610717773,
+   'token': 3588,
+   'token_str': ' dress',
+   'sequence': "flattering. love this dress. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug"},
+  {'score': 0.24447907507419586,
+   'token': 299,
+   'token_str': ' top',
+   'sequence': "flattering. love this top. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug"},
+  {'score': 0.18709176778793335,
+   'token': 6399,
+   'token_str': ' shirt',
+   'sequence': "flattering. love this shirt. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug"},
+  {'score': 0.06980422139167786,
+   'token': 23204,
+   'token_str': ' sweater',
+   'sequence': "flattering. love this sweater. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug"},
+  {'score': 0.06781341880559921,
+   'token': 16576,
+   'token_str': ' skirt',
+   'sequence': "flattering. love this skirt. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug"}],
+ [{'score': 0.8933400511741638,
+   'token': 650,
+   'token_str': ' small',
+   'sequence': "lovely, but small. love this skirt. the detail is amazing. runs small, i ordered a 12 i'm usually a 10, but still a little snug"},
+  {'score': 0.05062047392129898,
+   'token': 739,
+   'token_str': ' large',
+   'sequence': "lovely, but small. love this skirt. the detail is amazing. runs large, i ordered a 12 i'm usually a 10, but still a little snug"},
+  {'score': 0.0221096184104681,
+   'token': 380,
+   'token_str': ' big',
+   'sequence': "lovely, but small. love this skirt. the detail is amazing. runs big, i ordered a 12 i'm usually a 10, but still a little snug"},
+  {'score': 0.006218481808900833,
+   'token': 765,
+   'token_str': ' short',
+   'sequence': "lovely, but small. love this skirt. the detail is amazing. runs short, i ordered a 12 i'm usually a 10, but still a little snug"},
+  {'score': 0.0046571786515414715,
+   'token': 5262,
+   'token_str': ' tiny',
+   'sequence': "lovely, but small. love this skirt. the detail is amazing. runs tiny, i ordered a 12 i'm usually a 10, but still a little snug"}]]</code></pre>
+</div>
+</div>
+</section>
+<section id="d-extract-hidden-states-from-model" class="level2">
+<h2 class="anchored" data-anchor-id="d-extract-hidden-states-from-model">d) Extract hidden states from model</h2>
+<section id="from-raw-texts" class="level3">
+<h3 class="anchored" data-anchor-id="from-raw-texts">From raw texts</h3>
+<div id="cell-69" class="cell">
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>inp1 <span class="op">=</span> {<span class="st">'Clothing ID'</span>:<span class="dv">1</span>,</span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Title'</span>:<span class="st">'Flattering'</span>,</span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Review Text'</span>: <span class="st">"Love this skirt. The detail is amazing. Runs small I ordered a 12 I'm usually a 10, but still a little snug"</span></span>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a>       }</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-70" class="cell">
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>_config <span class="op">=</span> AutoConfig.from_pretrained(<span class="st">'./sample_weights/lm_model'</span>,output_hidden_states<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-71" class="cell">
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>trained_model <span class="op">=</span> language_model_init(AutoModelForMaskedLM,</span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>                                    cpoint_path<span class="op">=</span><span class="st">'./sample_weights/lm_model'</span>,</span>
+<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a>                                    config<span class="op">=</span>_config</span>
+<span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a>                                   )</span>
+<span id="cb62-5"><a href="#cb62-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb62-6"><a href="#cb62-6" aria-hidden="true" tabindex="-1"></a>controller2 <span class="op">=</span> ModelLMController(trained_model,data_store<span class="op">=</span>tdc,seed<span class="op">=</span><span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Total parameters: 124697433
+Total trainable parameters: 124697433</code></pre>
+</div>
+</div>
+<div id="cell-72" class="cell">
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>hidden_from_ip1 <span class="op">=</span> controller2.get_hidden_states_from_raw_text(inp1,</span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>                                                              state_name<span class="op">=</span><span class="st">'hidden_states'</span>,</span>
+<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>                                                              state_idx<span class="op">=</span>[<span class="op">-</span><span class="dv">1</span>,<span class="dv">0</span>]</span>
+<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a>                                                             )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-73" class="cell">
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>hidden_from_ip1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>Dataset({
+    features: ['Clothing ID', 'Review Text', 'input_ids', 'attention_mask', 'special_tokens_mask', 'hidden_states'],
+    num_rows: 1
+})</code></pre>
+</div>
+</div>
+<div id="cell-74" class="cell">
+<div class="sourceCode cell-code" id="cb67"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a>hidden_from_ip1[<span class="st">'hidden_states'</span>].shape</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>(1, 768)</code></pre>
+</div>
+</div>
+</section>
+<section id="from-validation-or-even-train-set" class="level3">
+<h3 class="anchored" data-anchor-id="from-validation-or-even-train-set">From validation (or even train) set</h3>
+<div id="cell-76" class="cell">
+<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a>hidden_from_vals <span class="op">=</span> controller2.get_hidden_states(ds_type<span class="op">=</span><span class="st">'validation'</span>,</span>
+<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>                                                 state_name<span class="op">=</span><span class="st">'hidden_states'</span>,</span>
+<span id="cb69-3"><a href="#cb69-3" aria-hidden="true" tabindex="-1"></a>                                                 state_idx<span class="op">=</span>[<span class="op">-</span><span class="dv">1</span>,<span class="dv">0</span>]</span>
+<span id="cb69-4"><a href="#cb69-4" aria-hidden="true" tabindex="-1"></a>                                                )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-77" class="cell">
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>hidden_from_vals</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>Dataset({
+    features: ['Clothing ID', 'Review Text', 'input_ids', 'attention_mask', 'special_tokens_mask', 'hidden_states'],
+    num_rows: 4529
+})</code></pre>
+</div>
+</div>
+<div id="cell-78" class="cell">
+<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a>hidden_from_vals[<span class="st">'hidden_states'</span>].shape</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>(4529, 768)</code></pre>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="finetune-a-roberta-language-model-with-token-concatenation" class="level1">
+<h1>3. Finetune a Roberta Language Model (with token concatenation)</h1>
+<p>Since our data only contain short text (with maximum sentence length is around 120 words), using Token Concatenation technique might not be ideal (as this technique is more suitable for when the text is long). One perk is that this will reduce the amount of training data. With that being said, we will still run some experiments using this technique.</p>
+<section id="a-create-a-textdatalmcontroller-object-2" class="level2">
+<h2 class="anchored" data-anchor-id="a-create-a-textdatalmcontroller-object-2">a) Create a TextDataLMController object</h2>
+<p>We will reuse the data and the preprocessings in <a href="https://anhquan0412.github.io/that-nlp-library/text_main_lm.html">this tutorial</a></p>
+<div id="cell-83" class="cell">
+<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a>dset <span class="op">=</span> load_dataset(<span class="st">'sample_data'</span>,data_files<span class="op">=</span>[<span class="st">'Womens_Clothing_Reviews.csv'</span>],split<span class="op">=</span><span class="st">'train'</span>)</span>
+<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a>tdc <span class="op">=</span> TextDataLMController(dset,</span>
+<span id="cb74-3"><a href="#cb74-3" aria-hidden="true" tabindex="-1"></a>                         main_text<span class="op">=</span><span class="st">'Review Text'</span>,</span>
+<span id="cb74-4"><a href="#cb74-4" aria-hidden="true" tabindex="-1"></a>                         filter_dict<span class="op">=</span>{<span class="st">'Review Text'</span>: <span class="kw">lambda</span> x: x <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>},</span>
+<span id="cb74-5"><a href="#cb74-5" aria-hidden="true" tabindex="-1"></a>                         metadatas<span class="op">=</span><span class="st">'Title'</span>,</span>
+<span id="cb74-6"><a href="#cb74-6" aria-hidden="true" tabindex="-1"></a>                         content_transformations<span class="op">=</span>[text_normalize,<span class="bu">str</span>.lower],</span>
+<span id="cb74-7"><a href="#cb74-7" aria-hidden="true" tabindex="-1"></a>                         seed<span class="op">=</span><span class="dv">42</span>,</span>
+<span id="cb74-8"><a href="#cb74-8" aria-hidden="true" tabindex="-1"></a>                         verbose<span class="op">=</span><span class="va">False</span></span>
+<span id="cb74-9"><a href="#cb74-9" aria-hidden="true" tabindex="-1"></a>                        )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Define our tokenizer for Roberta</p>
+<div id="cell-85" class="cell">
+<div class="sourceCode cell-code" id="cb75"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a>_tokenizer <span class="op">=</span> AutoTokenizer.from_pretrained(<span class="st">'roberta-base'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/home/quan/anaconda3/envs/nlp_dev/lib/python3.10/site-packages/huggingface_hub/file_download.py:1132: FutureWarning: `resume_download` is deprecated and will be removed in version 1.0.0. Downloads always resume when possible. If you want to force a new download, use `force_download=True`.
+  warnings.warn(</code></pre>
+</div>
+</div>
+<p>Process and tokenize our dataset (using token concatenation technique)</p>
+<div id="cell-87" class="cell">
+<div class="sourceCode cell-code" id="cb77"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a>block_size<span class="op">=</span><span class="dv">112</span></span>
+<span id="cb77-2"><a href="#cb77-2" aria-hidden="true" tabindex="-1"></a>tdc.process_and_tokenize(_tokenizer,line_by_line<span class="op">=</span><span class="va">False</span>,max_length<span class="op">=</span>block_size)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-88" class="cell">
+<div class="sourceCode cell-code" id="cb78"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a>tdc.main_ddict</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>DatasetDict({
+    train: Dataset({
+        features: ['input_ids', 'attention_mask', 'special_tokens_mask'],
+        num_rows: 12901
+    })
+    validation: Dataset({
+        features: ['input_ids', 'attention_mask', 'special_tokens_mask'],
+        num_rows: 3276
+    })
+})</code></pre>
+</div>
+</div>
+<p>And set the data collator</p>
+<div id="cell-90" class="cell">
+<div class="sourceCode cell-code" id="cb80"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a>tdc.set_data_collator(is_mlm<span class="op">=</span><span class="va">True</span>,mlm_prob<span class="op">=</span><span class="fl">0.15</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="b-initialize-and-train-roberta-language-model-1" class="level2">
+<h2 class="anchored" data-anchor-id="b-initialize-and-train-roberta-language-model-1">b) Initialize and train Roberta Language Model</h2>
+<div id="cell-92" class="cell">
+<div class="sourceCode cell-code" id="cb81"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb81-1"><a href="#cb81-1" aria-hidden="true" tabindex="-1"></a>_config <span class="op">=</span> AutoConfig.from_pretrained(<span class="st">'roberta-base'</span>,</span>
+<span id="cb81-2"><a href="#cb81-2" aria-hidden="true" tabindex="-1"></a>                                    vocab_size<span class="op">=</span><span class="bu">len</span>(_tokenizer))</span>
+<span id="cb81-3"><a href="#cb81-3" aria-hidden="true" tabindex="-1"></a>_config</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>RobertaConfig {
+  "_name_or_path": "roberta-base",
+  "architectures": [
+    "RobertaForMaskedLM"
+  ],
+  "attention_probs_dropout_prob": 0.1,
+  "bos_token_id": 0,
+  "classifier_dropout": null,
+  "eos_token_id": 2,
+  "hidden_act": "gelu",
+  "hidden_dropout_prob": 0.1,
+  "hidden_size": 768,
+  "initializer_range": 0.02,
+  "intermediate_size": 3072,
+  "layer_norm_eps": 1e-05,
+  "max_position_embeddings": 514,
+  "model_type": "roberta",
+  "num_attention_heads": 12,
+  "num_hidden_layers": 12,
+  "pad_token_id": 1,
+  "position_embedding_type": "absolute",
+  "transformers_version": "4.40.1",
+  "type_vocab_size": 1,
+  "use_cache": true,
+  "vocab_size": 50265
+}</code></pre>
+</div>
+</div>
+<div id="cell-93" class="cell">
+<div class="sourceCode cell-code" id="cb83"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a>_model <span class="op">=</span> language_model_init(AutoModelForMaskedLM,</span>
+<span id="cb83-2"><a href="#cb83-2" aria-hidden="true" tabindex="-1"></a>                             config<span class="op">=</span>_config,</span>
+<span id="cb83-3"><a href="#cb83-3" aria-hidden="true" tabindex="-1"></a>                             cpoint_path<span class="op">=</span><span class="st">'roberta-base'</span>,</span>
+<span id="cb83-4"><a href="#cb83-4" aria-hidden="true" tabindex="-1"></a>                             seed<span class="op">=</span><span class="dv">42</span></span>
+<span id="cb83-5"><a href="#cb83-5" aria-hidden="true" tabindex="-1"></a>                            )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Total parameters: 124697433
+Total trainable parameters: 124697433</code></pre>
+</div>
+</div>
+<p>Create a model controller</p>
+<div id="cell-95" class="cell">
+<div class="sourceCode cell-code" id="cb85"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true" tabindex="-1"></a>controller <span class="op">=</span> ModelLMController(_model,data_store<span class="op">=</span>tdc,seed<span class="op">=</span><span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>And we can start training our model</p>
+<div id="cell-97" class="cell">
+<div class="sourceCode cell-code" id="cb86"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb86-1"><a href="#cb86-1" aria-hidden="true" tabindex="-1"></a>lr <span class="op">=</span> <span class="fl">1e-4</span></span>
+<span id="cb86-2"><a href="#cb86-2" aria-hidden="true" tabindex="-1"></a>bs<span class="op">=</span><span class="dv">32</span></span>
+<span id="cb86-3"><a href="#cb86-3" aria-hidden="true" tabindex="-1"></a>wd<span class="op">=</span><span class="fl">0.01</span></span>
+<span id="cb86-4"><a href="#cb86-4" aria-hidden="true" tabindex="-1"></a>epochs<span class="op">=</span> <span class="dv">4</span></span>
+<span id="cb86-5"><a href="#cb86-5" aria-hidden="true" tabindex="-1"></a>warmup_ratio<span class="op">=</span><span class="fl">0.25</span></span>
+<span id="cb86-6"><a href="#cb86-6" aria-hidden="true" tabindex="-1"></a>controller.fit(epochs,lr,</span>
+<span id="cb86-7"><a href="#cb86-7" aria-hidden="true" tabindex="-1"></a>               batch_size<span class="op">=</span>bs,</span>
+<span id="cb86-8"><a href="#cb86-8" aria-hidden="true" tabindex="-1"></a>               weight_decay<span class="op">=</span>wd,</span>
+<span id="cb86-9"><a href="#cb86-9" aria-hidden="true" tabindex="-1"></a>               warmup_ratio<span class="op">=</span>warmup_ratio,</span>
+<span id="cb86-10"><a href="#cb86-10" aria-hidden="true" tabindex="-1"></a>               save_checkpoint<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb86-11"><a href="#cb86-11" aria-hidden="true" tabindex="-1"></a>              )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+    <div>
+      
+      <progress value="808" max="808" style="width:300px; height:20px; vertical-align: middle;"></progress>
+      [808/808 03:58, Epoch 4/4]
+    </div>
+    
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th">Epoch</th>
+<th data-quarto-table-cell-role="th">Training Loss</th>
+<th data-quarto-table-cell-role="th">Validation Loss</th>
+<th data-quarto-table-cell-role="th">Accuracy</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>No log</td>
+<td>1.694216</td>
+<td>0.628713</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>1.860100</td>
+<td>1.601513</td>
+<td>0.642077</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>1.860100</td>
+<td>1.515734</td>
+<td>0.656354</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>1.561200</td>
+<td>1.477700</td>
+<td>0.662074</td>
+</tr>
+</tbody>
+</table>
+<p>
+</p></div>
+</div>
+<div class="cell-output cell-output-display">
+
+    <div>
+      
+      <progress value="103" max="103" style="width:300px; height:20px; vertical-align: middle;"></progress>
+      [103/103 00:04]
+    </div>
+    
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Perplexity on validation set: 4.413</code></pre>
+</div>
+</div>
+<p>Slightly less perplexity than the previous model</p>
+<div id="cell-99" class="cell">
+<div class="sourceCode cell-code" id="cb88"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb88-1"><a href="#cb88-1" aria-hidden="true" tabindex="-1"></a>controller.trainer.model.save_pretrained(<span class="st">'./sample_weights/lm_model'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="c-fill-mask-using-model-2" class="level2">
+<h2 class="anchored" data-anchor-id="c-fill-mask-using-model-2">c) Fill mask using model</h2>
+<div id="cell-101" class="cell">
+<div class="sourceCode cell-code" id="cb89"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb89-1"><a href="#cb89-1" aria-hidden="true" tabindex="-1"></a>trained_model <span class="op">=</span> language_model_init(AutoModelForMaskedLM,</span>
+<span id="cb89-2"><a href="#cb89-2" aria-hidden="true" tabindex="-1"></a>                                    cpoint_path<span class="op">=</span><span class="st">'./sample_weights/lm_model'</span>,</span>
+<span id="cb89-3"><a href="#cb89-3" aria-hidden="true" tabindex="-1"></a>                                   )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Total parameters: 124697433
+Total trainable parameters: 124697433</code></pre>
+</div>
+</div>
+<div id="cell-102" class="cell">
+<div class="sourceCode cell-code" id="cb91"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb91-1"><a href="#cb91-1" aria-hidden="true" tabindex="-1"></a>controller2 <span class="op">=</span> ModelLMController(trained_model,data_store<span class="op">=</span>tdc,seed<span class="op">=</span><span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-103" class="cell">
+<div class="sourceCode cell-code" id="cb92"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb92-1"><a href="#cb92-1" aria-hidden="true" tabindex="-1"></a>inp1 <span class="op">=</span> {<span class="st">'Title'</span>:<span class="st">'Flattering'</span>,</span>
+<span id="cb92-2"><a href="#cb92-2" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Review Text'</span>: <span class="st">"Love this &lt;mask&gt;. The detail is amazing. Runs small I ordered a 12 I'm usually a 10, but still a little snug"</span></span>
+<span id="cb92-3"><a href="#cb92-3" aria-hidden="true" tabindex="-1"></a>       }</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-104" class="cell">
+<div class="sourceCode cell-code" id="cb93"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb93-1"><a href="#cb93-1" aria-hidden="true" tabindex="-1"></a>controller2.predict_raw_text(inp1,print_result<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Score: 0.328 &gt;&gt;&gt; flattering. love this top. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.304 &gt;&gt;&gt; flattering. love this dress. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.128 &gt;&gt;&gt; flattering. love this shirt. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.076 &gt;&gt;&gt; flattering. love this sweater. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.045 &gt;&gt;&gt; flattering. love this skirt. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+--------------------</code></pre>
+</div>
+</div>
+<p>You can input several raw texts</p>
+<div id="cell-106" class="cell">
+<div class="sourceCode cell-code" id="cb95"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb95-1"><a href="#cb95-1" aria-hidden="true" tabindex="-1"></a>inp2 <span class="op">=</span> {<span class="st">'Title'</span>:[<span class="st">'Flattering'</span>,<span class="st">'Lovely, but small'</span>],</span>
+<span id="cb95-2"><a href="#cb95-2" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Review Text'</span>: [<span class="st">"Love this &lt;mask&gt;. The detail is amazing. Runs small I ordered a 12 I'm usually a 10, but still a little snug"</span>,</span>
+<span id="cb95-3"><a href="#cb95-3" aria-hidden="true" tabindex="-1"></a>                        <span class="st">"Love this skirt. The detail is amazing. Runs &lt;mask&gt;, I ordered a 12 I'm usually a 10, but still a little snug"</span>]</span>
+<span id="cb95-4"><a href="#cb95-4" aria-hidden="true" tabindex="-1"></a>       }</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-107" class="cell">
+<div class="sourceCode cell-code" id="cb96"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb96-1"><a href="#cb96-1" aria-hidden="true" tabindex="-1"></a>controller2.predict_raw_text(inp2,print_result<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Score: 0.328 &gt;&gt;&gt; flattering. love this top. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.304 &gt;&gt;&gt; flattering. love this dress. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.128 &gt;&gt;&gt; flattering. love this shirt. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.076 &gt;&gt;&gt; flattering. love this sweater. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.045 &gt;&gt;&gt; flattering. love this skirt. the detail is amazing. runs small i ordered a 12 i'm usually a 10, but still a little snug
+--------------------
+Score: 0.893 &gt;&gt;&gt; lovely, but small. love this skirt. the detail is amazing. runs small, i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.062 &gt;&gt;&gt; lovely, but small. love this skirt. the detail is amazing. runs large, i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.020 &gt;&gt;&gt; lovely, but small. love this skirt. the detail is amazing. runs big, i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.004 &gt;&gt;&gt; lovely, but small. love this skirt. the detail is amazing. runs short, i ordered a 12 i'm usually a 10, but still a little snug
+Score: 0.003 &gt;&gt;&gt; lovely, but small. love this skirt. the detail is amazing. runs tiny, i ordered a 12 i'm usually a 10, but still a little snug
+--------------------</code></pre>
+</div>
+</div>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/anhquan0412\.github\.io\/that-nlp-library");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/anhquan0412/that-nlp-library/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>

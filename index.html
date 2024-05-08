@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.554">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="Aim to be one of the most convenient library for common NLP tasks">
+
+<title>that-nlp-library - Welcome to that-nlp-library</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="that-nlp-library - Welcome to that-nlp-library">
+<meta property="og:description" content="Aim to be one of the most convenient library for common NLP tasks">
+<meta property="og:site_name" content="that-nlp-library">
+<meta name="twitter:title" content="that-nlp-library - Welcome to that-nlp-library">
+<meta name="twitter:description" content="Aim to be one of the most convenient library for common NLP tasks">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-sidebar floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">that-nlp-library</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools tools-end">
+</div>
+          <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./index.html">Welcome to that-nlp-library</a></li></ol></nav>
+        <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Welcome to that-nlp-library</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true">
+ <span class="menu-text">1. Quick Starts</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_main.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Main</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_classification_tutorial.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Controller Tutorial: Classification</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_lm_roberta_tutorial.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Controller Tutorial: Training a Roberta Language Model</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
+ <span class="menu-text">2. All Use Cases</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="false">
+ <span class="menu-text">a. Roberta-based models for Supervised Learning</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_singlehead.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model (Custom Single Head)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_multihead.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model (Multi Head)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_multihead_regression.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model (Regression)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_conditional_prob.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model with Conditional Probability</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_dhc.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model with Deep Hierarchical Classification</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_multilabel.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model (Multi-Label)</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="false">
+ <span class="menu-text">b. GPT2-based models for Supervised Learning</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./gpt2_singlehead.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">GPT2 model (Custom Single Head)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./gpt2_multihead.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">GPT2 model (Multi Head)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./gpt2_multihead_regression.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">GPT2 model (Regression)</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="false">
+ <span class="menu-text">c.&nbsp;Masked Language Model Training</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_lm_roberta_tutorial.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Controller Tutorial: Training a Roberta Language Model</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="false">
+ <span class="menu-text">d.&nbsp;Causal Language Model Training</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_lm_gpt2_tutorial.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Controller Tutorial: Training a GPT2 Language Model</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" aria-expanded="false">
+ <span class="menu-text">e. Training A Streamed Dataset</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_singlehead_for_streaming.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model with a streamed dataset (Custom Single Head)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_lm_for_streaming.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta Language Model for a streamed dataset</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" aria-expanded="true">
+ <span class="menu-text">3. Evaluations For Supervised Learning</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./evaluations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Evaluations</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" aria-expanded="true">
+ <span class="menu-text">4. Hidden States Extraction</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-9" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./hidden_states.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Feature Extraction From Hidden States</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" aria-expanded="true">
+ <span class="menu-text">5. Text Classes</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-10" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" aria-expanded="false">
+ <span class="menu-text">a. Text Processing</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-11" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_augmentation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Augmentation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_transformation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Transformation</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-12" aria-expanded="false">
+ <span class="menu-text">b. Text Controller For Supervised Learning</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-12" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-12" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_main.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Main</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_main_streaming.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Main Streaming</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_main_benchmark.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Processing Benchmark</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-13" aria-expanded="false">
+ <span class="menu-text">c.&nbsp;Text Controller For Language Modeling</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-13" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-13" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_main_lm.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Main For Language Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_main_lm_streaming.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Main For Language Model - Streaming</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-14" aria-expanded="true">
+ <span class="menu-text">6. Model Classes</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-14" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-14" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-15" aria-expanded="false">
+ <span class="menu-text">a. Model Controller For Supervised Learning</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-15" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-15" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_main.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Main Functions and Controller</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-16" aria-expanded="false">
+ <span class="menu-text">b. Model Controller for Language Modeling</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-16" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-16" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_lm_main.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Language Model Main Functions and Controller</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-17" aria-expanded="false">
+ <span class="menu-text">c.&nbsp;Roberta-based classification Model</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-17" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-17" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./models.roberta.classifiers.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta Classifiers</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./models.roberta.deep_hierarchical_classifiers.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Deep Hierarchical Classifiers</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./models.roberta.conditional_prob_classifiers.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Conditional Probability Classifiers</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-18" aria-expanded="false">
+ <span class="menu-text">d.&nbsp;GPT2-based classification Model</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-18" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-18" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./models.gpt2.classifiers.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">GPT2 Classifiers</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-19" aria-expanded="true">
+ <span class="menu-text">7. Utility</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-19" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-19" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./utils.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">utils</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#installation" id="toc-installation" class="nav-link active" data-scroll-target="#installation">1. Installation</a></li>
+  <li><a href="#high-level-overview" id="toc-high-level-overview" class="nav-link" data-scroll-target="#high-level-overview">2. High-Level Overview</a>
+  <ul class="collapse">
+  <li><a href="#supervised-learning" id="toc-supervised-learning" class="nav-link" data-scroll-target="#supervised-learning">2.1. Supervised Learning</a>
+  <ul class="collapse">
+  <li><a href="#textdatacontroller-for-high-speed-and-customizable-text-processing" id="toc-textdatacontroller-for-high-speed-and-customizable-text-processing" class="nav-link" data-scroll-target="#textdatacontroller-for-high-speed-and-customizable-text-processing"><strong><code>TextDataController</code></strong>: For High-Speed and Customizable Text Processing</a></li>
+  <li><a href="#modelcontroller-for-customizable-model-traininginferenceinterpretation" id="toc-modelcontroller-for-customizable-model-traininginferenceinterpretation" class="nav-link" data-scroll-target="#modelcontroller-for-customizable-model-traininginferenceinterpretation"><strong><code>ModelController</code></strong>: For customizable model training/inference/interpretation</a></li>
+  <li><a href="#decoupling-of-text-controller-and-model-controller" id="toc-decoupling-of-text-controller-and-model-controller" class="nav-link" data-scroll-target="#decoupling-of-text-controller-and-model-controller">Decoupling of Text Controller and Model Controller</a></li>
+  </ul></li>
+  <li><a href="#language-modeling" id="toc-language-modeling" class="nav-link" data-scroll-target="#language-modeling">2.2 Language Modeling</a>
+  <ul class="collapse">
+  <li><a href="#textdatalmcontroller-text-data-controller-for-language-model" id="toc-textdatalmcontroller-text-data-controller-for-language-model" class="nav-link" data-scroll-target="#textdatalmcontroller-text-data-controller-for-language-model"><strong><code>TextDataLMController</code></strong>: Text Data Controller for Language Model</a></li>
+  <li><a href="#modellmcontroller-language-model-controller" id="toc-modellmcontroller-language-model-controller" class="nav-link" data-scroll-target="#modellmcontroller-language-model-controller"><strong><code>ModelLMController</code></strong>: Language Model Controller</a></li>
+  <li><a href="#hidden-states-extraction" id="toc-hidden-states-extraction" class="nav-link" data-scroll-target="#hidden-states-extraction">Hidden States Extraction</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#documentation" id="toc-documentation" class="nav-link" data-scroll-target="#documentation">3. Documentation</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/anhquan0412/that-nlp-library/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Welcome to that-nlp-library</h1>
+</div>
+
+<div>
+  <div class="description">
+    Aim to be one of the most convenient library for common NLP tasks
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<section id="installation" class="level1">
+<h1>1. Installation</h1>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install that_nlp_library</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>It is advised that you manually install torch (with your compatible cuda version if you GPU). Typically it’s</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip3</span> install torch</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Visit <a href="https://pytorch.org/">Pytorch page</a> for more information</p>
+</section>
+<section id="high-level-overview" class="level1">
+<h1>2. High-Level Overview</h1>
+<section id="supervised-learning" class="level2">
+<h2 class="anchored" data-anchor-id="supervised-learning">2.1. Supervised Learning</h2>
+<p>For supervised learning, the main pipeline contains 2 parts:</p>
+<section id="textdatacontroller-for-high-speed-and-customizable-text-processing" class="level3">
+<h3 class="anchored" data-anchor-id="textdatacontroller-for-high-speed-and-customizable-text-processing"><strong><a href="https://anhquan0412.github.io/that-nlp-library/text_main.html#textdatacontroller"><code>TextDataController</code></a></strong>: For High-Speed and Customizable Text Processing</h3>
+<p>Here is a list of processings that you can use (in order). You also can skip any processing if you want to.</p>
+<p>Here is an example of the Text Controller for a classification task (predict <code>Division Name</code>), without any text preprocessing. The code will also tokenize your text field.</p>
+<pre class="python3"><code>tdc = TextDataController.from_csv('sample_data/Womens_Clothing_Reviews.csv',
+                                  main_text='Review Text',
+                                  label_names='Division Name',
+                                  sup_types='classification',                                  
+                                 )
+tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
+tdc.process_and_tokenize(tokenizer,max_length=100,shuffle_trn=True)</code></pre>
+<p>And here is an example when all processings are applied</p>
+<pre class="python3"><code>
+# define a custom augmentation function
+from underthesea import text_normalize
+import nlpaug.augmenter.char as nac
+
+def nlp_aug(x,aug=None):
+    results = aug.augment(x)
+    if not isinstance(x,list): return results[0]
+    return results
+aug = nac.KeyboardAug(aug_char_max=3,aug_char_p=0.1,aug_word_p=0.07)
+nearby_aug_func = partial(nlp_aug,aug=aug)
+
+# initialize the TextDataController
+tdc = TextDataController.from_csv(dset,
+                                  main_text='Review Text',
+                                  
+                                  # metadatas
+                                  metadatas='Title',
+                                  
+                                  # label
+                                  label_names='Division Name',
+                                  sup_types='classification',
+                                  label_tfm_dict={'Division Name': lambda x: x if x!='Initmates' else 'Intimates'},
+                                  
+                                  # row filter
+                                  filter_dict={'Review Text': lambda x: x is not None,
+                                               'Division Name': lambda x: x is not None,
+                                              },
+                                              
+                                  # text transformation
+                                  content_transformation=[text_normalize,str.lower],
+                                  
+                                  # validation split
+                                  val_ratio=0.2,
+                                  stratify_cols=['Division Name'],
+                                  
+                                  # upsampling
+                                  upsampling_list=[('Division Name',lambda x: x=='Intimates')]
+                                  
+                                  # text augmentation
+                                  content_augmentations=nearby_aug_func
+                                 )
+
+tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
+tdc.process_and_tokenize(tokenizer,max_length=100,shuffle_trn=True)</code></pre>
+<p>For an in-depth tutorial on Text Controller for Supervised Learning (<a href="https://anhquan0412.github.io/that-nlp-library/text_main.html#textdatacontroller"><code>TextDataController</code></a>), please visit <a href="https://anhquan0412.github.io/that-nlp-library/text_main.html">here</a></p>
+<p>This library also supports a <strong>streamed version of Text Controller</strong> (<a href="https://anhquan0412.github.io/that-nlp-library/text_main_streaming.html#textdatacontrollerstreaming"><code>TextDataControllerStreaming</code></a>), allowing you to work with data without having it entirely on your memory. You can still perform all the processings in the non-streamed version, except for <em>Train/Validation split</em> (which means you have to define your validation set beforehand), and <em>Upsampling</em>.</p>
+<p>For more details on <strong>streaming</strong>, visit <a href="https://anhquan0412.github.io/that-nlp-library/text_main_streaming.html">how to create a streamed dataset</a> and <a href="https://anhquan0412.github.io/that-nlp-library/roberta_singlehead_for_streaming">how to train a model with a streamed dataset</a></p>
+<p>If you are curious on the time and space efficiency between streamed and non-streamed version, visit the benchmark <a href="https://anhquan0412.github.io/that-nlp-library/text_main_benchmark.html">here</a></p>
+</section>
+<section id="modelcontroller-for-customizable-model-traininginferenceinterpretation" class="level3">
+<h3 class="anchored" data-anchor-id="modelcontroller-for-customizable-model-traininginferenceinterpretation"><strong><a href="https://anhquan0412.github.io/that-nlp-library/model_main.html#modelcontroller"><code>ModelController</code></a></strong>: For customizable model training/inference/interpretation</h3>
+<p>Here is an example of using <a href="https://anhquan0412.github.io/that-nlp-library/model_main.html#modelcontroller"><code>ModelController</code></a> to train a simple 6-class classification RoBERTa model, with the data and the preprocessing steps stored in our previous <a href="https://anhquan0412.github.io/that-nlp-library/text_main.html#textdatacontroller"><code>TextDataController</code></a> object</p>
+<pre class="python3"><code>
+# Load the model from HuggingFace, with the number of classes defined in our TextDataController object
+num_labels = len(tdc.label_lists[0])
+model = RobertaForSequenceClassification.from_pretrained('roberta-base',num_labels=num_labels)
+
+
+# Create the `ModelController` object
+controller = ModelController(model,data_store=tdc,seed=42)
+
+# You can define multiple metrics for model evaluation
+metric_funcs = [partial(f1_score,average='macro'),accuracy_score] 
+
+# Training the model for 3 epochs, and save all checkpoints to 'my_saved_weights' directory
+controller.fit(epochs = 3,
+               learning_rate = 1e-4,
+               metric_funcs = metric_funcs,
+               batch_size = 32,
+               save_checkpoint=True,
+               o_dir='my_saved_weights',
+               compute_metrics=compute_metrics
+              )</code></pre>
+<p>The library can perform the following:</p>
+<ul>
+<li><p><strong><a href="https://anhquan0412.github.io/that-nlp-library/model_classification_tutorial.html">Classification</a></strong></p></li>
+<li><p><strong><a href="https://anhquan0412.github.io/that-nlp-library/roberta_multihead_regression.html">Regression</a></strong></p></li>
+<li><p><strong><a href="https://anhquan0412.github.io/that-nlp-library/roberta_multilabel.html">Multilabel classification</a></strong></p></li>
+<li><p><strong><a href="https://anhquan0412.github.io//that-nlp-library/roberta_multihead.html">Multiheads</a></strong>, where each head can be either classification or regression</p>
+<ul>
+<li><p>“Multihead” is when your model needs to predict multiple outputs at once, for example, given a sentence (e.g.&nbsp;a review on an e-commerce site), you have to predict what category the sentence is about, and the sentiment of the sentence, and maybe the rating of the sentence.</p></li>
+<li><p>For the above example, this is a 3-head problem: classification (for category), classification (for sentiment), and regression (for rating from 1 to 5)</p></li>
+</ul></li>
+<li><p>For 2-head classification where there’s hierarchical relationship between the first output and the second output (e.g.&nbsp;the first output is level 1 clothing category, and the second output is the level 2 clothing subcategory), you can utilize two specific approaches for this use-case: training with <a href="https://anhquan0412.github.io/that-nlp-library/roberta_conditional_prob.html">conditional probability</a>, or with <a href="https://anhquan0412.github.io/that-nlp-library/roberta_dhc.html">deep hierarchical classification</a></p></li>
+</ul>
+</section>
+<section id="decoupling-of-text-controller-and-model-controller" class="level3">
+<h3 class="anchored" data-anchor-id="decoupling-of-text-controller-and-model-controller">Decoupling of Text Controller and Model Controller</h3>
+<p>In this library, you can utilize <a href="https://anhquan0412.github.io/that-nlp-library/text_main.html#textdatacontroller"><code>TextDataController</code></a> only to handle all the text processings, and have the final processed-HuggingFace-DatasetDict returned to you. But if you have your own processed DatasetDict, you can skip the <a href="https://anhquan0412.github.io/that-nlp-library/text_main.html#textdatacontroller"><code>TextDataController</code></a> and use only the <a href="https://anhquan0412.github.io/that-nlp-library/model_main.html#modelcontroller"><code>ModelController</code></a> for training your data. There’s a quick tutorial on this decoupling <a href="https://anhquan0412.github.io/that-nlp-library/model_classification_tutorial.html#b-train-model-with-only-a-tokenized-datasetdict-no-textdatacontroller">here</a></p>
+</section>
+</section>
+<section id="language-modeling" class="level2">
+<h2 class="anchored" data-anchor-id="language-modeling">2.2 Language Modeling</h2>
+<p>For language modeling, the main pipeline also contains 2 parts</p>
+<section id="textdatalmcontroller-text-data-controller-for-language-model" class="level3">
+<h3 class="anchored" data-anchor-id="textdatalmcontroller-text-data-controller-for-language-model"><strong><a href="https://anhquan0412.github.io/that-nlp-library/text_main_lm.html#textdatalmcontroller"><code>TextDataLMController</code></a></strong>: Text Data Controller for Language Model</h3>
+<p>Similarly to <a href="https://anhquan0412.github.io/that-nlp-library/text_main.html#textdatacontroller"><code>TextDataController</code></a>, <a href="https://anhquan0412.github.io/that-nlp-library/text_main_lm.html#textdatalmcontroller"><code>TextDataLMController</code></a> also provide a list of processings (except for <em>Label Processing</em>, <em>Upsampling</em> and <em>Text Augmentation</em>). The controller also allows tokenization line-by-line or by token concatenation.</p>
+<p>Visit the tutorial <a href="https://anhquan0412.github.io/that-nlp-library/text_main_lm.html">here</a></p>
+<p>There’s also a streamed version (<a href="https://anhquan0412.github.io/that-nlp-library/text_main_lm_streaming.html#textdatalmcontrollerstreaming"><code>TextDataLMControllerStreaming</code></a>). Here is a <a href="https://anhquan0412.github.io/that-nlp-library/roberta_lm_for_streaming.html">tutorial on how to train a language model with a streamed dataset</a></p>
+</section>
+<section id="modellmcontroller-language-model-controller" class="level3">
+<h3 class="anchored" data-anchor-id="modellmcontroller-language-model-controller"><strong><a href="https://anhquan0412.github.io/that-nlp-library/model_lm_main.html#modellmcontroller"><code>ModelLMController</code></a></strong>: Language Model Controller</h3>
+<p>The library can train a <a href="https://anhquan0412.github.io/that-nlp-library/model_lm_roberta_tutorial.html">masked language modeling</a> (BERT, RoBERTa …) or a <a href="https://anhquan0412.github.io/that-nlp-library/model_lm_gpt2_tutorial.html">causal language model</a> (GPT) either from scratch or from existing pretrained language models.</p>
+</section>
+<section id="hidden-states-extraction" class="level3">
+<h3 class="anchored" data-anchor-id="hidden-states-extraction">Hidden States Extraction</h3>
+<p>The library also allow you to <a href="https://anhquan0412.github.io/that-nlp-library/hidden_states.html">extract the hidden states</a> of your choice, for further analysis or other downstream tasks that requires a vector representation of your text input.</p>
+</section>
+</section>
+</section>
+<section id="documentation" class="level1">
+<h1>3. Documentation</h1>
+<p>Visit <a href="https://anhquan0412.github.io/that-nlp-library/">https://anhquan0412.github.io/that-nlp-library/</a></p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/anhquan0412\.github\.io\/that-nlp-library");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/anhquan0412/that-nlp-library/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>

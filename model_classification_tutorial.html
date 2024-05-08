@@ -1,0 +1,2850 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.554">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="This notebook contains an end-to-end process of preprocess + tokenizing your text, and build a classification model based on Roberta architecture">
+
+<title>that-nlp-library - Model Controller Tutorial: Classification</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script><script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+<script src="https://unpkg.com/@jupyter-widgets/html-manager@*/dist/embed-amd.js" crossorigin="anonymous"></script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="that-nlp-library - Model Controller Tutorial: Classification">
+<meta property="og:description" content="This notebook contains an end-to-end process of preprocess + tokenizing your text, and build a classification model based on Roberta architecture">
+<meta property="og:site_name" content="that-nlp-library">
+<meta name="twitter:title" content="that-nlp-library - Model Controller Tutorial: Classification">
+<meta name="twitter:description" content="This notebook contains an end-to-end process of preprocess + tokenizing your text, and build a classification model based on Roberta architecture">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-sidebar floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">that-nlp-library</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools tools-end">
+</div>
+          <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./text_main.html">1. Quick Starts</a></li><li class="breadcrumb-item"><a href="./model_classification_tutorial.html">Model Controller Tutorial: Classification</a></li></ol></nav>
+        <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Welcome to that-nlp-library</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true">
+ <span class="menu-text">1. Quick Starts</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_main.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Main</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_classification_tutorial.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Model Controller Tutorial: Classification</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_lm_roberta_tutorial.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Controller Tutorial: Training a Roberta Language Model</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
+ <span class="menu-text">2. All Use Cases</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="false">
+ <span class="menu-text">a. Roberta-based models for Supervised Learning</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_singlehead.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model (Custom Single Head)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_multihead.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model (Multi Head)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_multihead_regression.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model (Regression)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_conditional_prob.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model with Conditional Probability</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_dhc.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model with Deep Hierarchical Classification</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_multilabel.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model (Multi-Label)</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="false">
+ <span class="menu-text">b. GPT2-based models for Supervised Learning</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./gpt2_singlehead.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">GPT2 model (Custom Single Head)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./gpt2_multihead.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">GPT2 model (Multi Head)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./gpt2_multihead_regression.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">GPT2 model (Regression)</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="false">
+ <span class="menu-text">c.&nbsp;Masked Language Model Training</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_lm_roberta_tutorial.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Controller Tutorial: Training a Roberta Language Model</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="false">
+ <span class="menu-text">d.&nbsp;Causal Language Model Training</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_lm_gpt2_tutorial.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Controller Tutorial: Training a GPT2 Language Model</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" aria-expanded="false">
+ <span class="menu-text">e. Training A Streamed Dataset</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_singlehead_for_streaming.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model with a streamed dataset (Custom Single Head)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./roberta_lm_for_streaming.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta Language Model for a streamed dataset</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" aria-expanded="true">
+ <span class="menu-text">3. Evaluations For Supervised Learning</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./evaluations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Evaluations</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" aria-expanded="true">
+ <span class="menu-text">4. Hidden States Extraction</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-9" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./hidden_states.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Feature Extraction From Hidden States</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" aria-expanded="true">
+ <span class="menu-text">5. Text Classes</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-10" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" aria-expanded="false">
+ <span class="menu-text">a. Text Processing</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-11" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_augmentation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Augmentation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_transformation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Transformation</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-12" aria-expanded="false">
+ <span class="menu-text">b. Text Controller For Supervised Learning</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-12" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-12" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_main.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Main</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_main_streaming.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Main Streaming</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_main_benchmark.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Processing Benchmark</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-13" aria-expanded="false">
+ <span class="menu-text">c.&nbsp;Text Controller For Language Modeling</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-13" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-13" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_main_lm.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Main For Language Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./text_main_lm_streaming.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Main For Language Model - Streaming</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-14" aria-expanded="true">
+ <span class="menu-text">6. Model Classes</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-14" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-14" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-15" aria-expanded="false">
+ <span class="menu-text">a. Model Controller For Supervised Learning</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-15" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-15" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_main.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Main Functions and Controller</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-16" aria-expanded="false">
+ <span class="menu-text">b. Model Controller for Language Modeling</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-16" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-16" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model_lm_main.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Language Model Main Functions and Controller</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-17" aria-expanded="false">
+ <span class="menu-text">c.&nbsp;Roberta-based classification Model</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-17" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-17" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./models.roberta.classifiers.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta Classifiers</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./models.roberta.deep_hierarchical_classifiers.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Deep Hierarchical Classifiers</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./models.roberta.conditional_prob_classifiers.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Conditional Probability Classifiers</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-18" aria-expanded="false">
+ <span class="menu-text">d.&nbsp;GPT2-based classification Model</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-18" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-18" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./models.gpt2.classifiers.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">GPT2 Classifiers</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-19" aria-expanded="true">
+ <span class="menu-text">7. Utility</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-19" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-19" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./utils.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">utils</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#define-the-custom-augmentation-function" id="toc-define-the-custom-augmentation-function" class="nav-link active" data-scroll-target="#define-the-custom-augmentation-function">1. Define the custom augmentation function</a></li>
+  <li><a href="#create-a-textdatacontroller-object" id="toc-create-a-textdatacontroller-object" class="nav-link" data-scroll-target="#create-a-textdatacontroller-object">2. Create a TextDataController object</a></li>
+  <li><a href="#model-experiment-roberta-vanilla-single-head-classification" id="toc-model-experiment-roberta-vanilla-single-head-classification" class="nav-link" data-scroll-target="#model-experiment-roberta-vanilla-single-head-classification">3. Model Experiment: Roberta Vanilla Single-Head Classification</a>
+  <ul class="collapse">
+  <li><a href="#a-train-roberta-model-using-the-model-controller" id="toc-a-train-roberta-model-using-the-model-controller" class="nav-link" data-scroll-target="#a-train-roberta-model-using-the-model-controller">a) Train Roberta model using the Model Controller</a>
+  <ul class="collapse">
+  <li><a href="#logging-your-training" id="toc-logging-your-training" class="nav-link" data-scroll-target="#logging-your-training">Logging your training</a></li>
+  </ul></li>
+  <li><a href="#b-train-model-with-only-a-tokenized-datasetdict-no-textdatacontroller" id="toc-b-train-model-with-only-a-tokenized-datasetdict-no-textdatacontroller" class="nav-link" data-scroll-target="#b-train-model-with-only-a-tokenized-datasetdict-no-textdatacontroller">b) Train model with only a Tokenized DatasetDict (no TextDataController)</a></li>
+  <li><a href="#c-make-predictions-using-textdatacontroller" id="toc-c-make-predictions-using-textdatacontroller" class="nav-link" data-scroll-target="#c-make-predictions-using-textdatacontroller">c) Make predictions, using TextDataController</a>
+  <ul class="collapse">
+  <li><a href="#load-trained-model" id="toc-load-trained-model" class="nav-link" data-scroll-target="#load-trained-model">Load trained model</a></li>
+  <li><a href="#predict-trainvalidation-set" id="toc-predict-trainvalidation-set" class="nav-link" data-scroll-target="#predict-trainvalidation-set">Predict Train/Validation set</a></li>
+  <li><a href="#predict-test-set" id="toc-predict-test-set" class="nav-link" data-scroll-target="#predict-test-set">Predict Test set</a></li>
+  </ul></li>
+  <li><a href="#d-make-predictions-using-only-tokenized-datasetdict" id="toc-d-make-predictions-using-only-tokenized-datasetdict" class="nav-link" data-scroll-target="#d-make-predictions-using-only-tokenized-datasetdict">d) Make predictions, using only Tokenized DatasetDict</a>
+  <ul class="collapse">
+  <li><a href="#load-trained-model-1" id="toc-load-trained-model-1" class="nav-link" data-scroll-target="#load-trained-model-1">Load trained model</a></li>
+  <li><a href="#predict-trainvalidation-set-1" id="toc-predict-trainvalidation-set-1" class="nav-link" data-scroll-target="#predict-trainvalidation-set-1">Predict Train/Validation set</a></li>
+  <li><a href="#predict-test-set-1" id="toc-predict-test-set-1" class="nav-link" data-scroll-target="#predict-test-set-1">Predict Test set</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#model-experiment-roberta-custom-classification" id="toc-model-experiment-roberta-custom-classification" class="nav-link" data-scroll-target="#model-experiment-roberta-custom-classification">4. Model Experiment: Roberta Custom Classification</a>
+  <ul class="collapse">
+  <li><a href="#a-define-and-train-a-custom-roberta-model" id="toc-a-define-and-train-a-custom-roberta-model" class="nav-link" data-scroll-target="#a-define-and-train-a-custom-roberta-model">a) Define and train a custom Roberta model</a></li>
+  <li><a href="#b-make-predictions" id="toc-b-make-predictions" class="nav-link" data-scroll-target="#b-make-predictions">b) Make predictions</a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/anhquan0412/that-nlp-library/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./text_main.html">1. Quick Starts</a></li><li class="breadcrumb-item"><a href="./model_classification_tutorial.html">Model Controller Tutorial: Classification</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">Model Controller Tutorial: Classification</h1>
+</div>
+
+<div>
+  <div class="description">
+    This notebook contains an end-to-end process of preprocess + tokenizing your text, and build a classification model based on Roberta architecture
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<div id="cell-3" class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-4" class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">#This will specify a (or a list) of GPUs for training</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>os.environ[<span class="st">'CUDA_VISIBLE_DEVICES'</span>] <span class="op">=</span> <span class="st">"0"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-5" class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> that_nlp_library.text_transformation <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> that_nlp_library.text_augmentation <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> that_nlp_library.text_main <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> that_nlp_library.utils <span class="im">import</span> seed_everything</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-6" class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> underthesea <span class="im">import</span> text_normalize</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> functools <span class="im">import</span> partial</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> transformers <span class="im">import</span> DataCollatorWithPadding,RobertaTokenizer</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> transformers.models.roberta.modeling_roberta <span class="im">import</span> RobertaForSequenceClassification</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> nlpaug.augmenter.char <span class="im">as</span> nac</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> datasets <span class="im">import</span> load_dataset</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> random</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="define-the-custom-augmentation-function" class="level1">
+<h1>1. Define the custom augmentation function</h1>
+<div id="cell-8" class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> nlp_aug_stochastic(x,aug<span class="op">=</span><span class="va">None</span>,p<span class="op">=</span><span class="fl">0.5</span>):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> <span class="bu">isinstance</span>(x,<span class="bu">list</span>): </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> random.random()<span class="op">&lt;</span>p: <span class="cf">return</span> aug.augment(x)[<span class="dv">0</span>]</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> x</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    news<span class="op">=</span>[]</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    originals<span class="op">=</span>[]</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _x <span class="kw">in</span> x:</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> random.random()<span class="op">&lt;</span>p: news.append(_x)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>: originals.append(_x)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># only perform augmentation when needed</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">len</span>(news): news <span class="op">=</span> aug.augment(news)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> news<span class="op">+</span>originals</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-9" class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>aug <span class="op">=</span> nac.KeyboardAug(aug_char_max<span class="op">=</span><span class="dv">3</span>,aug_char_p<span class="op">=</span><span class="fl">0.1</span>,aug_word_p<span class="op">=</span><span class="fl">0.07</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>nearby_aug_func <span class="op">=</span> partial(nlp_aug_stochastic,aug<span class="op">=</span>aug,p<span class="op">=</span><span class="fl">0.3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="create-a-textdatacontroller-object" class="level1">
+<h1>2. Create a TextDataController object</h1>
+<p>We will reuse the data and the preprocessings in <a href="https://anhquan0412.github.io/that-nlp-library/text_main.html">this tutorial</a></p>
+<div id="cell-12" class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>dset <span class="op">=</span> load_dataset(<span class="st">'sample_data'</span>,data_files<span class="op">=</span>[<span class="st">'Womens_Clothing_Reviews.csv'</span>],split<span class="op">=</span><span class="st">'train'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-13" class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>pd.Series(<span class="bu">list</span>(<span class="bu">map</span>(<span class="kw">lambda</span> x: <span class="bu">len</span>(x.split()),[text <span class="cf">for</span> text <span class="kw">in</span> dset[<span class="st">'Review Text'</span>] <span class="cf">if</span> text <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>]))).describe()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>count    22641.000000
+mean        60.196679
+std         28.534612
+min          2.000000
+25%         36.000000
+50%         59.000000
+75%         88.000000
+max        115.000000
+dtype: float64</code></pre>
+</div>
+</div>
+<div id="cell-14" class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>tdc <span class="op">=</span> TextDataController(dset,</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>                         main_text<span class="op">=</span><span class="st">'Review Text'</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>                         label_names<span class="op">=</span><span class="st">'Department Name'</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>                         sup_types<span class="op">=</span><span class="st">'classification'</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>                         filter_dict<span class="op">=</span>{<span class="st">'Review Text'</span>: <span class="kw">lambda</span> x: x <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>                                      <span class="st">'Department Name'</span>: <span class="kw">lambda</span> x: x <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>                                     },</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>                         metadatas<span class="op">=</span>[<span class="st">'Title'</span>,<span class="st">'Division Name'</span>],</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>                         content_transformations<span class="op">=</span>[text_normalize,<span class="bu">str</span>.lower],</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>                         content_augmentations<span class="op">=</span> [nearby_aug_func,<span class="bu">str</span>.lower], </span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>                         <span class="co"># add "str.lower" here because nearby_aug might return uppercase character</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>                         val_ratio<span class="op">=</span><span class="fl">0.2</span>,</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>                         batch_size<span class="op">=</span><span class="dv">1000</span>,</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>                         seed<span class="op">=</span><span class="dv">42</span>,</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>                         num_proc<span class="op">=</span><span class="dv">20</span>,</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>                         verbose<span class="op">=</span><span class="va">True</span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>                        )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Define our tokenizer for Roberta</p>
+<div id="cell-16" class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>_tokenizer <span class="op">=</span> RobertaTokenizer.from_pretrained(<span class="st">'roberta-base'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/home/quan/anaconda3/envs/nlp_dev/lib/python3.10/site-packages/huggingface_hub/file_download.py:1132: FutureWarning: `resume_download` is deprecated and will be removed in version 1.0.0. Downloads always resume when possible. If you want to force a new download, use `force_download=True`.
+  warnings.warn(</code></pre>
+</div>
+</div>
+<p>Process and tokenize our dataset</p>
+<div id="cell-18" class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>tdc.process_and_tokenize(_tokenizer,max_length<span class="op">=</span><span class="dv">100</span>,shuffle_trn<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>-------------------- Start Main Text Processing --------------------
+-------------------- Data Filtering --------------------
+----- Do &lt;lambda&gt; on Review Text -----
+----- Do &lt;lambda&gt; on Department Name -----
+Done
+----- Metadata Simple Processing &amp; Concatenating to Main Content -----
+Done
+----- Label Encoding -----
+Done
+-------------------- Text Transformation --------------------
+----- text_normalize -----
+----- lower -----
+Done
+-------------------- Train Test Split --------------------
+Validation split based on val_ratio
+Done
+-------------------- Dropping unused features --------------------
+Done
+- Number of rows leaked: 0, which is 0.00% of training set
+-------------------- Text Augmentation --------------------
+----- nlp_aug_stochastic -----
+----- lower -----
+Done
+-------------------- Shuffling and flattening train set --------------------
+Done
+-------------------- Tokenization --------------------
+Done</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<script type="application/vnd.jupyter.widget-view+json">
+{"model_id":"01de2bad468344479c2b5e5a38cd7cac","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
+</script>
+</div>
+<div class="cell-output cell-output-display">
+<script type="application/vnd.jupyter.widget-view+json">
+{"model_id":"8c3455f5d45b4351819f880b25ea8c31","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
+</script>
+</div>
+</div>
+<div id="cell-19" class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>tdc.main_ddict</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>DatasetDict({
+    train: Dataset({
+        features: ['Title', 'Review Text', 'Division Name', 'Department Name', 'label', 'input_ids', 'attention_mask'],
+        num_rows: 18102
+    })
+    validation: Dataset({
+        features: ['Title', 'Review Text', 'Division Name', 'Department Name', 'label', 'input_ids', 'attention_mask'],
+        num_rows: 4526
+    })
+})</code></pre>
+</div>
+</div>
+<p>Let’s see one example of how those content transformations and augmentations affect our input</p>
+<div id="cell-21" class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>sample_txt <span class="op">=</span> <span class="st">'This is not what I expected 🤬. I gulped when I put this in my bag during retailer days because the price was still too much ... but thought this has to be wonderful to charge so much,right??'</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(sample_txt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>This is not what I expected 🤬. I gulped when I put this in my bag during retailer days because the price was still too much ... but thought this has to be wonderful to charge so much,right??</code></pre>
+</div>
+</div>
+<div id="cell-22" class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>two_steps_tokenization_explain(sample_txt,_tokenizer,</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>                               content_tfms<span class="op">=</span>[text_normalize,<span class="bu">str</span>.lower],</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>                               aug_tfms<span class="op">=</span>[partial(nlp_aug_stochastic,aug<span class="op">=</span>aug,p<span class="op">=</span><span class="dv">1</span>),<span class="bu">str</span>.lower]</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>                              )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        ------- Text Transformation Explained -------
+----- Raw sentence -----
+This is not what I expected 🤬. I gulped when I put this in my bag during retailer days because the price was still too much ... but thought this has to be wonderful to charge so much,right??
+
+----- Content Transformations (on both train and test) -----
+--- text_normalize ---
+This is not what I expected 🤬 . I gulped when I put this in my bag during retailer days because the price was still too much ... but thought this has to be wonderful to charge so much , right ? ?
+
+--- lower ---
+this is not what i expected 🤬 . i gulped when i put this in my bag during retailer days because the price was still too much ... but thought this has to be wonderful to charge so much , right ? ?
+
+
+----- Augmentations (on train only) -----
+--- nlp_aug_stochastic ---
+tMis is not what i expected 🤬. i gulped when i put this in my bag during rrtailer Cays because the price was still too much. .. but thought this has to be wonderful to Vharge so much, right??
+
+--- lower ---
+tmis is not what i expected 🤬. i gulped when i put this in my bag during rrtailer cays because the price was still too much. .. but thought this has to be wonderful to vharge so much, right??
+
+
+        ------- Tokenizer Explained -------
+----- Input -----
+tmis is not what i expected 🤬. i gulped when i put this in my bag during rrtailer cays because the price was still too much. .. but thought this has to be wonderful to vharge so much, right??
+
+----- Tokenized results ----- 
+{'input_ids': [0, 26989, 354, 16, 45, 99, 939, 421, 8103, 10470, 11582, 4, 939, 42445, 9700, 77, 939, 342, 42, 11, 127, 3298, 148, 910, 338, 17624, 254, 740, 4113, 142, 5, 425, 21, 202, 350, 203, 4, 29942, 53, 802, 42, 34, 7, 28, 4613, 7, 748, 298, 16347, 98, 203, 6, 235, 28749, 2], 'attention_mask': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}
+
+----- Results from tokenizer.convert_ids_to_tokens -----
+['&lt;s&gt;', 'tm', 'is', 'Ġis', 'Ġnot', 'Ġwhat', 'Ġi', 'Ġexpected', 'ĠðŁ', '¤', '¬', '.', 'Ġi', 'Ġgul', 'ped', 'Ġwhen', 'Ġi', 'Ġput', 'Ġthis', 'Ġin', 'Ġmy', 'Ġbag', 'Ġduring', 'Ġr', 'r', 'tail', 'er', 'Ġc', 'ays', 'Ġbecause', 'Ġthe', 'Ġprice', 'Ġwas', 'Ġstill', 'Ġtoo', 'Ġmuch', '.', 'Ġ..', 'Ġbut', 'Ġthought', 'Ġthis', 'Ġhas', 'Ġto', 'Ġbe', 'Ġwonderful', 'Ġto', 'Ġv', 'h', 'arge', 'Ġso', 'Ġmuch', ',', 'Ġright', '??', '&lt;/s&gt;']
+
+----- Results from tokenizer.decode ----- 
+&lt;s&gt;tmis is not what i expected 🤬. i gulped when i put this in my bag during rrtailer cays because the price was still too much... but thought this has to be wonderful to vharge so much, right??&lt;/s&gt;
+</code></pre>
+</div>
+</div>
+</section>
+<section id="model-experiment-roberta-vanilla-single-head-classification" class="level1">
+<h1>3. Model Experiment: Roberta Vanilla Single-Head Classification</h1>
+<div id="cell-24" class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> that_nlp_library.models.roberta.classifiers <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> that_nlp_library.model_main <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> f1_score, accuracy_score</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="a-train-roberta-model-using-the-model-controller" class="level2">
+<h2 class="anchored" data-anchor-id="a-train-roberta-model-using-the-model-controller">a) Train Roberta model using the Model Controller</h2>
+<p>Here are the unique values in our label</p>
+<div id="cell-27" class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>tdc.label_lists[<span class="dv">0</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>['Bottoms', 'Dresses', 'Intimate', 'Jackets', 'Tops', 'Trend']</code></pre>
+</div>
+</div>
+<div id="cell-28" class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>num_classes <span class="op">=</span> <span class="bu">len</span>(tdc.label_lists[<span class="dv">0</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Let’s define our model</p>
+<div id="cell-30" class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>seed_everything(<span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-31" class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>model_name<span class="op">=</span><span class="st">'roberta-base'</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>_model <span class="op">=</span> RobertaForSequenceClassification.from_pretrained(model_name,num_labels<span class="op">=</span>num_classes)</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>_model <span class="op">=</span> _model.to(<span class="st">'cuda:0'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/home/quan/anaconda3/envs/nlp_dev/lib/python3.10/site-packages/huggingface_hub/file_download.py:1132: FutureWarning: `resume_download` is deprecated and will be removed in version 1.0.0. Downloads always resume when possible. If you want to force a new download, use `force_download=True`.
+  warnings.warn(
+Some weights of RobertaForSequenceClassification were not initialized from the model checkpoint at roberta-base and are newly initialized: ['classifier.dense.bias', 'classifier.dense.weight', 'classifier.out_proj.bias', 'classifier.out_proj.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.</code></pre>
+</div>
+</div>
+<p>Then we can define the metrics to used, and the Model Controller object</p>
+<div id="cell-33" class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>metric_funcs <span class="op">=</span> [partial(f1_score,average<span class="op">=</span><span class="st">'macro'</span>),accuracy_score] </span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="co"># we will use both f1_macro and accuracy score as metrics</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-34" class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>controller <span class="op">=</span> ModelController(_model,</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>                             data_store<span class="op">=</span>tdc,</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>                             seed<span class="op">=</span><span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>And we can start training our model</p>
+<div id="cell-36" class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>lr <span class="op">=</span> <span class="fl">1e-4</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>bs<span class="op">=</span><span class="dv">32</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>wd<span class="op">=</span><span class="fl">0.01</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>epochs<span class="op">=</span> <span class="dv">3</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>controller.fit(epochs,lr,</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>               metric_funcs<span class="op">=</span>metric_funcs,</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>               batch_size<span class="op">=</span>bs,</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>               weight_decay<span class="op">=</span>wd,</span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>               save_checkpoint<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>               compute_metrics<span class="op">=</span>compute_metrics,</span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>              )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+    <div>
+      
+      <progress value="849" max="849" style="width:300px; height:20px; vertical-align: middle;"></progress>
+      [849/849 02:09, Epoch 3/3]
+    </div>
+    
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th">Epoch</th>
+<th data-quarto-table-cell-role="th">Training Loss</th>
+<th data-quarto-table-cell-role="th">Validation Loss</th>
+<th data-quarto-table-cell-role="th">F1 Score Department name</th>
+<th data-quarto-table-cell-role="th">Accuracy Score Department name</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>No log</td>
+<td>0.304115</td>
+<td>0.743430</td>
+<td>0.914494</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>0.417500</td>
+<td>0.264885</td>
+<td>0.749442</td>
+<td>0.919797</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>0.417500</td>
+<td>0.281572</td>
+<td>0.747713</td>
+<td>0.918471</td>
+</tr>
+</tbody>
+</table>
+<p>
+</p></div>
+</div>
+</div>
+<section id="logging-your-training" class="level3">
+<h3 class="anchored" data-anchor-id="logging-your-training">Logging your training</h3>
+<p>You can log your training using HuggingFace:</p>
+<ul>
+<li><p>Supported platforms are “azure_ml”, “comet_ml”, “mlflow”, “neptune”, “tensorboard”, “clearml” and “wandb”</p></li>
+<li><p>References:</p>
+<ul>
+<li><p>https://huggingface.co/docs/transformers/v4.40.2/en/main_classes/trainer#transformers.TrainingArguments</p></li>
+<li><p>https://docs.wandb.ai/guides/integrations/huggingface</p></li>
+</ul></li>
+</ul>
+<div class="sourceCode" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>controller.fit(epochs,lr,</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>               metric_funcs<span class="op">=</span>metric_funcs,</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>               batch_size<span class="op">=</span>bs,</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>               weight_decay<span class="op">=</span>wd,</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>               save_checkpoint<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>               compute_metrics<span class="op">=</span>compute_metrics,</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>               hf_report_to<span class="op">=</span><span class="st">'wandb'</span></span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>              )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>You can save your model weights at the end of your training</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>controller.trainer.model.save_pretrained(<span class="st">'./sample_weights/model_progress'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Or you can save your weights at every epochs during your training</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>controller.fit(epochs,lr,</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>               metric_funcs<span class="op">=</span>metric_funcs,</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>               batch_size<span class="op">=</span>bs,</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>               weight_decay<span class="op">=</span>wd,</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>               save_checkpoint<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>               o_dir<span class="op">=</span><span class="st">'my_saved_weights'</span>,</span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>               compute_metrics<span class="op">=</span>compute_metrics,</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="b-train-model-with-only-a-tokenized-datasetdict-no-textdatacontroller" class="level2">
+<h2 class="anchored" data-anchor-id="b-train-model-with-only-a-tokenized-datasetdict-no-textdatacontroller">b) Train model with only a Tokenized DatasetDict (no TextDataController)</h2>
+<p>This part assumes you already have your tokenized datasetdict (you don’t even need to pad your tokens, as demonstrated below). We will ‘borrow’ TextDataController to create such datasetdict for us</p>
+<div id="cell-46" class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co"># import copy</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="co"># main_ddict = copy.deepcopy(tdc.main_ddict)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-47" class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>dset <span class="op">=</span> load_dataset(<span class="st">'sample_data'</span>,data_files<span class="op">=</span>[<span class="st">'Womens_Clothing_Reviews.csv'</span>],split<span class="op">=</span><span class="st">'train'</span>)</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>tdc <span class="op">=</span> TextDataController(dset,</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>                         main_text<span class="op">=</span><span class="st">'Review Text'</span>,</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>                         label_names<span class="op">=</span><span class="st">'Department Name'</span>,</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>                         sup_types<span class="op">=</span><span class="st">'classification'</span>,</span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>                         filter_dict<span class="op">=</span>{<span class="st">'Review Text'</span>: <span class="kw">lambda</span> x: x <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>,</span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>                                      <span class="st">'Department Name'</span>: <span class="kw">lambda</span> x: x <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>,</span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>                                     },</span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>                         metadatas<span class="op">=</span>[<span class="st">'Title'</span>,<span class="st">'Division Name'</span>],</span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>                         content_transformations<span class="op">=</span>[text_normalize,<span class="bu">str</span>.lower],</span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a>                         content_augmentations<span class="op">=</span> [nearby_aug_func,<span class="bu">str</span>.lower], </span>
+<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a>                         <span class="co"># add "str.lower" here because nearby_aug might return uppercase character</span></span>
+<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a>                         val_ratio<span class="op">=</span><span class="fl">0.2</span>,</span>
+<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a>                         batch_size<span class="op">=</span><span class="dv">1000</span>,</span>
+<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a>                         seed<span class="op">=</span><span class="dv">42</span>,</span>
+<span id="cb35-17"><a href="#cb35-17" aria-hidden="true" tabindex="-1"></a>                         num_proc<span class="op">=</span><span class="dv">20</span>,</span>
+<span id="cb35-18"><a href="#cb35-18" aria-hidden="true" tabindex="-1"></a>                         verbose<span class="op">=</span><span class="va">True</span></span>
+<span id="cb35-19"><a href="#cb35-19" aria-hidden="true" tabindex="-1"></a>                        )</span>
+<span id="cb35-20"><a href="#cb35-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-21"><a href="#cb35-21" aria-hidden="true" tabindex="-1"></a>_tokenizer <span class="op">=</span> RobertaTokenizer.from_pretrained(<span class="st">'roberta-base'</span>)</span>
+<span id="cb35-22"><a href="#cb35-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-23"><a href="#cb35-23" aria-hidden="true" tabindex="-1"></a><span class="co"># set max_length to -1 to skip the padding</span></span>
+<span id="cb35-24"><a href="#cb35-24" aria-hidden="true" tabindex="-1"></a>tdc.process_and_tokenize(_tokenizer,max_length<span class="op">=-</span><span class="dv">1</span>,shuffle_trn<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>-------------------- Start Main Text Processing --------------------
+-------------------- Data Filtering --------------------
+----- Do &lt;lambda&gt; on Review Text -----
+----- Do &lt;lambda&gt; on Department Name -----
+Done
+----- Metadata Simple Processing &amp; Concatenating to Main Content -----
+Done
+----- Label Encoding -----
+Done
+-------------------- Text Transformation --------------------
+----- text_normalize -----
+----- lower -----
+Done
+-------------------- Train Test Split --------------------
+Validation split based on val_ratio
+Done
+-------------------- Dropping unused features --------------------
+Done
+- Number of rows leaked: 0, which is 0.00% of training set
+-------------------- Text Augmentation --------------------
+----- nlp_aug_stochastic -----
+----- lower -----
+Done
+-------------------- Shuffling and flattening train set --------------------
+Done
+-------------------- Tokenization --------------------
+Done</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<script type="application/vnd.jupyter.widget-view+json">
+{"model_id":"959a9bba14e14f7bb0c325a31779619e","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
+</script>
+</div>
+<div class="cell-output cell-output-display">
+<script type="application/vnd.jupyter.widget-view+json">
+{"model_id":"38f62bf348b141c4b6236334a388039b","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
+</script>
+</div>
+</div>
+<div id="cell-48" class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>main_ddict</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>DatasetDict({
+    train: Dataset({
+        features: ['Title', 'Review Text', 'Division Name', 'Department Name', 'label', 'input_ids', 'attention_mask'],
+        num_rows: 18102
+    })
+    validation: Dataset({
+        features: ['Title', 'Review Text', 'Division Name', 'Department Name', 'label', 'input_ids', 'attention_mask'],
+        num_rows: 4526
+    })
+})</code></pre>
+</div>
+</div>
+<p>Note that your DatasetDict must contain tokens besides raw text (which typically includes ‘input_ids’, ‘token_type_ids’, ‘attention_mask’)</p>
+<div id="cell-50" class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>num_classes <span class="op">=</span> <span class="dv">6</span> <span class="co"># the number of classes</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-51" class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>seed_everything(<span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-52" class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>model_name<span class="op">=</span><span class="st">'roberta-base'</span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>_model <span class="op">=</span> RobertaForSequenceClassification.from_pretrained(model_name,num_labels<span class="op">=</span>num_classes)</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>_model <span class="op">=</span> _model.to(<span class="st">'cuda:0'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/home/quan/anaconda3/envs/nlp_dev/lib/python3.10/site-packages/huggingface_hub/file_download.py:1132: FutureWarning: `resume_download` is deprecated and will be removed in version 1.0.0. Downloads always resume when possible. If you want to force a new download, use `force_download=True`.
+  warnings.warn(
+Some weights of RobertaForSequenceClassification were not initialized from the model checkpoint at roberta-base and are newly initialized: ['classifier.dense.bias', 'classifier.dense.weight', 'classifier.out_proj.bias', 'classifier.out_proj.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.</code></pre>
+</div>
+</div>
+<div id="cell-53" class="cell">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>metric_funcs <span class="op">=</span> [partial(f1_score,average<span class="op">=</span><span class="st">'macro'</span>),accuracy_score] </span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a><span class="co"># note that you omit the `data_store` argument</span></span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>controller <span class="op">=</span> ModelController(_model,seed<span class="op">=</span><span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-54" class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>lr <span class="op">=</span> <span class="fl">1e-4</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>bs<span class="op">=</span><span class="dv">32</span></span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>wd<span class="op">=</span><span class="fl">0.01</span></span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>epochs<span class="op">=</span> <span class="dv">3</span></span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>controller.fit(epochs,lr,</span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>               ddict<span class="op">=</span>main_ddict, <span class="co"># Put in your tokenized datasetdict here</span></span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>               metric_funcs<span class="op">=</span>metric_funcs,</span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>               label_names<span class="op">=</span><span class="st">'Department Name'</span>,</span>
+<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a>               head_sizes<span class="op">=</span>num_classes,</span>
+<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>               batch_size<span class="op">=</span>bs,</span>
+<span id="cb44-12"><a href="#cb44-12" aria-hidden="true" tabindex="-1"></a>               weight_decay<span class="op">=</span>wd,</span>
+<span id="cb44-13"><a href="#cb44-13" aria-hidden="true" tabindex="-1"></a>               save_checkpoint<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb44-14"><a href="#cb44-14" aria-hidden="true" tabindex="-1"></a>               compute_metrics<span class="op">=</span>compute_metrics,</span>
+<span id="cb44-15"><a href="#cb44-15" aria-hidden="true" tabindex="-1"></a>               tokenizer<span class="op">=</span>_tokenizer,</span>
+<span id="cb44-16"><a href="#cb44-16" aria-hidden="true" tabindex="-1"></a>              )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+    <div>
+      
+      <progress value="849" max="849" style="width:300px; height:20px; vertical-align: middle;"></progress>
+      [849/849 02:12, Epoch 3/3]
+    </div>
+    
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th">Epoch</th>
+<th data-quarto-table-cell-role="th">Training Loss</th>
+<th data-quarto-table-cell-role="th">Validation Loss</th>
+<th data-quarto-table-cell-role="th">F1 Score Department name</th>
+<th data-quarto-table-cell-role="th">Accuracy Score Department name</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>No log</td>
+<td>0.299611</td>
+<td>0.733846</td>
+<td>0.910738</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>0.414500</td>
+<td>0.257584</td>
+<td>0.748776</td>
+<td>0.920018</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>0.414500</td>
+<td>0.263301</td>
+<td>0.747707</td>
+<td>0.921564</td>
+</tr>
+</tbody>
+</table>
+<p>
+</p></div>
+</div>
+</div>
+<div id="cell-55" class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>controller.trainer.model.save_pretrained(<span class="st">'./sample_weights/model_progress'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="c-make-predictions-using-textdatacontroller" class="level2">
+<h2 class="anchored" data-anchor-id="c-make-predictions-using-textdatacontroller">c) Make predictions, using TextDataController</h2>
+<section id="load-trained-model" class="level3">
+<h3 class="anchored" data-anchor-id="load-trained-model">Load trained model</h3>
+<div id="cell-58" class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>trained_model <span class="op">=</span> RobertaForSequenceClassification.from_pretrained(<span class="st">'./sample_weights/model_progress'</span>,num_labels<span class="op">=</span><span class="dv">6</span>).to(<span class="st">'cuda:0'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-59" class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>controller <span class="op">=</span> ModelController(trained_model,tdc,seed<span class="op">=</span><span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="predict-trainvalidation-set" class="level3">
+<h3 class="anchored" data-anchor-id="predict-trainvalidation-set">Predict Train/Validation set</h3>
+<p>Make prediction on all validation set</p>
+<div id="cell-62" class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>df_val <span class="op">=</span> controller.predict_ddict(ds_type<span class="op">=</span><span class="st">'validation'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>-------------------- Start making predictions --------------------</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<script type="application/vnd.jupyter.widget-view+json">
+{"model_id":"795936c4a61246458dc9571b79ab70a4","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
+</script>
+</div>
+<div class="cell-output cell-output-display">
+<script type="application/vnd.jupyter.widget-view+json">
+{"model_id":"f415cc61142f494d9cbafa200dc6e115","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
+</script>
+</div>
+</div>
+<div id="cell-63" class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>df_val <span class="op">=</span> df_val.to_pandas()</span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>df_val.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Title</th>
+<th data-quarto-table-cell-role="th">Review Text</th>
+<th data-quarto-table-cell-role="th">Division Name</th>
+<th data-quarto-table-cell-role="th">Department Name</th>
+<th data-quarto-table-cell-role="th">label</th>
+<th data-quarto-table-cell-role="th">input_ids</th>
+<th data-quarto-table-cell-role="th">attention_mask</th>
+<th data-quarto-table-cell-role="th">pred_Department Name</th>
+<th data-quarto-table-cell-role="th">pred_prob_Department Name</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td></td>
+<td>general petite . . such a fun jacket ! great t...</td>
+<td>general petite</td>
+<td>Intimate</td>
+<td>2</td>
+<td>[0, 15841, 4716, 1459, 479, 479, 215, 10, 1531...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Jackets</td>
+<td>0.823920</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>simple and elegant</td>
+<td>general petite . simple and elegant . i though...</td>
+<td>general petite</td>
+<td>Tops</td>
+<td>4</td>
+<td>[0, 15841, 4716, 1459, 479, 2007, 8, 14878, 47...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Tops</td>
+<td>0.995652</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>retro and pretty</td>
+<td>general . retro and pretty . this top has a bi...</td>
+<td>general</td>
+<td>Tops</td>
+<td>4</td>
+<td>[0, 15841, 479, 11299, 8, 1256, 479, 42, 299, ...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Tops</td>
+<td>0.995805</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>summer/fall wear</td>
+<td>general petite . summer / fall wear . i first ...</td>
+<td>general petite</td>
+<td>Dresses</td>
+<td>1</td>
+<td>[0, 15841, 4716, 1459, 479, 1035, 1589, 1136, ...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Dresses</td>
+<td>0.985551</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>perfect except slip</td>
+<td>general petite . perfect except slip . this is...</td>
+<td>general petite</td>
+<td>Dresses</td>
+<td>1</td>
+<td>[0, 15841, 4716, 1459, 479, 1969, 4682, 9215, ...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Dresses</td>
+<td>0.985531</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+<p>You can try to get your metric to see if it matches your last traing epoch’s above</p>
+<div id="cell-65" class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>f1_score(df_val[<span class="st">'Department Name'</span>],df_val[<span class="st">'pred_Department Name'</span>],average<span class="op">=</span><span class="st">'macro'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>0.7485565717033943</code></pre>
+</div>
+</div>
+<p>You can also make predictions on all training set, by changing argument <code>ds_type</code> to “train”</p>
+</section>
+<section id="predict-test-set" class="level3">
+<h3 class="anchored" data-anchor-id="predict-test-set">Predict Test set</h3>
+<p>We will go through details on how to make a prediction on a completely new and raw dataset using our trained model. For now, let’s reuse the sample csv and pretend it’s our test set</p>
+<div id="cell-69" class="cell">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>df_test <span class="op">=</span> pd.read_csv(<span class="st">'sample_data/Womens_Clothing_Reviews.csv'</span>,encoding<span class="op">=</span><span class="st">'utf-8-sig'</span>).sample(frac<span class="op">=</span><span class="fl">0.2</span>,random_state<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a><span class="co"># drop NaN values in the label column</span></span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>df_test <span class="op">=</span> df_test[<span class="op">~</span>df_test[<span class="st">'Department Name'</span>].isna()].reset_index(drop<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a><span class="co"># save the label, as we will calculate some metrics later. We also filter out labels with NaN Review Text,</span></span>
+<span id="cb53-6"><a href="#cb53-6" aria-hidden="true" tabindex="-1"></a><span class="co"># as there will be a filtering processing on the test set</span></span>
+<span id="cb53-7"><a href="#cb53-7" aria-hidden="true" tabindex="-1"></a>true_labels <span class="op">=</span> df_test.loc[<span class="op">~</span>df_test[<span class="st">'Review Text'</span>].isna(),<span class="st">'Department Name'</span>].values </span>
+<span id="cb53-8"><a href="#cb53-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-9"><a href="#cb53-9" aria-hidden="true" tabindex="-1"></a><span class="co"># drop the label (you don't need to, but this is necessary to simulate an actual test set)</span></span>
+<span id="cb53-10"><a href="#cb53-10" aria-hidden="true" tabindex="-1"></a>df_test.drop(<span class="st">'Department Name'</span>,axis<span class="op">=</span><span class="dv">1</span>,inplace<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-70" class="cell">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>df_test.shape</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>(4692, 9)</code></pre>
+</div>
+</div>
+<div id="cell-71" class="cell">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>df_test.head(<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Clothing ID</th>
+<th data-quarto-table-cell-role="th">Age</th>
+<th data-quarto-table-cell-role="th">Title</th>
+<th data-quarto-table-cell-role="th">Review Text</th>
+<th data-quarto-table-cell-role="th">Rating</th>
+<th data-quarto-table-cell-role="th">Recommended IND</th>
+<th data-quarto-table-cell-role="th">Positive Feedback Count</th>
+<th data-quarto-table-cell-role="th">Division Name</th>
+<th data-quarto-table-cell-role="th">Class Name</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>872</td>
+<td>42</td>
+<td>Perfect for work and play</td>
+<td>This shirt works for both going out and going ...</td>
+<td>5</td>
+<td>1</td>
+<td>0</td>
+<td>General</td>
+<td>Knits</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>1033</td>
+<td>40</td>
+<td>NaN</td>
+<td>I don't know why i had the opposite problem mo...</td>
+<td>4</td>
+<td>1</td>
+<td>0</td>
+<td>General Petite</td>
+<td>Jeans</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>1037</td>
+<td>45</td>
+<td>Great pants</td>
+<td>These cords are great--lightweight for fl wint...</td>
+<td>5</td>
+<td>1</td>
+<td>1</td>
+<td>General Petite</td>
+<td>Jeans</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>829</td>
+<td>35</td>
+<td>Surprisingly comfy for a button down</td>
+<td>I am a 10 m and got the 10. it fits perfectly ...</td>
+<td>5</td>
+<td>1</td>
+<td>1</td>
+<td>General Petite</td>
+<td>Blouses</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>872</td>
+<td>29</td>
+<td>Short and small</td>
+<td>The shirt is mostly a thick sweatshirt materia...</td>
+<td>3</td>
+<td>0</td>
+<td>15</td>
+<td>General Petite</td>
+<td>Knits</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+<p>From here, you have 2 options</p>
+<ol type="1">
+<li>Use <a href="https://anhquan0412.github.io/that-nlp-library/text_main.html#textdatacontroller"><code>TextDataController</code></a> to process your data, then <a href="https://anhquan0412.github.io/that-nlp-library/model_main.html#modelcontroller"><code>ModelController</code></a>’s job is to perform prediction</li>
+<li>Convert your dataframe to a HuggingFace Dataset, and let the <a href="https://anhquan0412.github.io/that-nlp-library/model_main.html#modelcontroller"><code>ModelController</code></a> take care of the preprocessing and the prediction</li>
+</ol>
+<p>Option 1:</p>
+<div id="cell-74" class="cell">
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>_test_dset_processed <span class="op">=</span> tdc.prepare_test_dataset_from_df(df_test,validate<span class="op">=</span><span class="va">True</span>,do_filtering<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>- Input Validation Precheck -
+Data contains missing values!
+-----&gt; List of columns and the number of missing values for each
+Title          758
+Review Text    164
+dtype: int64
+Data contains duplicated values!
+-----&gt; Number of duplications: 2 rows
+-------------------- Start Test Set Transformation --------------------
+-------------------- Data Filtering --------------------
+----- Do &lt;lambda&gt; on Review Text -----
+Done
+----- Metadata Simple Processing &amp; Concatenating to Main Content -----
+Done
+-------------------- Text Transformation --------------------
+----- text_normalize -----
+----- lower -----
+Done
+-------------------- Tokenization --------------------
+Done</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<script type="application/vnd.jupyter.widget-view+json">
+{"model_id":"f880f01629a143f78c95f076fd06cf57","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
+</script>
+</div>
+<div class="cell-output cell-output-display">
+<script type="application/vnd.jupyter.widget-view+json">
+{"model_id":"fb8db7a72aae4214b15ac92b03973cbd","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
+</script>
+</div>
+<div class="cell-output cell-output-display">
+<script type="application/vnd.jupyter.widget-view+json">
+{"model_id":"35872a4481b144538dfba2b68e237fd9","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
+</script>
+</div>
+<div class="cell-output cell-output-display">
+<script type="application/vnd.jupyter.widget-view+json">
+{"model_id":"1063d33acdfc40b49ea3561ed529f57e","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
+</script>
+</div>
+<div class="cell-output cell-output-display">
+<script type="application/vnd.jupyter.widget-view+json">
+{"model_id":"e9c0a1b6f3df4c048b86438612235dd6","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
+</script>
+</div>
+</div>
+<div id="cell-75" class="cell">
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>_test_dset_processed</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>Dataset({
+    features: ['Title', 'Review Text', 'Division Name', 'input_ids', 'attention_mask'],
+    num_rows: 4528
+})</code></pre>
+</div>
+</div>
+<div id="cell-76" class="cell">
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>_test_dset_predicted <span class="op">=</span> controller.predict_ddict(_test_dset_processed)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>-------------------- Start making predictions --------------------</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<script type="application/vnd.jupyter.widget-view+json">
+{"model_id":"4a88803930b84ef58fbe5b742f5ec1d2","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
+</script>
+</div>
+<div class="cell-output cell-output-display">
+<script type="application/vnd.jupyter.widget-view+json">
+{"model_id":"4214afd9cab545e6accdadc689b16742","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
+</script>
+</div>
+</div>
+<div id="cell-77" class="cell">
+<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>df_test_predicted <span class="op">=</span> _test_dset_predicted.to_pandas()</span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>df_test_predicted.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Title</th>
+<th data-quarto-table-cell-role="th">Review Text</th>
+<th data-quarto-table-cell-role="th">Division Name</th>
+<th data-quarto-table-cell-role="th">input_ids</th>
+<th data-quarto-table-cell-role="th">attention_mask</th>
+<th data-quarto-table-cell-role="th">pred_Department Name</th>
+<th data-quarto-table-cell-role="th">pred_prob_Department Name</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>perfect for work and play</td>
+<td>general . perfect for work and play . this shi...</td>
+<td>general</td>
+<td>[0, 15841, 479, 1969, 13, 173, 8, 310, 479, 42...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Tops</td>
+<td>0.996438</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td></td>
+<td>general petite . . i don't know why i had the ...</td>
+<td>general petite</td>
+<td>[0, 15841, 4716, 1459, 479, 479, 939, 218, 75,...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Bottoms</td>
+<td>0.976738</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>great pants</td>
+<td>general petite . great pants . thes e cords ar...</td>
+<td>general petite</td>
+<td>[0, 15841, 4716, 1459, 479, 372, 9304, 479, 5,...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Bottoms</td>
+<td>0.958788</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>surprisingly comfy for a button down</td>
+<td>general petite . surprisingly comfy for a butt...</td>
+<td>general petite</td>
+<td>[0, 15841, 4716, 1459, 479, 10262, 3137, 24382...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Tops</td>
+<td>0.994487</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>short and small</td>
+<td>general petite . short and small . the shirt i...</td>
+<td>general petite</td>
+<td>[0, 15841, 4716, 1459, 479, 765, 8, 650, 479, ...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Tops</td>
+<td>0.995179</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+<p>Option 2:</p>
+<div id="cell-79" class="cell">
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> datasets <span class="im">import</span> Dataset</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>If you want to turn off the info printing, you can do it to the <a href="https://anhquan0412.github.io/that-nlp-library/text_main.html#textdatacontroller"><code>TextDataController</code></a> (stored as <code>data_store</code>) in the <a href="https://anhquan0412.github.io/that-nlp-library/model_main.html#modelcontroller"><code>ModelController</code></a> class</p>
+<div id="cell-81" class="cell">
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>controller.data_store.set_verbose(<span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-82" class="cell">
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>_test_dset <span class="op">=</span> Dataset.from_pandas(df_test)</span>
+<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a>_test_dset_predicted <span class="op">=</span> controller.predict_raw_dset(_test_dset,</span>
+<span id="cb66-3"><a href="#cb66-3" aria-hidden="true" tabindex="-1"></a>                                                   do_filtering<span class="op">=</span><span class="va">True</span>, <span class="co"># since we have some text filtering in the processing</span></span>
+<span id="cb66-4"><a href="#cb66-4" aria-hidden="true" tabindex="-1"></a>                                                  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>-------------------- Start making predictions --------------------</code></pre>
+</div>
+</div>
+<div id="cell-83" class="cell">
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>df_test_predicted <span class="op">=</span> _test_dset_predicted.to_pandas()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-84" class="cell">
+<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a>df_test_predicted.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Title</th>
+<th data-quarto-table-cell-role="th">Review Text</th>
+<th data-quarto-table-cell-role="th">Division Name</th>
+<th data-quarto-table-cell-role="th">input_ids</th>
+<th data-quarto-table-cell-role="th">attention_mask</th>
+<th data-quarto-table-cell-role="th">pred_Department Name</th>
+<th data-quarto-table-cell-role="th">pred_prob_Department Name</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>perfect for work and play</td>
+<td>general . perfect for work and play . this shi...</td>
+<td>general</td>
+<td>[0, 15841, 479, 1969, 13, 173, 8, 310, 479, 42...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Tops</td>
+<td>0.996438</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td></td>
+<td>general petite . . i don't know why i had the ...</td>
+<td>general petite</td>
+<td>[0, 15841, 4716, 1459, 479, 479, 939, 218, 75,...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Bottoms</td>
+<td>0.976738</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>great pants</td>
+<td>general petite . great pants . thes e cords ar...</td>
+<td>general petite</td>
+<td>[0, 15841, 4716, 1459, 479, 372, 9304, 479, 5,...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Bottoms</td>
+<td>0.958788</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>surprisingly comfy for a button down</td>
+<td>general petite . surprisingly comfy for a butt...</td>
+<td>general petite</td>
+<td>[0, 15841, 4716, 1459, 479, 10262, 3137, 24382...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Tops</td>
+<td>0.994487</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>short and small</td>
+<td>general petite . short and small . the shirt i...</td>
+<td>general petite</td>
+<td>[0, 15841, 4716, 1459, 479, 765, 8, 650, 479, ...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Tops</td>
+<td>0.995179</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+<p>Let’s quickly check the f1 score to make sure everything works correctly</p>
+<div id="cell-86" class="cell">
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>f1_score(true_labels,df_test_predicted[<span class="st">'pred_Department Name'</span>],average<span class="op">=</span><span class="st">'macro'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>0.759160993145196</code></pre>
+</div>
+</div>
+<p>This is not too far off from the validation F1 score. Notice that the ‘test set’ is just a sample from the original dataset, not the entire new set</p>
+<p>We can even predict top k results</p>
+<div id="cell-89" class="cell">
+<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a>_test_dset <span class="op">=</span> Dataset.from_pandas(df_test)</span>
+<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a>_test_dset_predicted <span class="op">=</span> controller.predict_raw_dset(_test_dset,</span>
+<span id="cb72-3"><a href="#cb72-3" aria-hidden="true" tabindex="-1"></a>                                                   do_filtering<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb72-4"><a href="#cb72-4" aria-hidden="true" tabindex="-1"></a>                                                   topk<span class="op">=</span><span class="dv">3</span></span>
+<span id="cb72-5"><a href="#cb72-5" aria-hidden="true" tabindex="-1"></a>                                                  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>-------------------- Start making predictions --------------------</code></pre>
+</div>
+</div>
+<div id="cell-90" class="cell">
+<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a>df_test_predicted <span class="op">=</span> _test_dset_predicted.to_pandas()</span>
+<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-3"><a href="#cb74-3" aria-hidden="true" tabindex="-1"></a>df_test_predicted.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Title</th>
+<th data-quarto-table-cell-role="th">Review Text</th>
+<th data-quarto-table-cell-role="th">Division Name</th>
+<th data-quarto-table-cell-role="th">input_ids</th>
+<th data-quarto-table-cell-role="th">attention_mask</th>
+<th data-quarto-table-cell-role="th">pred_Department Name</th>
+<th data-quarto-table-cell-role="th">pred_prob_Department Name</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>perfect for work and play</td>
+<td>general . perfect for work and play . this shi...</td>
+<td>general</td>
+<td>[0, 15841, 479, 1969, 13, 173, 8, 310, 479, 42...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>[Tops, Intimate, Trend]</td>
+<td>[0.9964378, 0.0014704004, 0.00085006363]</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td></td>
+<td>general petite . . i don't know why i had the ...</td>
+<td>general petite</td>
+<td>[0, 15841, 4716, 1459, 479, 479, 939, 218, 75,...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>[Bottoms, Intimate, Trend]</td>
+<td>[0.97673845, 0.017872315, 0.0033529706]</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>great pants</td>
+<td>general petite . great pants . thes e cords ar...</td>
+<td>general petite</td>
+<td>[0, 15841, 4716, 1459, 479, 372, 9304, 479, 5,...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>[Bottoms, Intimate, Trend]</td>
+<td>[0.95878834, 0.033563487, 0.004869911]</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>surprisingly comfy for a button down</td>
+<td>general petite . surprisingly comfy for a butt...</td>
+<td>general petite</td>
+<td>[0, 15841, 4716, 1459, 479, 10262, 3137, 24382...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>[Tops, Intimate, Jackets]</td>
+<td>[0.994487, 0.0027335314, 0.0009791912]</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>short and small</td>
+<td>general petite . short and small . the shirt i...</td>
+<td>general petite</td>
+<td>[0, 15841, 4716, 1459, 479, 765, 8, 650, 479, ...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>[Tops, Intimate, Trend]</td>
+<td>[0.9951786, 0.002501535, 0.00096233515]</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+<p>If we just want to make a prediction on a small amount of data (single sentence, or a few sentences), we can use <a href="https://anhquan0412.github.io/that-nlp-library/model_main.html#modelcontroller.predict_raw_text"><code>ModelController.predict_raw_text</code></a></p>
+<div id="cell-92" class="cell">
+<div class="sourceCode cell-code" id="cb75"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Since we have some metadatas (Title and Division Name), we need to define a dictionary containing those values</span></span>
+<span id="cb75-2"><a href="#cb75-2" aria-hidden="true" tabindex="-1"></a>raw_content<span class="op">=</span>{<span class="st">'Review Text'</span>: <span class="st">'This shirt is so comfortable I love it!'</span>,</span>
+<span id="cb75-3"><a href="#cb75-3" aria-hidden="true" tabindex="-1"></a>             <span class="st">'Title'</span>: <span class="st">'Great shirt'</span>,</span>
+<span id="cb75-4"><a href="#cb75-4" aria-hidden="true" tabindex="-1"></a>             <span class="st">'Division Name'</span>: <span class="st">'general'</span>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>If you don’t use metadata, just create a string instead, e.g.</p>
+<p><code>raw_content='This shirt is so comfortable I love it!'</code></p>
+<div id="cell-94" class="cell">
+<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a>df_result <span class="op">=</span> controller.predict_raw_text(raw_content)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>-------------------- Start making predictions --------------------</code></pre>
+</div>
+</div>
+<div id="cell-95" class="cell">
+<div class="sourceCode cell-code" id="cb78"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a>df_result</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>{'Review Text': ['general . great shirt . this shirt is so comfortable i love it !'],
+ 'Title': ['great shirt'],
+ 'Division Name': ['general'],
+ 'input_ids': [[0,
+   15841,
+   479,
+   372,
+   6399,
+   479,
+   42,
+   6399,
+   16,
+   98,
+   3473,
+   939,
+   657,
+   24,
+   27785,
+   2]],
+ 'attention_mask': [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]],
+ 'pred_Department Name': ['Tops'],
+ 'pred_prob_Department Name': [0.996221661567688]}</code></pre>
+</div>
+</div>
+<div id="cell-96" class="cell">
+<div class="sourceCode cell-code" id="cb80"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a>df_result <span class="op">=</span> controller.predict_raw_text(raw_content,topk<span class="op">=</span><span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>-------------------- Start making predictions --------------------</code></pre>
+</div>
+</div>
+<div id="cell-97" class="cell">
+<div class="sourceCode cell-code" id="cb82"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb82-1"><a href="#cb82-1" aria-hidden="true" tabindex="-1"></a>df_result</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>{'Review Text': ['general . great shirt . this shirt is so comfortable i love it !'],
+ 'Title': ['great shirt'],
+ 'Division Name': ['general'],
+ 'input_ids': [[0,
+   15841,
+   479,
+   372,
+   6399,
+   479,
+   42,
+   6399,
+   16,
+   98,
+   3473,
+   939,
+   657,
+   24,
+   27785,
+   2]],
+ 'attention_mask': [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]],
+ 'pred_Department Name': [['Tops', 'Intimate', 'Trend']],
+ 'pred_prob_Department Name': [[0.996221661567688,
+   0.0016704618465155363,
+   0.0008719302131794393]]}</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="d-make-predictions-using-only-tokenized-datasetdict" class="level2">
+<h2 class="anchored" data-anchor-id="d-make-predictions-using-only-tokenized-datasetdict">d) Make predictions, using only Tokenized DatasetDict</h2>
+<section id="load-trained-model-1" class="level3">
+<h3 class="anchored" data-anchor-id="load-trained-model-1">Load trained model</h3>
+<div id="cell-100" class="cell">
+<div class="sourceCode cell-code" id="cb84"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb84-1"><a href="#cb84-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load trained model from section 4.2</span></span>
+<span id="cb84-2"><a href="#cb84-2" aria-hidden="true" tabindex="-1"></a>trained_model <span class="op">=</span> RobertaForSequenceClassification.from_pretrained(<span class="st">'./sample_weights/model_progress'</span>,num_labels<span class="op">=</span><span class="dv">6</span>).to(<span class="st">'cuda:0'</span>)</span>
+<span id="cb84-3"><a href="#cb84-3" aria-hidden="true" tabindex="-1"></a>controller <span class="op">=</span> ModelController(trained_model,seed<span class="op">=</span><span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="predict-trainvalidation-set-1" class="level3">
+<h3 class="anchored" data-anchor-id="predict-trainvalidation-set-1">Predict Train/Validation set</h3>
+<div id="cell-102" class="cell">
+<div class="sourceCode cell-code" id="cb85"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true" tabindex="-1"></a>main_ddict</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>DatasetDict({
+    train: Dataset({
+        features: ['Title', 'Review Text', 'Division Name', 'Department Name', 'label', 'input_ids', 'attention_mask'],
+        num_rows: 18102
+    })
+    validation: Dataset({
+        features: ['Title', 'Review Text', 'Division Name', 'Department Name', 'label', 'input_ids', 'attention_mask'],
+        num_rows: 4526
+    })
+})</code></pre>
+</div>
+</div>
+<p>Since we don’t use a <a href="https://anhquan0412.github.io/that-nlp-library/text_main.html#textdatacontroller"><code>TextDataController</code></a>, we have to define a few arguments to make it work</p>
+<div id="cell-104" class="cell">
+<div class="sourceCode cell-code" id="cb87"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb87-1"><a href="#cb87-1" aria-hidden="true" tabindex="-1"></a>label_names<span class="op">=</span><span class="st">'Department Name'</span></span>
+<span id="cb87-2"><a href="#cb87-2" aria-hidden="true" tabindex="-1"></a>num_classes<span class="op">=</span><span class="dv">6</span></span>
+<span id="cb87-3"><a href="#cb87-3" aria-hidden="true" tabindex="-1"></a>class_predefined <span class="op">=</span> [<span class="st">'Bottoms'</span>, <span class="st">'Dresses'</span>, <span class="st">'Intimate'</span>, <span class="st">'Jackets'</span>, <span class="st">'Tops'</span>, <span class="st">'Trend'</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-105" class="cell">
+<div class="sourceCode cell-code" id="cb88"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb88-1"><a href="#cb88-1" aria-hidden="true" tabindex="-1"></a>df_val <span class="op">=</span> controller.predict_ddict(main_ddict,</span>
+<span id="cb88-2"><a href="#cb88-2" aria-hidden="true" tabindex="-1"></a>                                 ds_type<span class="op">=</span><span class="st">'validation'</span>,</span>
+<span id="cb88-3"><a href="#cb88-3" aria-hidden="true" tabindex="-1"></a>                                 is_multilabel<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb88-4"><a href="#cb88-4" aria-hidden="true" tabindex="-1"></a>                                 tokenizer<span class="op">=</span>_tokenizer,</span>
+<span id="cb88-5"><a href="#cb88-5" aria-hidden="true" tabindex="-1"></a>                                 label_names<span class="op">=</span>label_names,</span>
+<span id="cb88-6"><a href="#cb88-6" aria-hidden="true" tabindex="-1"></a>                                 class_names_predefined<span class="op">=</span>class_predefined</span>
+<span id="cb88-7"><a href="#cb88-7" aria-hidden="true" tabindex="-1"></a>                                )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>-------------------- Start making predictions --------------------</code></pre>
+</div>
+</div>
+<div id="cell-106" class="cell">
+<div class="sourceCode cell-code" id="cb90"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb90-1"><a href="#cb90-1" aria-hidden="true" tabindex="-1"></a>df_val <span class="op">=</span> df_val.to_pandas()</span>
+<span id="cb90-2"><a href="#cb90-2" aria-hidden="true" tabindex="-1"></a>df_val.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Title</th>
+<th data-quarto-table-cell-role="th">Review Text</th>
+<th data-quarto-table-cell-role="th">Division Name</th>
+<th data-quarto-table-cell-role="th">Department Name</th>
+<th data-quarto-table-cell-role="th">label</th>
+<th data-quarto-table-cell-role="th">input_ids</th>
+<th data-quarto-table-cell-role="th">attention_mask</th>
+<th data-quarto-table-cell-role="th">pred_Department Name</th>
+<th data-quarto-table-cell-role="th">pred_prob_Department Name</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td></td>
+<td>general petite . . such a fun jacket ! great t...</td>
+<td>general petite</td>
+<td>Intimate</td>
+<td>2</td>
+<td>[0, 15841, 4716, 1459, 479, 479, 215, 10, 1531...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Jackets</td>
+<td>0.823920</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>simple and elegant</td>
+<td>general petite . simple and elegant . i though...</td>
+<td>general petite</td>
+<td>Tops</td>
+<td>4</td>
+<td>[0, 15841, 4716, 1459, 479, 2007, 8, 14878, 47...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Tops</td>
+<td>0.995665</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>retro and pretty</td>
+<td>general . retro and pretty . this top has a bi...</td>
+<td>general</td>
+<td>Tops</td>
+<td>4</td>
+<td>[0, 15841, 479, 11299, 8, 1256, 479, 42, 299, ...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Tops</td>
+<td>0.995805</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>summer/fall wear</td>
+<td>general petite . summer / fall wear . i first ...</td>
+<td>general petite</td>
+<td>Dresses</td>
+<td>1</td>
+<td>[0, 15841, 4716, 1459, 479, 1035, 1589, 1136, ...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Dresses</td>
+<td>0.985551</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>perfect except slip</td>
+<td>general petite . perfect except slip . this is...</td>
+<td>general petite</td>
+<td>Dresses</td>
+<td>1</td>
+<td>[0, 15841, 4716, 1459, 479, 1969, 4682, 9215, ...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Dresses</td>
+<td>0.985531</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="predict-test-set-1" class="level3">
+<h3 class="anchored" data-anchor-id="predict-test-set-1">Predict Test set</h3>
+<div id="cell-108" class="cell">
+<div class="sourceCode cell-code" id="cb91"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb91-1"><a href="#cb91-1" aria-hidden="true" tabindex="-1"></a>df_test <span class="op">=</span> pd.read_csv(<span class="st">'sample_data/Womens_Clothing_Reviews.csv'</span>,encoding<span class="op">=</span><span class="st">'utf-8-sig'</span>).sample(frac<span class="op">=</span><span class="fl">0.2</span>,random_state<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb91-2"><a href="#cb91-2" aria-hidden="true" tabindex="-1"></a><span class="co"># drop NaN values in the label column</span></span>
+<span id="cb91-3"><a href="#cb91-3" aria-hidden="true" tabindex="-1"></a>df_test <span class="op">=</span> df_test[<span class="op">~</span>df_test[<span class="st">'Department Name'</span>].isna()].reset_index(drop<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb91-4"><a href="#cb91-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb91-5"><a href="#cb91-5" aria-hidden="true" tabindex="-1"></a><span class="co"># save the label, as we will calculate some metrics later. We also filter out labels with NaN Review Text,</span></span>
+<span id="cb91-6"><a href="#cb91-6" aria-hidden="true" tabindex="-1"></a><span class="co"># as there will be a filtering processing on the test set</span></span>
+<span id="cb91-7"><a href="#cb91-7" aria-hidden="true" tabindex="-1"></a>true_labels <span class="op">=</span> df_test.loc[<span class="op">~</span>df_test[<span class="st">'Review Text'</span>].isna(),<span class="st">'Department Name'</span>].values </span>
+<span id="cb91-8"><a href="#cb91-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb91-9"><a href="#cb91-9" aria-hidden="true" tabindex="-1"></a><span class="co"># drop the label (you don't need to, but this is necessary to simulate an actual test set)</span></span>
+<span id="cb91-10"><a href="#cb91-10" aria-hidden="true" tabindex="-1"></a>df_test.drop(<span class="st">'Department Name'</span>,axis<span class="op">=</span><span class="dv">1</span>,inplace<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Similarly, you have to have your test dataset that has been preprocessed and tokenized, so that the final dataset should have some or all of these fields: <code>input_ids</code>, <code>token_type_ids</code>, <code>attention_mask</code>. For now we will borrow the previous <code>tdc</code> to do the preprocessing for us.</p>
+<div id="cell-110" class="cell">
+<div class="sourceCode cell-code" id="cb92"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb92-1"><a href="#cb92-1" aria-hidden="true" tabindex="-1"></a>_test_dset_processed <span class="op">=</span> tdc.prepare_test_dataset_from_df(df_test,validate<span class="op">=</span><span class="va">True</span>,do_filtering<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>- Input Validation Precheck -
+Data contains missing values!
+-----&gt; List of columns and the number of missing values for each
+Title          758
+Review Text    164
+dtype: int64
+Data contains duplicated values!
+-----&gt; Number of duplications: 2 rows</code></pre>
+</div>
+</div>
+<div id="cell-111" class="cell">
+<div class="sourceCode cell-code" id="cb94"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb94-1"><a href="#cb94-1" aria-hidden="true" tabindex="-1"></a>_test_dset_processed</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>Dataset({
+    features: ['Title', 'Review Text', 'Division Name', 'input_ids', 'attention_mask'],
+    num_rows: 4528
+})</code></pre>
+</div>
+</div>
+<p>Again, we are using <a href="https://anhquan0412.github.io/that-nlp-library/text_main.html#textdatacontroller"><code>TextDataController</code></a> to make this process easier to handle. If you have your own pipeline, feel free to use it to produce the processed test dataset. Also, as this point, all you need in your dataset is either (or all) of these features: <code>input_ids</code>, <code>token_type_ids</code>, <code>attention_mask</code>. You can drop other features if you want, though it’s not required</p>
+<div id="cell-113" class="cell">
+<div class="sourceCode cell-code" id="cb96"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb96-1"><a href="#cb96-1" aria-hidden="true" tabindex="-1"></a>_test_dset_processed <span class="op">=</span> _test_dset_processed.remove_columns([<span class="st">'Title'</span>,<span class="st">'Review Text'</span>,<span class="st">'Division Name'</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-114" class="cell">
+<div class="sourceCode cell-code" id="cb97"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb97-1"><a href="#cb97-1" aria-hidden="true" tabindex="-1"></a>df_test_predicted <span class="op">=</span> controller.predict_ddict(_test_dset_processed,</span>
+<span id="cb97-2"><a href="#cb97-2" aria-hidden="true" tabindex="-1"></a>                                             is_multilabel<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb97-3"><a href="#cb97-3" aria-hidden="true" tabindex="-1"></a>                                             tokenizer<span class="op">=</span>_tokenizer,</span>
+<span id="cb97-4"><a href="#cb97-4" aria-hidden="true" tabindex="-1"></a>                                             label_names<span class="op">=</span>label_names,</span>
+<span id="cb97-5"><a href="#cb97-5" aria-hidden="true" tabindex="-1"></a>                                             class_names_predefined<span class="op">=</span>class_predefined</span>
+<span id="cb97-6"><a href="#cb97-6" aria-hidden="true" tabindex="-1"></a>                                            )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>-------------------- Start making predictions --------------------</code></pre>
+</div>
+</div>
+<div id="cell-115" class="cell">
+<div class="sourceCode cell-code" id="cb99"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb99-1"><a href="#cb99-1" aria-hidden="true" tabindex="-1"></a>df_test_predicted <span class="op">=</span> df_test_predicted.to_pandas()</span>
+<span id="cb99-2"><a href="#cb99-2" aria-hidden="true" tabindex="-1"></a>df_test_predicted.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">input_ids</th>
+<th data-quarto-table-cell-role="th">attention_mask</th>
+<th data-quarto-table-cell-role="th">pred_Department Name</th>
+<th data-quarto-table-cell-role="th">pred_prob_Department Name</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>[0, 15841, 479, 1969, 13, 173, 8, 310, 479, 42...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Tops</td>
+<td>0.996438</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>[0, 15841, 4716, 1459, 479, 479, 939, 218, 75,...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Bottoms</td>
+<td>0.976738</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>[0, 15841, 4716, 1459, 479, 372, 9304, 479, 5,...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Bottoms</td>
+<td>0.958788</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>[0, 15841, 4716, 1459, 479, 10262, 3137, 24382...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Tops</td>
+<td>0.994487</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>[0, 15841, 4716, 1459, 479, 765, 8, 650, 479, ...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Tops</td>
+<td>0.995179</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="model-experiment-roberta-custom-classification" class="level1">
+<h1>4. Model Experiment: Roberta Custom Classification</h1>
+<div id="cell-117" class="cell">
+<div class="sourceCode cell-code" id="cb100"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb100-1"><a href="#cb100-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> that_nlp_library.models.roberta.classifiers <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb100-2"><a href="#cb100-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> that_nlp_library.model_main <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb100-3"><a href="#cb100-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> f1_score, accuracy_score</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-118" class="cell">
+<div class="sourceCode cell-code" id="cb101"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb101-1"><a href="#cb101-1" aria-hidden="true" tabindex="-1"></a>dset <span class="op">=</span> load_dataset(<span class="st">'sample_data'</span>,data_files<span class="op">=</span>[<span class="st">'Womens_Clothing_Reviews.csv'</span>],split<span class="op">=</span><span class="st">'train'</span>)</span>
+<span id="cb101-2"><a href="#cb101-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb101-3"><a href="#cb101-3" aria-hidden="true" tabindex="-1"></a>tdc <span class="op">=</span> TextDataController(dset,</span>
+<span id="cb101-4"><a href="#cb101-4" aria-hidden="true" tabindex="-1"></a>                         main_text<span class="op">=</span><span class="st">'Review Text'</span>,</span>
+<span id="cb101-5"><a href="#cb101-5" aria-hidden="true" tabindex="-1"></a>                         label_names<span class="op">=</span><span class="st">'Department Name'</span>,</span>
+<span id="cb101-6"><a href="#cb101-6" aria-hidden="true" tabindex="-1"></a>                         sup_types<span class="op">=</span><span class="st">'classification'</span>,</span>
+<span id="cb101-7"><a href="#cb101-7" aria-hidden="true" tabindex="-1"></a>                         filter_dict<span class="op">=</span>{<span class="st">'Review Text'</span>: <span class="kw">lambda</span> x: x <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>,</span>
+<span id="cb101-8"><a href="#cb101-8" aria-hidden="true" tabindex="-1"></a>                                      <span class="st">'Department Name'</span>: <span class="kw">lambda</span> x: x <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>,</span>
+<span id="cb101-9"><a href="#cb101-9" aria-hidden="true" tabindex="-1"></a>                                     },</span>
+<span id="cb101-10"><a href="#cb101-10" aria-hidden="true" tabindex="-1"></a>                         metadatas<span class="op">=</span>[<span class="st">'Title'</span>,<span class="st">'Division Name'</span>],</span>
+<span id="cb101-11"><a href="#cb101-11" aria-hidden="true" tabindex="-1"></a>                         content_transformations<span class="op">=</span>[text_normalize,<span class="bu">str</span>.lower],</span>
+<span id="cb101-12"><a href="#cb101-12" aria-hidden="true" tabindex="-1"></a>                         content_augmentations<span class="op">=</span> [nearby_aug_func,<span class="bu">str</span>.lower], </span>
+<span id="cb101-13"><a href="#cb101-13" aria-hidden="true" tabindex="-1"></a>                         <span class="co"># add "str.lower" here because nearby_aug might return uppercase character</span></span>
+<span id="cb101-14"><a href="#cb101-14" aria-hidden="true" tabindex="-1"></a>                         val_ratio<span class="op">=</span><span class="fl">0.2</span>,</span>
+<span id="cb101-15"><a href="#cb101-15" aria-hidden="true" tabindex="-1"></a>                         batch_size<span class="op">=</span><span class="dv">1000</span>,</span>
+<span id="cb101-16"><a href="#cb101-16" aria-hidden="true" tabindex="-1"></a>                         seed<span class="op">=</span><span class="dv">42</span>,</span>
+<span id="cb101-17"><a href="#cb101-17" aria-hidden="true" tabindex="-1"></a>                         num_proc<span class="op">=</span><span class="dv">20</span>,</span>
+<span id="cb101-18"><a href="#cb101-18" aria-hidden="true" tabindex="-1"></a>                         verbose<span class="op">=</span><span class="va">False</span></span>
+<span id="cb101-19"><a href="#cb101-19" aria-hidden="true" tabindex="-1"></a>                        )</span>
+<span id="cb101-20"><a href="#cb101-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb101-21"><a href="#cb101-21" aria-hidden="true" tabindex="-1"></a>_tokenizer <span class="op">=</span> RobertaTokenizer.from_pretrained(<span class="st">'roberta-base'</span>)</span>
+<span id="cb101-22"><a href="#cb101-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb101-23"><a href="#cb101-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb101-24"><a href="#cb101-24" aria-hidden="true" tabindex="-1"></a>tdc.process_and_tokenize(_tokenizer,max_length<span class="op">=</span><span class="dv">100</span>,shuffle_trn<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/home/quan/anaconda3/envs/nlp_dev/lib/python3.10/site-packages/huggingface_hub/file_download.py:1132: FutureWarning: `resume_download` is deprecated and will be removed in version 1.0.0. Downloads always resume when possible. If you want to force a new download, use `force_download=True`.
+  warnings.warn(</code></pre>
+</div>
+</div>
+<section id="a-define-and-train-a-custom-roberta-model" class="level2">
+<h2 class="anchored" data-anchor-id="a-define-and-train-a-custom-roberta-model">a) Define and train a custom Roberta model</h2>
+<div id="cell-120" class="cell">
+<div class="sourceCode cell-code" id="cb103"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb103-1"><a href="#cb103-1" aria-hidden="true" tabindex="-1"></a>num_classes <span class="op">=</span> <span class="bu">len</span>(tdc.label_lists[<span class="dv">0</span>])</span>
+<span id="cb103-2"><a href="#cb103-2" aria-hidden="true" tabindex="-1"></a>num_classes</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>6</code></pre>
+</div>
+</div>
+<p>Let’s define a Roberta model (without a head), because we will create our custom classification head</p>
+<div id="cell-122" class="cell">
+<div class="sourceCode cell-code" id="cb105"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb105-1"><a href="#cb105-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> transformers.models.roberta.modeling_roberta <span class="im">import</span> RobertaModel</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-123" class="cell">
+<div class="sourceCode cell-code" id="cb106"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb106-1"><a href="#cb106-1" aria-hidden="true" tabindex="-1"></a>roberta_body <span class="op">=</span> RobertaModel.from_pretrained(<span class="st">'roberta-base'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/home/quan/anaconda3/envs/nlp_dev/lib/python3.10/site-packages/huggingface_hub/file_download.py:1132: FutureWarning: `resume_download` is deprecated and will be removed in version 1.0.0. Downloads always resume when possible. If you want to force a new download, use `force_download=True`.
+  warnings.warn(
+Some weights of RobertaModel were not initialized from the model checkpoint at roberta-base and are newly initialized: ['roberta.pooler.dense.bias', 'roberta.pooler.dense.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.</code></pre>
+</div>
+</div>
+<p>Then we can define a classification head. One trick we can use to boost the performance of our entire model is to concatenate the outputs of <code>[CLS]</code> from the four last layers of the pre-trained Roberta model (source: https://ieeexplore.ieee.org/document/9335912). We already define such custom head (<a href="https://anhquan0412.github.io/that-nlp-library/models.roberta.classifiers.html#concatheadsimple"><code>ConcatHeadSimple</code></a>), and the necessary architecture to make it work (<a href="https://anhquan0412.github.io/that-nlp-library/models.roberta.classifiers.html#robertahiddenstateconcatforsequenceclassification"><code>RobertaHiddenStateConcatForSequenceClassification</code></a>)</p>
+<div id="cell-125" class="cell">
+<div class="sourceCode cell-code" id="cb108"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb108-1"><a href="#cb108-1" aria-hidden="true" tabindex="-1"></a><span class="co"># our model is more complex, so it's best to define some of its arguments</span></span>
+<span id="cb108-2"><a href="#cb108-2" aria-hidden="true" tabindex="-1"></a>_model_kwargs<span class="op">=</span>{</span>
+<span id="cb108-3"><a href="#cb108-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># overall model hyperparams</span></span>
+<span id="cb108-4"><a href="#cb108-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">'head_class_sizes'</span>:num_classes,</span>
+<span id="cb108-5"><a href="#cb108-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">'head_class'</span>: ConcatHeadSimple,</span>
+<span id="cb108-6"><a href="#cb108-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># classfication head hyperparams</span></span>
+<span id="cb108-7"><a href="#cb108-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'layer2concat'</span>:<span class="dv">2</span>, <span class="co"># you can change the number of layers to concat (default is 4, based on the paper)</span></span>
+<span id="cb108-8"><a href="#cb108-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'classifier_dropout'</span>:<span class="fl">0.1</span> </span>
+<span id="cb108-9"><a href="#cb108-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb108-10"><a href="#cb108-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb108-11"><a href="#cb108-11" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> model_init_classification(model_class <span class="op">=</span> RobertaHiddenStateConcatForSequenceClassification,</span>
+<span id="cb108-12"><a href="#cb108-12" aria-hidden="true" tabindex="-1"></a>                                  cpoint_path <span class="op">=</span> <span class="st">'roberta-base'</span>, </span>
+<span id="cb108-13"><a href="#cb108-13" aria-hidden="true" tabindex="-1"></a>                                  output_hidden_states<span class="op">=</span><span class="va">True</span>, <span class="co"># since we are using 'hidden layer contatenation' technique</span></span>
+<span id="cb108-14"><a href="#cb108-14" aria-hidden="true" tabindex="-1"></a>                                  seed<span class="op">=</span><span class="dv">42</span>,</span>
+<span id="cb108-15"><a href="#cb108-15" aria-hidden="true" tabindex="-1"></a>                                  body_model<span class="op">=</span>roberta_body,</span>
+<span id="cb108-16"><a href="#cb108-16" aria-hidden="true" tabindex="-1"></a>                                  model_kwargs <span class="op">=</span> _model_kwargs)</span>
+<span id="cb108-17"><a href="#cb108-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb108-18"><a href="#cb108-18" aria-hidden="true" tabindex="-1"></a>metric_funcs <span class="op">=</span> [partial(f1_score,average<span class="op">=</span><span class="st">'macro'</span>),accuracy_score]</span>
+<span id="cb108-19"><a href="#cb108-19" aria-hidden="true" tabindex="-1"></a>controller <span class="op">=</span> ModelController(model,tdc,seed<span class="op">=</span><span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Loading body weights. This assumes the body is the very first block of your custom architecture
+Total parameters: 124654854
+Total trainable parameters: 124654854</code></pre>
+</div>
+</div>
+<p>And we can start training our model</p>
+<div id="cell-127" class="cell">
+<div class="sourceCode cell-code" id="cb110"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb110-1"><a href="#cb110-1" aria-hidden="true" tabindex="-1"></a>seed_everything(<span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-128" class="cell">
+<div class="sourceCode cell-code" id="cb111"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb111-1"><a href="#cb111-1" aria-hidden="true" tabindex="-1"></a>lr <span class="op">=</span> <span class="fl">1e-4</span></span>
+<span id="cb111-2"><a href="#cb111-2" aria-hidden="true" tabindex="-1"></a>bs<span class="op">=</span><span class="dv">32</span></span>
+<span id="cb111-3"><a href="#cb111-3" aria-hidden="true" tabindex="-1"></a>wd<span class="op">=</span><span class="fl">0.01</span></span>
+<span id="cb111-4"><a href="#cb111-4" aria-hidden="true" tabindex="-1"></a>epochs<span class="op">=</span> <span class="dv">3</span></span>
+<span id="cb111-5"><a href="#cb111-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb111-6"><a href="#cb111-6" aria-hidden="true" tabindex="-1"></a>controller.fit(epochs,lr,</span>
+<span id="cb111-7"><a href="#cb111-7" aria-hidden="true" tabindex="-1"></a>               metric_funcs<span class="op">=</span>metric_funcs,</span>
+<span id="cb111-8"><a href="#cb111-8" aria-hidden="true" tabindex="-1"></a>               batch_size<span class="op">=</span>bs,</span>
+<span id="cb111-9"><a href="#cb111-9" aria-hidden="true" tabindex="-1"></a>               weight_decay<span class="op">=</span>wd,</span>
+<span id="cb111-10"><a href="#cb111-10" aria-hidden="true" tabindex="-1"></a>               save_checkpoint<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb111-11"><a href="#cb111-11" aria-hidden="true" tabindex="-1"></a>               compute_metrics<span class="op">=</span>compute_metrics,</span>
+<span id="cb111-12"><a href="#cb111-12" aria-hidden="true" tabindex="-1"></a>              )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+    <div>
+      
+      <progress value="849" max="849" style="width:300px; height:20px; vertical-align: middle;"></progress>
+      [849/849 02:15, Epoch 3/3]
+    </div>
+    
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th">Epoch</th>
+<th data-quarto-table-cell-role="th">Training Loss</th>
+<th data-quarto-table-cell-role="th">Validation Loss</th>
+<th data-quarto-table-cell-role="th">F1 Score Department name</th>
+<th data-quarto-table-cell-role="th">Accuracy Score Department name</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>No log</td>
+<td>0.296447</td>
+<td>0.744318</td>
+<td>0.914936</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>0.428200</td>
+<td>0.258439</td>
+<td>0.752792</td>
+<td>0.922669</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>0.428200</td>
+<td>0.272308</td>
+<td>0.747529</td>
+<td>0.920018</td>
+</tr>
+</tbody>
+</table>
+<p>
+</p></div>
+</div>
+</div>
+</section>
+<section id="b-make-predictions" class="level2">
+<h2 class="anchored" data-anchor-id="b-make-predictions">b) Make predictions</h2>
+<p>Make prediction on all validation set</p>
+<div id="cell-131" class="cell">
+<div class="sourceCode cell-code" id="cb112"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb112-1"><a href="#cb112-1" aria-hidden="true" tabindex="-1"></a>df_val <span class="op">=</span> controller.predict_ddict(ds_type<span class="op">=</span><span class="st">'validation'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>-------------------- Start making predictions --------------------</code></pre>
+</div>
+</div>
+<div id="cell-132" class="cell">
+<div class="sourceCode cell-code" id="cb114"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb114-1"><a href="#cb114-1" aria-hidden="true" tabindex="-1"></a>df_val <span class="op">=</span> df_val.to_pandas()</span>
+<span id="cb114-2"><a href="#cb114-2" aria-hidden="true" tabindex="-1"></a>df_val.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Title</th>
+<th data-quarto-table-cell-role="th">Review Text</th>
+<th data-quarto-table-cell-role="th">Division Name</th>
+<th data-quarto-table-cell-role="th">Department Name</th>
+<th data-quarto-table-cell-role="th">label</th>
+<th data-quarto-table-cell-role="th">input_ids</th>
+<th data-quarto-table-cell-role="th">attention_mask</th>
+<th data-quarto-table-cell-role="th">pred_Department Name</th>
+<th data-quarto-table-cell-role="th">pred_prob_Department Name</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td></td>
+<td>general petite . . such a fun jacket ! great t...</td>
+<td>general petite</td>
+<td>Intimate</td>
+<td>2</td>
+<td>[0, 15841, 4716, 1459, 479, 479, 215, 10, 1531...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Jackets</td>
+<td>0.818531</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>simple and elegant</td>
+<td>general petite . simple and elegant . i though...</td>
+<td>general petite</td>
+<td>Tops</td>
+<td>4</td>
+<td>[0, 15841, 4716, 1459, 479, 2007, 8, 14878, 47...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Tops</td>
+<td>0.997387</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>retro and pretty</td>
+<td>general . retro and pretty . this top has a bi...</td>
+<td>general</td>
+<td>Tops</td>
+<td>4</td>
+<td>[0, 15841, 479, 11299, 8, 1256, 479, 42, 299, ...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Tops</td>
+<td>0.997603</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>summer/fall wear</td>
+<td>general petite . summer / fall wear . i first ...</td>
+<td>general petite</td>
+<td>Dresses</td>
+<td>1</td>
+<td>[0, 15841, 4716, 1459, 479, 1035, 1589, 1136, ...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Dresses</td>
+<td>0.988438</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>perfect except slip</td>
+<td>general petite . perfect except slip . this is...</td>
+<td>general petite</td>
+<td>Dresses</td>
+<td>1</td>
+<td>[0, 15841, 4716, 1459, 479, 1969, 4682, 9215, ...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>Dresses</td>
+<td>0.989150</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+<p>You can try to get your metric to see if it matches your last traing epoch’s above</p>
+<div id="cell-134" class="cell">
+<div class="sourceCode cell-code" id="cb115"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb115-1"><a href="#cb115-1" aria-hidden="true" tabindex="-1"></a>f1_score(df_val[<span class="st">'Department Name'</span>],df_val[<span class="st">'pred_Department Name'</span>],average<span class="op">=</span><span class="st">'macro'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>0.7475294947215362</code></pre>
+</div>
+</div>
+<div id="cell-135" class="cell">
+<div class="sourceCode cell-code" id="cb117"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb117-1"><a href="#cb117-1" aria-hidden="true" tabindex="-1"></a>df_val <span class="op">=</span> controller.predict_ddict(ds_type<span class="op">=</span><span class="st">'validation'</span>,topk<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb117-2"><a href="#cb117-2" aria-hidden="true" tabindex="-1"></a>df_val <span class="op">=</span> df_val.to_pandas()</span>
+<span id="cb117-3"><a href="#cb117-3" aria-hidden="true" tabindex="-1"></a>df_val.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>-------------------- Start making predictions --------------------</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Title</th>
+<th data-quarto-table-cell-role="th">Review Text</th>
+<th data-quarto-table-cell-role="th">Division Name</th>
+<th data-quarto-table-cell-role="th">Department Name</th>
+<th data-quarto-table-cell-role="th">label</th>
+<th data-quarto-table-cell-role="th">input_ids</th>
+<th data-quarto-table-cell-role="th">attention_mask</th>
+<th data-quarto-table-cell-role="th">pred_Department Name</th>
+<th data-quarto-table-cell-role="th">pred_prob_Department Name</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td></td>
+<td>general petite . . such a fun jacket ! great t...</td>
+<td>general petite</td>
+<td>Intimate</td>
+<td>2</td>
+<td>[0, 15841, 4716, 1459, 479, 479, 215, 10, 1531...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>[Jackets, Tops]</td>
+<td>[0.8185308, 0.14819466]</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>simple and elegant</td>
+<td>general petite . simple and elegant . i though...</td>
+<td>general petite</td>
+<td>Tops</td>
+<td>4</td>
+<td>[0, 15841, 4716, 1459, 479, 2007, 8, 14878, 47...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>[Tops, Intimate]</td>
+<td>[0.9973871, 0.0010666925]</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>retro and pretty</td>
+<td>general . retro and pretty . this top has a bi...</td>
+<td>general</td>
+<td>Tops</td>
+<td>4</td>
+<td>[0, 15841, 479, 11299, 8, 1256, 479, 42, 299, ...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>[Tops, Intimate]</td>
+<td>[0.997603, 0.001102674]</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>summer/fall wear</td>
+<td>general petite . summer / fall wear . i first ...</td>
+<td>general petite</td>
+<td>Dresses</td>
+<td>1</td>
+<td>[0, 15841, 4716, 1459, 479, 1035, 1589, 1136, ...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>[Dresses, Trend]</td>
+<td>[0.98843807, 0.005955467]</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>perfect except slip</td>
+<td>general petite . perfect except slip . this is...</td>
+<td>general petite</td>
+<td>Dresses</td>
+<td>1</td>
+<td>[0, 15841, 4716, 1459, 479, 1969, 4682, 9215, ...</td>
+<td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...</td>
+<td>[Dresses, Trend]</td>
+<td>[0.9891495, 0.0058816983]</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script type="application/vnd.jupyter.widget-state+json">
+{"state":{},"version_major":2,"version_minor":0}
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/anhquan0412\.github\.io\/that-nlp-library");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/anhquan0412/that-nlp-library/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>

@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.554">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="This module contains the old Python class for TextDataController">
+
+<title>that-nlp-library - Text Data Controller</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../styles.css">
+<meta property="og:title" content="that-nlp-library - Text Data Controller">
+<meta property="og:description" content="This module contains the old Python class for TextDataController">
+<meta property="og:site_name" content="that-nlp-library">
+<meta name="twitter:title" content="that-nlp-library - Text Data Controller">
+<meta name="twitter:description" content="This module contains the old Python class for TextDataController">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-sidebar floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">that-nlp-library</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools tools-end">
+</div>
+          <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Text Data Controller</li></ol></nav>
+        <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Welcome to that-nlp-library</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true">
+ <span class="menu-text">1. Quick Starts</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../text_main.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Main</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../model_classification_tutorial.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Controller Tutorial: Classification</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../model_lm_roberta_tutorial.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Controller Tutorial: Training a Roberta Language Model</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
+ <span class="menu-text">2. All Use Cases</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="false">
+ <span class="menu-text">a. Roberta-based models for Supervised Learning</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../roberta_singlehead.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model (Custom Single Head)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../roberta_multihead.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model (Multi Head)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../roberta_multihead_regression.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model (Regression)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../roberta_conditional_prob.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model with Conditional Probability</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../roberta_dhc.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model with Deep Hierarchical Classification</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../roberta_multilabel.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model (Multi-Label)</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="false">
+ <span class="menu-text">b. GPT2-based models for Supervised Learning</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../gpt2_singlehead.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">GPT2 model (Custom Single Head)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../gpt2_multihead.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">GPT2 model (Multi Head)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../gpt2_multihead_regression.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">GPT2 model (Regression)</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="false">
+ <span class="menu-text">c.&nbsp;Masked Language Model Training</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../model_lm_roberta_tutorial.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Controller Tutorial: Training a Roberta Language Model</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="false">
+ <span class="menu-text">d.&nbsp;Causal Language Model Training</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../model_lm_gpt2_tutorial.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Controller Tutorial: Training a GPT2 Language Model</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" aria-expanded="false">
+ <span class="menu-text">e. Training A Streamed Dataset</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../roberta_singlehead_for_streaming.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta model with a streamed dataset (Custom Single Head)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../roberta_lm_for_streaming.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta Language Model for a streamed dataset</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" aria-expanded="true">
+ <span class="menu-text">3. Evaluations For Supervised Learning</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../evaluations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Evaluations</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" aria-expanded="true">
+ <span class="menu-text">4. Hidden States Extraction</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-9" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../hidden_states.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Feature Extraction From Hidden States</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" aria-expanded="true">
+ <span class="menu-text">5. Text Classes</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-10" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" aria-expanded="false">
+ <span class="menu-text">a. Text Processing</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-11" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../text_augmentation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Augmentation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../text_transformation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Transformation</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-12" aria-expanded="false">
+ <span class="menu-text">b. Text Controller For Supervised Learning</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-12" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-12" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../text_main.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Main</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../text_main_streaming.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Main Streaming</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../text_main_benchmark.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Processing Benchmark</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-13" aria-expanded="false">
+ <span class="menu-text">c.&nbsp;Text Controller For Language Modeling</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-13" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-13" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../text_main_lm.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Main For Language Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../text_main_lm_streaming.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Main For Language Model - Streaming</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-14" aria-expanded="true">
+ <span class="menu-text">6. Model Classes</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-14" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-14" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-15" aria-expanded="false">
+ <span class="menu-text">a. Model Controller For Supervised Learning</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-15" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-15" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../model_main.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Main Functions and Controller</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-16" aria-expanded="false">
+ <span class="menu-text">b. Model Controller for Language Modeling</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-16" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-16" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../model_lm_main.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Language Model Main Functions and Controller</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-17" aria-expanded="false">
+ <span class="menu-text">c.&nbsp;Roberta-based classification Model</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-17" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-17" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../models.roberta.classifiers.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Roberta Classifiers</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../models.roberta.deep_hierarchical_classifiers.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Deep Hierarchical Classifiers</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../models.roberta.conditional_prob_classifiers.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Conditional Probability Classifiers</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-18" aria-expanded="false">
+ <span class="menu-text">d.&nbsp;GPT2-based classification Model</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-18" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-18" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../models.gpt2.classifiers.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">GPT2 Classifiers</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-19" aria-expanded="true">
+ <span class="menu-text">7. Utility</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-19" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-19" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../utils.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">utils</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Text Data Controller</h1>
+</div>
+
+<div>
+  <div class="description">
+    This module contains the old Python class for TextDataController
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<div id="e00d819a" class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> TextDataController():</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>                 inp, <span class="co"># HuggingFainpce Dataset or DatasetDict</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>                 main_text:<span class="bu">str</span>, <span class="co"># Name of the main text column</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>                 label_names<span class="op">=</span><span class="va">None</span>, <span class="co"># Names of the label (dependent variable) columns</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>                 class_names_predefined<span class="op">=</span><span class="va">None</span>, <span class="co"># List of names associated with the labels (same index order)</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>                 filter_dict<span class="op">=</span>{}, <span class="co"># A dictionary: {feature: filtering_function_based_on_the_feature}</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>                 metadatas<span class="op">=</span>[], <span class="co"># Names of the metadata columns</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>                 process_metas<span class="op">=</span><span class="va">True</span>, <span class="co"># Whether to do simple text processing on the chosen metadatas</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>                 content_transformations<span class="op">=</span>[], <span class="co"># A list of text transformations</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>                 val_ratio:<span class="bu">int</span><span class="op">|</span><span class="bu">float</span><span class="op">|</span><span class="va">None</span><span class="op">=</span><span class="fl">0.2</span>, <span class="co"># Ratio of data for validation set</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>                 stratify_cols<span class="op">=</span>[], <span class="co"># Column(s) needed to do stratified shuffle split</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>                 upsampling_list<span class="op">=</span>{}, <span class="co"># A list of tuple. Each tuple: (feature,upsampling_function_based_on_the_feature)</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>                 content_augmentations<span class="op">=</span>[], <span class="co"># A list of text augmentations</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>                 seed<span class="op">=</span><span class="va">None</span>, <span class="co"># Random seed</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>                 batch_size<span class="op">=</span><span class="dv">1000</span>, <span class="co"># CPU batch size</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>                 num_proc<span class="op">=</span><span class="dv">4</span>, <span class="co"># Number of process for multiprocessing</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>                 cols_to_keep<span class="op">=</span><span class="va">None</span>, <span class="co"># Columns to keep after all processings</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>                 buffer_size<span class="op">=</span><span class="dv">10000</span>, <span class="co"># For shuffling data</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>                 num_shards<span class="op">=</span><span class="dv">64</span>, <span class="co"># Number of shards. Stream datasets can be made out of multiple shards</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>                 convert_training_to_iterable<span class="op">=</span><span class="va">True</span>, <span class="co"># Whether to convert training Dataset to IterableDataset</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>                 verbose<span class="op">=</span><span class="va">True</span>, <span class="co"># Whether to print processing information</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>                ):</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.main_text <span class="op">=</span> main_text</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.metadatas <span class="op">=</span> val2iterable(metadatas)</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.process_metas <span class="op">=</span> process_metas</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.label_names <span class="op">=</span> val2iterable(label_names) <span class="cf">if</span> label_names <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span> <span class="cf">else</span> <span class="va">None</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.label_lists <span class="op">=</span> class_names_predefined</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.filter_dict <span class="op">=</span> filter_dict</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.content_tfms <span class="op">=</span> val2iterable(content_transformations)</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.upsampling_list <span class="op">=</span> upsampling_list</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.aug_tfms <span class="op">=</span> val2iterable(content_augmentations)</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.val_ratio <span class="op">=</span> val_ratio</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.stratify_cols <span class="op">=</span> val2iterable(stratify_cols)</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.seed <span class="op">=</span> seed</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.is_batched <span class="op">=</span> batch_size<span class="op">&gt;</span><span class="dv">1</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.batch_size <span class="op">=</span> batch_size</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.num_proc <span class="op">=</span> num_proc</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.cols_to_keep <span class="op">=</span> cols_to_keep</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.buffer_size <span class="op">=</span> buffer_size</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.num_shards <span class="op">=</span> num_shards</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.ddict_rest <span class="op">=</span> DatasetDict()</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.convert_training_to_iterable <span class="op">=</span> convert_training_to_iterable</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.verbose <span class="op">=</span> verbose</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.verboseprint <span class="op">=</span> <span class="bu">print</span> <span class="cf">if</span> verbose <span class="cf">else</span> <span class="kw">lambda</span> <span class="op">*</span>a, <span class="op">**</span>k: <span class="va">None</span></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">hasattr</span>(inp,<span class="st">'keys'</span>):</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="st">'train'</span> <span class="kw">in</span> inp.keys(): <span class="co"># is datasetdict</span></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.ddict_rest <span class="op">=</span> inp</span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.dset <span class="op">=</span> <span class="va">self</span>.ddict_rest.pop(<span class="st">'train'</span>)</span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>                <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">'The given DatasetDict has no "train" split'</span>)</span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>: <span class="co"># is dataset</span></span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.dset <span class="op">=</span> inp</span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.is_streamed<span class="op">=</span><span class="bu">isinstance</span>(<span class="va">self</span>.dset,IterableDataset)</span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.all_cols <span class="op">=</span> get_dset_col_names(<span class="va">self</span>.dset)</span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.is_streamed <span class="kw">and</span> <span class="va">self</span>.label_names <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span> <span class="kw">and</span> <span class="va">self</span>.label_lists <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">'All class labels must be provided when streaming'</span>)</span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.is_streamed <span class="kw">and</span> <span class="bu">len</span>(<span class="va">self</span>.upsampling_list):</span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a>            warnings.warn(<span class="st">"Upsampling requires dataset concatenation, which can be extremely slow (x2) for streamed dataset"</span>)</span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._processed_call<span class="op">=</span><span class="va">False</span></span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._determine_multihead_multilabel()</span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-70"><a href="#cb1-70" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-71"><a href="#cb1-71" aria-hidden="true" tabindex="-1"></a>    <span class="at">@classmethod</span></span>
+<span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> from_csv(cls,file_path,<span class="op">**</span>kwargs):</span>
+<span id="cb1-73"><a href="#cb1-73" aria-hidden="true" tabindex="-1"></a>        file_path <span class="op">=</span> Path(file_path)</span>
+<span id="cb1-74"><a href="#cb1-74" aria-hidden="true" tabindex="-1"></a>        ds <span class="op">=</span> load_dataset(<span class="bu">str</span>(file_path.parent),</span>
+<span id="cb1-75"><a href="#cb1-75" aria-hidden="true" tabindex="-1"></a>                                  data_files<span class="op">=</span>file_path.name,</span>
+<span id="cb1-76"><a href="#cb1-76" aria-hidden="true" tabindex="-1"></a>                                  split<span class="op">=</span><span class="st">'train'</span>)</span>
+<span id="cb1-77"><a href="#cb1-77" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> TextDataController(ds,<span class="op">**</span>kwargs)</span>
+<span id="cb1-78"><a href="#cb1-78" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-79"><a href="#cb1-79" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-80"><a href="#cb1-80" aria-hidden="true" tabindex="-1"></a>    <span class="at">@classmethod</span></span>
+<span id="cb1-81"><a href="#cb1-81" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> from_df(cls,df,validate<span class="op">=</span><span class="va">True</span>,<span class="op">**</span>kwargs):</span>
+<span id="cb1-82"><a href="#cb1-82" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> validate:</span>
+<span id="cb1-83"><a href="#cb1-83" aria-hidden="true" tabindex="-1"></a>            check_input_validation(df)</span>
+<span id="cb1-84"><a href="#cb1-84" aria-hidden="true" tabindex="-1"></a>        ds <span class="op">=</span> Dataset.from_pandas(df)</span>
+<span id="cb1-85"><a href="#cb1-85" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> TextDataController(ds,<span class="op">**</span>kwargs)</span>
+<span id="cb1-86"><a href="#cb1-86" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-87"><a href="#cb1-87" aria-hidden="true" tabindex="-1"></a>    <span class="at">@classmethod</span></span>
+<span id="cb1-88"><a href="#cb1-88" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> from_pickle(cls,</span>
+<span id="cb1-89"><a href="#cb1-89" aria-hidden="true" tabindex="-1"></a>                    fname, <span class="co"># Name of the pickle file</span></span>
+<span id="cb1-90"><a href="#cb1-90" aria-hidden="true" tabindex="-1"></a>                    parent<span class="op">=</span><span class="st">'pickle_files'</span> <span class="co"># Parent folder</span></span>
+<span id="cb1-91"><a href="#cb1-91" aria-hidden="true" tabindex="-1"></a>                   ):</span>
+<span id="cb1-92"><a href="#cb1-92" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> load_pickle(fname,parent<span class="op">=</span>parent)</span>
+<span id="cb1-93"><a href="#cb1-93" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-94"><a href="#cb1-94" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _determine_multihead_multilabel(<span class="va">self</span>):</span>
+<span id="cb1-95"><a href="#cb1-95" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.is_multilabel<span class="op">=</span><span class="va">False</span></span>
+<span id="cb1-96"><a href="#cb1-96" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.is_multihead<span class="op">=</span><span class="va">False</span></span>
+<span id="cb1-97"><a href="#cb1-97" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.label_names <span class="kw">is</span> <span class="va">None</span>: <span class="cf">return</span></span>
+<span id="cb1-98"><a href="#cb1-98" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-99"><a href="#cb1-99" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(<span class="va">self</span>.label_names)<span class="op">&gt;</span><span class="dv">1</span>:</span>
+<span id="cb1-100"><a href="#cb1-100" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.is_multihead<span class="op">=</span><span class="va">True</span></span>
+<span id="cb1-101"><a href="#cb1-101" aria-hidden="true" tabindex="-1"></a>        <span class="co"># get label of first row</span></span>
+<span id="cb1-102"><a href="#cb1-102" aria-hidden="true" tabindex="-1"></a>        first_label <span class="op">=</span> <span class="va">self</span>.dset[<span class="va">self</span>.label_names[<span class="dv">0</span>]][<span class="dv">0</span>] <span class="cf">if</span> <span class="kw">not</span> <span class="va">self</span>.is_streamed <span class="cf">else</span> <span class="bu">next</span>(<span class="bu">iter</span>(<span class="va">self</span>.dset))[<span class="va">self</span>.label_names[<span class="dv">0</span>]]</span>
+<span id="cb1-103"><a href="#cb1-103" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">isinstance</span>(first_label,(<span class="bu">list</span>,<span class="bu">set</span>,<span class="bu">tuple</span>)):</span>
+<span id="cb1-104"><a href="#cb1-104" aria-hidden="true" tabindex="-1"></a>            <span class="co"># This is multi-label. Ignore self.label_names[1:]</span></span>
+<span id="cb1-105"><a href="#cb1-105" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.label_names <span class="op">=</span> [<span class="va">self</span>.label_names[<span class="dv">0</span>]]</span>
+<span id="cb1-106"><a href="#cb1-106" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.is_multihead<span class="op">=</span><span class="va">False</span></span>
+<span id="cb1-107"><a href="#cb1-107" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.is_multilabel<span class="op">=</span><span class="va">True</span></span>
+<span id="cb1-108"><a href="#cb1-108" aria-hidden="true" tabindex="-1"></a>                     </span>
+<span id="cb1-109"><a href="#cb1-109" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> validate_input(<span class="va">self</span>):</span>
+<span id="cb1-110"><a href="#cb1-110" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.is_streamed:</span>
+<span id="cb1-111"><a href="#cb1-111" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.verboseprint(<span class="st">'Input validation check is disabled when data is streamed'</span>)</span>
+<span id="cb1-112"><a href="#cb1-112" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb1-113"><a href="#cb1-113" aria-hidden="true" tabindex="-1"></a>        _df <span class="op">=</span> <span class="va">self</span>.dset.to_pandas()</span>
+<span id="cb1-114"><a href="#cb1-114" aria-hidden="true" tabindex="-1"></a>        check_input_validation(_df)</span>
+<span id="cb1-115"><a href="#cb1-115" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-116"><a href="#cb1-116" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-117"><a href="#cb1-117" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-118"><a href="#cb1-118" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> save_as_pickles(<span class="va">self</span>,</span>
+<span id="cb1-119"><a href="#cb1-119" aria-hidden="true" tabindex="-1"></a>                        fname, <span class="co"># Name of the pickle file</span></span>
+<span id="cb1-120"><a href="#cb1-120" aria-hidden="true" tabindex="-1"></a>                        parent<span class="op">=</span><span class="st">'pickle_files'</span>, <span class="co"># Parent folder</span></span>
+<span id="cb1-121"><a href="#cb1-121" aria-hidden="true" tabindex="-1"></a>                        drop_data_attributes<span class="op">=</span><span class="va">False</span> <span class="co"># Whether to drop all large-size data attributes</span></span>
+<span id="cb1-122"><a href="#cb1-122" aria-hidden="true" tabindex="-1"></a>                       ):</span>
+<span id="cb1-123"><a href="#cb1-123" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> drop_data_attributes:</span>
+<span id="cb1-124"><a href="#cb1-124" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="bu">hasattr</span>(<span class="va">self</span>, <span class="st">'main_ddict'</span>):</span>
+<span id="cb1-125"><a href="#cb1-125" aria-hidden="true" tabindex="-1"></a>                <span class="kw">del</span> <span class="va">self</span>.main_ddict</span>
+<span id="cb1-126"><a href="#cb1-126" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="bu">hasattr</span>(<span class="va">self</span>, <span class="st">'ddict_rest'</span>):</span>
+<span id="cb1-127"><a href="#cb1-127" aria-hidden="true" tabindex="-1"></a>                <span class="kw">del</span> <span class="va">self</span>.ddict_rest</span>
+<span id="cb1-128"><a href="#cb1-128" aria-hidden="true" tabindex="-1"></a>        save_to_pickle(<span class="va">self</span>,fname,parent<span class="op">=</span>parent)</span>
+<span id="cb1-129"><a href="#cb1-129" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-130"><a href="#cb1-130" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-131"><a href="#cb1-131" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _check_validation_leaking(<span class="va">self</span>):</span>
+<span id="cb1-132"><a href="#cb1-132" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.val_ratio <span class="kw">is</span> <span class="va">None</span> <span class="kw">or</span> <span class="va">self</span>.is_streamed:</span>
+<span id="cb1-133"><a href="#cb1-133" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb1-134"><a href="#cb1-134" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-135"><a href="#cb1-135" aria-hidden="true" tabindex="-1"></a>        trn_txt <span class="op">=</span> <span class="va">self</span>.main_ddict[<span class="st">'train'</span>][<span class="va">self</span>.main_text]</span>
+<span id="cb1-136"><a href="#cb1-136" aria-hidden="true" tabindex="-1"></a>        val_txt <span class="op">=</span> <span class="va">self</span>.main_ddict[<span class="st">'validation'</span>][<span class="va">self</span>.main_text]        </span>
+<span id="cb1-137"><a href="#cb1-137" aria-hidden="true" tabindex="-1"></a>        val_txt_leaked <span class="op">=</span> check_text_leaking(trn_txt,val_txt,verbose<span class="op">=</span><span class="va">self</span>.verbose)</span>
+<span id="cb1-138"><a href="#cb1-138" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-139"><a href="#cb1-139" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(val_txt_leaked)<span class="op">==</span><span class="dv">0</span>: <span class="cf">return</span></span>
+<span id="cb1-140"><a href="#cb1-140" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-141"><a href="#cb1-141" aria-hidden="true" tabindex="-1"></a>        <span class="co"># filter train dataset to get rid of leaks</span></span>
+<span id="cb1-142"><a href="#cb1-142" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.verboseprint(<span class="st">'Filtering leaked data out of training set...'</span>)</span>
+<span id="cb1-143"><a href="#cb1-143" aria-hidden="true" tabindex="-1"></a>        _func <span class="op">=</span> partial(lambda_batch,</span>
+<span id="cb1-144"><a href="#cb1-144" aria-hidden="true" tabindex="-1"></a>                        feature<span class="op">=</span><span class="va">self</span>.main_text,</span>
+<span id="cb1-145"><a href="#cb1-145" aria-hidden="true" tabindex="-1"></a>                        func<span class="op">=</span><span class="kw">lambda</span> x: x.strip().lower() <span class="kw">not</span> <span class="kw">in</span> val_txt_leaked,</span>
+<span id="cb1-146"><a href="#cb1-146" aria-hidden="true" tabindex="-1"></a>                        is_batched<span class="op">=</span><span class="va">self</span>.is_batched)</span>
+<span id="cb1-147"><a href="#cb1-147" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.main_ddict[<span class="st">'train'</span>] <span class="op">=</span> hf_filter_dset(<span class="va">self</span>.main_ddict[<span class="st">'train'</span>],_func,<span class="va">self</span>.is_batched,<span class="va">self</span>.batch_size,<span class="va">self</span>.num_proc)   </span>
+<span id="cb1-148"><a href="#cb1-148" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.verboseprint(<span class="st">'Done'</span>)</span>
+<span id="cb1-149"><a href="#cb1-149" aria-hidden="true" tabindex="-1"></a>           </span>
+<span id="cb1-150"><a href="#cb1-150" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _train_test_split(<span class="va">self</span>):</span>
+<span id="cb1-151"><a href="#cb1-151" aria-hidden="true" tabindex="-1"></a>        print_msg(<span class="st">'Train Test Split'</span>,<span class="dv">20</span>,verbose<span class="op">=</span><span class="va">self</span>.verbose)</span>
+<span id="cb1-152"><a href="#cb1-152" aria-hidden="true" tabindex="-1"></a>        val_key <span class="op">=</span> <span class="bu">list</span>(<span class="bu">set</span>(<span class="va">self</span>.ddict_rest.keys()) <span class="op">&amp;</span> <span class="bu">set</span>([<span class="st">'val'</span>,<span class="st">'validation'</span>,<span class="st">'valid'</span>]))</span>
+<span id="cb1-153"><a href="#cb1-153" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(val_key)<span class="op">==</span><span class="dv">1</span>: <span class="co"># val split exists</span></span>
+<span id="cb1-154"><a href="#cb1-154" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.verboseprint(<span class="st">'Validation split already exists'</span>)</span>
+<span id="cb1-155"><a href="#cb1-155" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.main_ddict<span class="op">=</span>DatasetDict({<span class="st">'train'</span>:<span class="va">self</span>.dset,</span>
+<span id="cb1-156"><a href="#cb1-156" aria-hidden="true" tabindex="-1"></a>                                         <span class="st">'validation'</span>:<span class="va">self</span>.ddict_rest.pop(val_key[<span class="dv">0</span>])})</span>
+<span id="cb1-157"><a href="#cb1-157" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-158"><a href="#cb1-158" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-159"><a href="#cb1-159" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> <span class="va">self</span>.val_ratio <span class="kw">is</span> <span class="va">None</span>: <span class="co"># use all data</span></span>
+<span id="cb1-160"><a href="#cb1-160" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.verboseprint(<span class="st">'No validation split defined'</span>)</span>
+<span id="cb1-161"><a href="#cb1-161" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.main_ddict<span class="op">=</span>DatasetDict({<span class="st">'train'</span>:<span class="va">self</span>.dset})</span>
+<span id="cb1-162"><a href="#cb1-162" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-163"><a href="#cb1-163" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> (<span class="bu">isinstance</span>(<span class="va">self</span>.val_ratio,<span class="bu">float</span>) <span class="kw">or</span> <span class="bu">isinstance</span>(<span class="va">self</span>.val_ratio,<span class="bu">int</span>)) <span class="kw">and</span> <span class="kw">not</span> <span class="bu">len</span>(<span class="va">self</span>.stratify_cols):</span>
+<span id="cb1-164"><a href="#cb1-164" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.verboseprint(<span class="st">'Validation split based on val_ratio'</span>)</span>
+<span id="cb1-165"><a href="#cb1-165" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="va">self</span>.is_streamed:</span>
+<span id="cb1-166"><a href="#cb1-166" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="bu">isinstance</span>(<span class="va">self</span>.val_ratio,<span class="bu">float</span>):</span>
+<span id="cb1-167"><a href="#cb1-167" aria-hidden="true" tabindex="-1"></a>                    warnings.warn(<span class="st">"Length of streamed dataset is unknown to use float validation ratio. Default to the first 1000 data points for validation"</span>)</span>
+<span id="cb1-168"><a href="#cb1-168" aria-hidden="true" tabindex="-1"></a>                    <span class="va">self</span>.val_ratio<span class="op">=</span><span class="dv">1000</span>  </span>
+<span id="cb1-169"><a href="#cb1-169" aria-hidden="true" tabindex="-1"></a>                trn_dset <span class="op">=</span> <span class="va">self</span>.dset.skip(<span class="va">self</span>.val_ratio)  </span>
+<span id="cb1-170"><a href="#cb1-170" aria-hidden="true" tabindex="-1"></a>                val_datas <span class="op">=</span> <span class="bu">list</span>(<span class="va">self</span>.dset.take(<span class="va">self</span>.val_ratio))</span>
+<span id="cb1-171"><a href="#cb1-171" aria-hidden="true" tabindex="-1"></a>                val_dict<span class="op">=</span>{k: [v[k] <span class="cf">for</span> v <span class="kw">in</span> val_datas] <span class="cf">for</span> k <span class="kw">in</span> val_datas[<span class="dv">0</span>].keys()}   </span>
+<span id="cb1-172"><a href="#cb1-172" aria-hidden="true" tabindex="-1"></a>                val_dset <span class="op">=</span> Dataset.from_dict(val_dict) </span>
+<span id="cb1-173"><a href="#cb1-173" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.main_ddict<span class="op">=</span>DatasetDict({<span class="st">'train'</span>:trn_dset,</span>
+<span id="cb1-174"><a href="#cb1-174" aria-hidden="true" tabindex="-1"></a>                                         <span class="st">'validation'</span>:val_dset})</span>
+<span id="cb1-175"><a href="#cb1-175" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
+<span id="cb1-176"><a href="#cb1-176" aria-hidden="true" tabindex="-1"></a>                <span class="co"># train val split</span></span>
+<span id="cb1-177"><a href="#cb1-177" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.main_ddict <span class="op">=</span> <span class="va">self</span>.dset.train_test_split(test_size<span class="op">=</span><span class="va">self</span>.val_ratio,shuffle<span class="op">=</span><span class="va">True</span>,seed<span class="op">=</span><span class="va">self</span>.seed)</span>
+<span id="cb1-178"><a href="#cb1-178" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.main_ddict[<span class="st">'validation'</span>]<span class="op">=</span><span class="va">self</span>.main_ddict[<span class="st">'test'</span>]</span>
+<span id="cb1-179"><a href="#cb1-179" aria-hidden="true" tabindex="-1"></a>                <span class="kw">del</span> <span class="va">self</span>.main_ddict[<span class="st">'test'</span>]</span>
+<span id="cb1-180"><a href="#cb1-180" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-181"><a href="#cb1-181" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>: <span class="co"># val_ratio split with stratifying</span></span>
+<span id="cb1-182"><a href="#cb1-182" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="va">self</span>.is_streamed: <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">'Stratified split is not supported for streamed data'</span>)                </span>
+<span id="cb1-183"><a href="#cb1-183" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="va">self</span>.is_multilabel <span class="kw">and</span> <span class="va">self</span>.label_names[<span class="dv">0</span>] <span class="kw">in</span> <span class="va">self</span>.stratify_cols:</span>
+<span id="cb1-184"><a href="#cb1-184" aria-hidden="true" tabindex="-1"></a>                <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">'For MultiLabel classification, you cannot choose the label as your stratified column'</span>)</span>
+<span id="cb1-185"><a href="#cb1-185" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.verboseprint(<span class="st">'Validation split based on val_ratio, with stratifying'</span>)</span>
+<span id="cb1-186"><a href="#cb1-186" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Create a new feature 'stratified', which is a concatenation of values in stratify_cols</span></span>
+<span id="cb1-187"><a href="#cb1-187" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="va">self</span>.is_batched:</span>
+<span id="cb1-188"><a href="#cb1-188" aria-hidden="true" tabindex="-1"></a>                stratified_creation <span class="op">=</span> <span class="kw">lambda</span> x: {<span class="st">'stratified'</span>:</span>
+<span id="cb1-189"><a href="#cb1-189" aria-hidden="true" tabindex="-1"></a>                                     [<span class="st">'_'</span>.join(<span class="bu">list</span>(<span class="bu">map</span>(<span class="bu">str</span>,[x[v][i] <span class="cf">for</span> v <span class="kw">in</span> <span class="va">self</span>.stratify_cols]))) </span>
+<span id="cb1-190"><a href="#cb1-190" aria-hidden="true" tabindex="-1"></a>                                      <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(x[<span class="va">self</span>.stratify_cols[<span class="dv">0</span>]]))]}</span>
+<span id="cb1-191"><a href="#cb1-191" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
+<span id="cb1-192"><a href="#cb1-192" aria-hidden="true" tabindex="-1"></a>                stratified_creation <span class="op">=</span> <span class="kw">lambda</span> x: {<span class="st">'stratified'</span>:</span>
+<span id="cb1-193"><a href="#cb1-193" aria-hidden="true" tabindex="-1"></a>                                     <span class="st">'_'</span>.join(<span class="bu">list</span>(<span class="bu">map</span>(<span class="bu">str</span>,[x[v] <span class="cf">for</span> v <span class="kw">in</span> <span class="va">self</span>.stratify_cols]))) </span>
+<span id="cb1-194"><a href="#cb1-194" aria-hidden="true" tabindex="-1"></a>                                      }</span>
+<span id="cb1-195"><a href="#cb1-195" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.dset <span class="op">=</span> <span class="va">self</span>.dset.<span class="bu">map</span>(stratified_creation,</span>
+<span id="cb1-196"><a href="#cb1-196" aria-hidden="true" tabindex="-1"></a>                                      batched<span class="op">=</span><span class="va">self</span>.is_batched,</span>
+<span id="cb1-197"><a href="#cb1-197" aria-hidden="true" tabindex="-1"></a>                                      batch_size<span class="op">=</span><span class="va">self</span>.batch_size,</span>
+<span id="cb1-198"><a href="#cb1-198" aria-hidden="true" tabindex="-1"></a>                                      num_proc<span class="op">=</span><span class="va">self</span>.num_proc)</span>
+<span id="cb1-199"><a href="#cb1-199" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.dset<span class="op">=</span><span class="va">self</span>.dset.class_encode_column(<span class="st">"stratified"</span>)</span>
+<span id="cb1-200"><a href="#cb1-200" aria-hidden="true" tabindex="-1"></a>            <span class="co"># train val split</span></span>
+<span id="cb1-201"><a href="#cb1-201" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.main_ddict <span class="op">=</span> <span class="va">self</span>.dset.train_test_split(test_size<span class="op">=</span><span class="va">self</span>.val_ratio,</span>
+<span id="cb1-202"><a href="#cb1-202" aria-hidden="true" tabindex="-1"></a>                                                         shuffle<span class="op">=</span><span class="va">True</span>,seed<span class="op">=</span><span class="va">self</span>.seed,</span>
+<span id="cb1-203"><a href="#cb1-203" aria-hidden="true" tabindex="-1"></a>                                                        stratify_by_column<span class="op">=</span><span class="st">'stratified'</span>)</span>
+<span id="cb1-204"><a href="#cb1-204" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.main_ddict[<span class="st">'validation'</span>]<span class="op">=</span><span class="va">self</span>.main_ddict[<span class="st">'test'</span>]</span>
+<span id="cb1-205"><a href="#cb1-205" aria-hidden="true" tabindex="-1"></a>            <span class="kw">del</span> <span class="va">self</span>.main_ddict[<span class="st">'test'</span>]</span>
+<span id="cb1-206"><a href="#cb1-206" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.main_ddict<span class="op">=</span><span class="va">self</span>.main_ddict.remove_columns([<span class="st">'stratified'</span>])</span>
+<span id="cb1-207"><a href="#cb1-207" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-208"><a href="#cb1-208" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-209"><a href="#cb1-209" aria-hidden="true" tabindex="-1"></a>        <span class="kw">del</span> <span class="va">self</span>.dset</span>
+<span id="cb1-210"><a href="#cb1-210" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.verboseprint(<span class="st">'Done'</span>)</span>
+<span id="cb1-211"><a href="#cb1-211" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-212"><a href="#cb1-212" aria-hidden="true" tabindex="-1"></a>                             </span>
+<span id="cb1-213"><a href="#cb1-213" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _create_label_mapping_func(<span class="va">self</span>,encoder_classes):</span>
+<span id="cb1-214"><a href="#cb1-214" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.is_multihead:</span>
+<span id="cb1-215"><a href="#cb1-215" aria-hidden="true" tabindex="-1"></a>            label2idxs <span class="op">=</span> [{v:i <span class="cf">for</span> i,v <span class="kw">in</span> <span class="bu">enumerate</span>(l_classes)} <span class="cf">for</span> l_classes <span class="kw">in</span> encoder_classes]</span>
+<span id="cb1-216"><a href="#cb1-216" aria-hidden="true" tabindex="-1"></a>                    </span>
+<span id="cb1-217"><a href="#cb1-217" aria-hidden="true" tabindex="-1"></a>            _func <span class="op">=</span> <span class="kw">lambda</span> inp: {<span class="st">'label'</span>: [[label2idxs[i][v] <span class="cf">for</span> i,v <span class="kw">in</span> <span class="bu">enumerate</span>(vs)] <span class="cf">for</span> vs <span class="kw">in</span> <span class="bu">zip</span>(<span class="op">*</span>[inp[l] <span class="cf">for</span> l <span class="kw">in</span> <span class="va">self</span>.label_names])] <span class="op">\</span></span>
+<span id="cb1-218"><a href="#cb1-218" aria-hidden="true" tabindex="-1"></a>                                    <span class="cf">if</span> <span class="va">self</span>.is_batched <span class="cf">else</span> [label2idxs[i][v] <span class="cf">for</span> i,v <span class="kw">in</span> <span class="bu">enumerate</span>([inp[l] <span class="cf">for</span> l <span class="kw">in</span> <span class="va">self</span>.label_names])]</span>
+<span id="cb1-219"><a href="#cb1-219" aria-hidden="true" tabindex="-1"></a>                              }</span>
+<span id="cb1-220"><a href="#cb1-220" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-221"><a href="#cb1-221" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb1-222"><a href="#cb1-222" aria-hidden="true" tabindex="-1"></a>            label2idx <span class="op">=</span> {v:i <span class="cf">for</span> i,v <span class="kw">in</span> <span class="bu">enumerate</span>(encoder_classes[<span class="dv">0</span>])}</span>
+<span id="cb1-223"><a href="#cb1-223" aria-hidden="true" tabindex="-1"></a>            _func <span class="op">=</span> partial(lambda_map_batch,</span>
+<span id="cb1-224"><a href="#cb1-224" aria-hidden="true" tabindex="-1"></a>                           feature<span class="op">=</span><span class="va">self</span>.label_names[<span class="dv">0</span>],</span>
+<span id="cb1-225"><a href="#cb1-225" aria-hidden="true" tabindex="-1"></a>                           func<span class="op">=</span><span class="kw">lambda</span> x: label2idx[x],</span>
+<span id="cb1-226"><a href="#cb1-226" aria-hidden="true" tabindex="-1"></a>                           output_feature<span class="op">=</span><span class="st">'label'</span>,</span>
+<span id="cb1-227"><a href="#cb1-227" aria-hidden="true" tabindex="-1"></a>                           is_batched<span class="op">=</span><span class="va">self</span>.is_batched)</span>
+<span id="cb1-228"><a href="#cb1-228" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> _func</span>
+<span id="cb1-229"><a href="#cb1-229" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-230"><a href="#cb1-230" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _encode_labels(<span class="va">self</span>):</span>
+<span id="cb1-231"><a href="#cb1-231" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.label_names <span class="kw">is</span> <span class="va">None</span>: <span class="cf">return</span></span>
+<span id="cb1-232"><a href="#cb1-232" aria-hidden="true" tabindex="-1"></a>        print_msg(<span class="st">'Label Encoding'</span>,verbose<span class="op">=</span><span class="va">self</span>.verbose)</span>
+<span id="cb1-233"><a href="#cb1-233" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-234"><a href="#cb1-234" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.label_lists <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span> <span class="kw">and</span> <span class="kw">not</span> <span class="bu">isinstance</span>(<span class="va">self</span>.label_lists[<span class="dv">0</span>],<span class="bu">list</span>):</span>
+<span id="cb1-235"><a href="#cb1-235" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.label_lists <span class="op">=</span> [<span class="va">self</span>.label_lists]</span>
+<span id="cb1-236"><a href="#cb1-236" aria-hidden="true" tabindex="-1"></a>                    </span>
+<span id="cb1-237"><a href="#cb1-237" aria-hidden="true" tabindex="-1"></a>        encoder_classes<span class="op">=</span>[]</span>
+<span id="cb1-238"><a href="#cb1-238" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> <span class="va">self</span>.is_multilabel:</span>
+<span id="cb1-239"><a href="#cb1-239" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> idx,l <span class="kw">in</span> <span class="bu">enumerate</span>(<span class="va">self</span>.label_names):</span>
+<span id="cb1-240"><a href="#cb1-240" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="va">self</span>.label_lists <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb1-241"><a href="#cb1-241" aria-hidden="true" tabindex="-1"></a>                    l_encoder <span class="op">=</span> LabelEncoder()</span>
+<span id="cb1-242"><a href="#cb1-242" aria-hidden="true" tabindex="-1"></a>                    _ <span class="op">=</span> l_encoder.fit(<span class="va">self</span>.dset[l])</span>
+<span id="cb1-243"><a href="#cb1-243" aria-hidden="true" tabindex="-1"></a>                    l_classes <span class="op">=</span> <span class="bu">list</span>(l_encoder.classes_)</span>
+<span id="cb1-244"><a href="#cb1-244" aria-hidden="true" tabindex="-1"></a>                <span class="cf">else</span>:</span>
+<span id="cb1-245"><a href="#cb1-245" aria-hidden="true" tabindex="-1"></a>                    l_classes <span class="op">=</span> <span class="bu">sorted</span>(<span class="bu">list</span>(<span class="va">self</span>.label_lists[idx]))</span>
+<span id="cb1-246"><a href="#cb1-246" aria-hidden="true" tabindex="-1"></a>                encoder_classes.append(l_classes)</span>
+<span id="cb1-247"><a href="#cb1-247" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-248"><a href="#cb1-248" aria-hidden="true" tabindex="-1"></a>            _func <span class="op">=</span> <span class="va">self</span>._create_label_mapping_func(encoder_classes)</span>
+<span id="cb1-249"><a href="#cb1-249" aria-hidden="true" tabindex="-1"></a>                </span>
+<span id="cb1-250"><a href="#cb1-250" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.dset <span class="op">=</span> hf_map_dset(<span class="va">self</span>.dset,_func,<span class="va">self</span>.is_batched,<span class="va">self</span>.batch_size,<span class="va">self</span>.num_proc)</span>
+<span id="cb1-251"><a href="#cb1-251" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-252"><a href="#cb1-252" aria-hidden="true" tabindex="-1"></a>            val_key <span class="op">=</span> <span class="bu">list</span>(<span class="bu">set</span>(<span class="va">self</span>.ddict_rest.keys()) <span class="op">&amp;</span> <span class="bu">set</span>([<span class="st">'val'</span>,<span class="st">'validation'</span>,<span class="st">'valid'</span>]))</span>
+<span id="cb1-253"><a href="#cb1-253" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="bu">len</span>(val_key)<span class="op">&gt;</span><span class="dv">1</span>: <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">'Your DatasetDict has more than 1 validation split'</span>)</span>
+<span id="cb1-254"><a href="#cb1-254" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="bu">len</span>(val_key)<span class="op">==</span><span class="dv">1</span>:</span>
+<span id="cb1-255"><a href="#cb1-255" aria-hidden="true" tabindex="-1"></a>                val_key<span class="op">=</span>val_key[<span class="dv">0</span>]</span>
+<span id="cb1-256"><a href="#cb1-256" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.ddict_rest[val_key] <span class="op">=</span> hf_map_dset(<span class="va">self</span>.ddict_rest[val_key],_func,</span>
+<span id="cb1-257"><a href="#cb1-257" aria-hidden="true" tabindex="-1"></a>                                                       <span class="va">self</span>.is_batched,<span class="va">self</span>.batch_size,<span class="va">self</span>.num_proc)</span>
+<span id="cb1-258"><a href="#cb1-258" aria-hidden="true" tabindex="-1"></a>                    </span>
+<span id="cb1-259"><a href="#cb1-259" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb1-260"><a href="#cb1-260" aria-hidden="true" tabindex="-1"></a>            <span class="co"># For MultiLabel, we transform the label itself to one-hot (or actually, few-hot)</span></span>
+<span id="cb1-261"><a href="#cb1-261" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="va">self</span>.label_lists <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb1-262"><a href="#cb1-262" aria-hidden="true" tabindex="-1"></a>                l_encoder <span class="op">=</span> MultiLabelBinarizer()</span>
+<span id="cb1-263"><a href="#cb1-263" aria-hidden="true" tabindex="-1"></a>                _ <span class="op">=</span> l_encoder.fit(<span class="va">self</span>.dset[<span class="va">self</span>.label_names[<span class="dv">0</span>]])</span>
+<span id="cb1-264"><a href="#cb1-264" aria-hidden="true" tabindex="-1"></a>                l_classes <span class="op">=</span> <span class="bu">list</span>(l_encoder.classes_)</span>
+<span id="cb1-265"><a href="#cb1-265" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
+<span id="cb1-266"><a href="#cb1-266" aria-hidden="true" tabindex="-1"></a>                l_classes <span class="op">=</span> <span class="bu">sorted</span>(<span class="bu">list</span>(<span class="va">self</span>.label_lists[<span class="dv">0</span>]))</span>
+<span id="cb1-267"><a href="#cb1-267" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-268"><a href="#cb1-268" aria-hidden="true" tabindex="-1"></a>            encoder_classes.append(l_classes)</span>
+<span id="cb1-269"><a href="#cb1-269" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-270"><a href="#cb1-270" aria-hidden="true" tabindex="-1"></a>            l_encoder <span class="op">=</span> MultiLabelBinarizer(classes<span class="op">=</span>encoder_classes[<span class="dv">0</span>])</span>
+<span id="cb1-271"><a href="#cb1-271" aria-hidden="true" tabindex="-1"></a>            _ <span class="op">=</span> l_encoder.fit(<span class="va">None</span>)</span>
+<span id="cb1-272"><a href="#cb1-272" aria-hidden="true" tabindex="-1"></a>            _func <span class="op">=</span> partial(lambda_map_batch,</span>
+<span id="cb1-273"><a href="#cb1-273" aria-hidden="true" tabindex="-1"></a>                            feature<span class="op">=</span><span class="va">self</span>.label_names[<span class="dv">0</span>],</span>
+<span id="cb1-274"><a href="#cb1-274" aria-hidden="true" tabindex="-1"></a>                            func<span class="op">=</span><span class="kw">lambda</span> x: l_encoder.transform(x),</span>
+<span id="cb1-275"><a href="#cb1-275" aria-hidden="true" tabindex="-1"></a>                            output_feature<span class="op">=</span><span class="st">'label'</span>,</span>
+<span id="cb1-276"><a href="#cb1-276" aria-hidden="true" tabindex="-1"></a>                            is_batched<span class="op">=</span><span class="va">self</span>.is_batched,</span>
+<span id="cb1-277"><a href="#cb1-277" aria-hidden="true" tabindex="-1"></a>                            is_func_batched<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb1-278"><a href="#cb1-278" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.dset <span class="op">=</span> hf_map_dset(<span class="va">self</span>.dset,_func,<span class="va">self</span>.is_batched,<span class="va">self</span>.batch_size,<span class="va">self</span>.num_proc)                                                 </span>
+<span id="cb1-279"><a href="#cb1-279" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-280"><a href="#cb1-280" aria-hidden="true" tabindex="-1"></a>            val_key <span class="op">=</span> <span class="bu">list</span>(<span class="bu">set</span>(<span class="va">self</span>.ddict_rest.keys()) <span class="op">&amp;</span> <span class="bu">set</span>([<span class="st">'val'</span>,<span class="st">'validation'</span>,<span class="st">'valid'</span>]))</span>
+<span id="cb1-281"><a href="#cb1-281" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="bu">len</span>(val_key)<span class="op">&gt;</span><span class="dv">1</span>: <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">'Your DatasetDict has more than 1 validation dataset'</span>)</span>
+<span id="cb1-282"><a href="#cb1-282" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="bu">len</span>(val_key)<span class="op">==</span><span class="dv">1</span>:</span>
+<span id="cb1-283"><a href="#cb1-283" aria-hidden="true" tabindex="-1"></a>                val_key<span class="op">=</span>val_key[<span class="dv">0</span>]</span>
+<span id="cb1-284"><a href="#cb1-284" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.ddict_rest[val_key] <span class="op">=</span> hf_map_dset(<span class="va">self</span>.ddict_rest[val_key],_func,</span>
+<span id="cb1-285"><a href="#cb1-285" aria-hidden="true" tabindex="-1"></a>                                                       <span class="va">self</span>.is_batched,<span class="va">self</span>.batch_size,<span class="va">self</span>.num_proc)</span>
+<span id="cb1-286"><a href="#cb1-286" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-287"><a href="#cb1-287" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.label_lists <span class="op">=</span> encoder_classes</span>
+<span id="cb1-288"><a href="#cb1-288" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.verboseprint(<span class="st">'Done'</span>)</span>
+<span id="cb1-289"><a href="#cb1-289" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-290"><a href="#cb1-290" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _process_metadatas(<span class="va">self</span>,dset,ddict_rest<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb1-291"><a href="#cb1-291" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(<span class="va">self</span>.metadatas)<span class="op">&gt;</span><span class="dv">0</span>:</span>
+<span id="cb1-292"><a href="#cb1-292" aria-hidden="true" tabindex="-1"></a>            print_msg(<span class="st">'Metadata Simple Processing &amp; Concatenating to Main Content'</span>,verbose<span class="op">=</span><span class="va">self</span>.verbose)</span>
+<span id="cb1-293"><a href="#cb1-293" aria-hidden="true" tabindex="-1"></a>            map_func <span class="op">=</span> partial(concat_metadatas,</span>
+<span id="cb1-294"><a href="#cb1-294" aria-hidden="true" tabindex="-1"></a>                               main_text<span class="op">=</span><span class="va">self</span>.main_text,</span>
+<span id="cb1-295"><a href="#cb1-295" aria-hidden="true" tabindex="-1"></a>                               metadatas<span class="op">=</span><span class="va">self</span>.metadatas,</span>
+<span id="cb1-296"><a href="#cb1-296" aria-hidden="true" tabindex="-1"></a>                               process_metas<span class="op">=</span><span class="va">self</span>.process_metas,</span>
+<span id="cb1-297"><a href="#cb1-297" aria-hidden="true" tabindex="-1"></a>                               is_batched<span class="op">=</span><span class="va">self</span>.is_batched)</span>
+<span id="cb1-298"><a href="#cb1-298" aria-hidden="true" tabindex="-1"></a>            dset <span class="op">=</span> hf_map_dset(dset,map_func,<span class="va">self</span>.is_batched,<span class="va">self</span>.batch_size,<span class="va">self</span>.num_proc)</span>
+<span id="cb1-299"><a href="#cb1-299" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> ddict_rest <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb1-300"><a href="#cb1-300" aria-hidden="true" tabindex="-1"></a>                ddict_rest <span class="op">=</span> hf_map_dset(ddict_rest,map_func,<span class="va">self</span>.is_batched,<span class="va">self</span>.batch_size,<span class="va">self</span>.num_proc)</span>
+<span id="cb1-301"><a href="#cb1-301" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.verboseprint(<span class="st">'Done'</span>)</span>
+<span id="cb1-302"><a href="#cb1-302" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> dset <span class="cf">if</span> ddict_rest <span class="kw">is</span> <span class="va">None</span> <span class="cf">else</span> (dset,ddict_rest)</span>
+<span id="cb1-303"><a href="#cb1-303" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-304"><a href="#cb1-304" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-305"><a href="#cb1-305" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-306"><a href="#cb1-306" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _simplify_ddict(<span class="va">self</span>):</span>
+<span id="cb1-307"><a href="#cb1-307" aria-hidden="true" tabindex="-1"></a>        print_msg(<span class="st">'Dropping unused features'</span>,<span class="dv">20</span>,verbose<span class="op">=</span><span class="va">self</span>.verbose)</span>
+<span id="cb1-308"><a href="#cb1-308" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.cols_to_keep <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb1-309"><a href="#cb1-309" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.cols_to_keep<span class="op">=</span> [<span class="va">self</span>.main_text] <span class="op">+</span> <span class="va">self</span>.metadatas</span>
+<span id="cb1-310"><a href="#cb1-310" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="va">self</span>.label_names <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>: <span class="va">self</span>.cols_to_keep<span class="op">+=</span><span class="va">self</span>.label_names</span>
+<span id="cb1-311"><a href="#cb1-311" aria-hidden="true" tabindex="-1"></a>        cols_to_remove <span class="op">=</span> <span class="bu">set</span>(<span class="va">self</span>.all_cols) <span class="op">-</span> <span class="bu">set</span>(<span class="va">self</span>.cols_to_keep)</span>
+<span id="cb1-312"><a href="#cb1-312" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.main_ddict[<span class="st">'train'</span>]<span class="op">=</span><span class="va">self</span>.main_ddict[<span class="st">'train'</span>].remove_columns(<span class="bu">list</span>(cols_to_remove))</span>
+<span id="cb1-313"><a href="#cb1-313" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="st">'validation'</span> <span class="kw">in</span> <span class="va">self</span>.main_ddict.keys():</span>
+<span id="cb1-314"><a href="#cb1-314" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.main_ddict[<span class="st">'validation'</span>]<span class="op">=</span><span class="va">self</span>.main_ddict[<span class="st">'validation'</span>].remove_columns(<span class="bu">list</span>(cols_to_remove))</span>
+<span id="cb1-315"><a href="#cb1-315" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.verboseprint(<span class="st">'Done'</span>)</span>
+<span id="cb1-316"><a href="#cb1-316" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-317"><a href="#cb1-317" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _do_transformation(<span class="va">self</span>,dset,ddict_rest<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb1-318"><a href="#cb1-318" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(<span class="va">self</span>.content_tfms):</span>
+<span id="cb1-319"><a href="#cb1-319" aria-hidden="true" tabindex="-1"></a>            print_msg(<span class="st">'Text Transformation'</span>,<span class="dv">20</span>,verbose<span class="op">=</span><span class="va">self</span>.verbose)</span>
+<span id="cb1-320"><a href="#cb1-320" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> tfm <span class="kw">in</span> <span class="va">self</span>.content_tfms:</span>
+<span id="cb1-321"><a href="#cb1-321" aria-hidden="true" tabindex="-1"></a>                print_msg(callable_name(tfm),verbose<span class="op">=</span><span class="va">self</span>.verbose)</span>
+<span id="cb1-322"><a href="#cb1-322" aria-hidden="true" tabindex="-1"></a>                _func <span class="op">=</span> partial(lambda_map_batch,</span>
+<span id="cb1-323"><a href="#cb1-323" aria-hidden="true" tabindex="-1"></a>                               feature<span class="op">=</span><span class="va">self</span>.main_text,</span>
+<span id="cb1-324"><a href="#cb1-324" aria-hidden="true" tabindex="-1"></a>                               func<span class="op">=</span>tfm,</span>
+<span id="cb1-325"><a href="#cb1-325" aria-hidden="true" tabindex="-1"></a>                               is_batched<span class="op">=</span><span class="va">self</span>.is_batched)</span>
+<span id="cb1-326"><a href="#cb1-326" aria-hidden="true" tabindex="-1"></a>                dset <span class="op">=</span> hf_map_dset(dset,_func,<span class="va">self</span>.is_batched,<span class="va">self</span>.batch_size,<span class="va">self</span>.num_proc)</span>
+<span id="cb1-327"><a href="#cb1-327" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> ddict_rest <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb1-328"><a href="#cb1-328" aria-hidden="true" tabindex="-1"></a>                    ddict_rest <span class="op">=</span> hf_map_dset(ddict_rest,_func,<span class="va">self</span>.is_batched,<span class="va">self</span>.batch_size,<span class="va">self</span>.num_proc)</span>
+<span id="cb1-329"><a href="#cb1-329" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.verboseprint(<span class="st">'Done'</span>)</span>
+<span id="cb1-330"><a href="#cb1-330" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> dset <span class="cf">if</span> ddict_rest <span class="kw">is</span> <span class="va">None</span> <span class="cf">else</span> (dset,ddict_rest)</span>
+<span id="cb1-331"><a href="#cb1-331" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb1-332"><a href="#cb1-332" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _do_filtering(<span class="va">self</span>,dset,ddict_rest<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb1-333"><a href="#cb1-333" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(<span class="va">self</span>.filter_dict):</span>
+<span id="cb1-334"><a href="#cb1-334" aria-hidden="true" tabindex="-1"></a>            print_msg(<span class="st">'Data Filtering'</span>,<span class="dv">20</span>,verbose<span class="op">=</span><span class="va">self</span>.verbose)</span>
+<span id="cb1-335"><a href="#cb1-335" aria-hidden="true" tabindex="-1"></a>            col_names <span class="op">=</span> get_dset_col_names(dset)</span>
+<span id="cb1-336"><a href="#cb1-336" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> f,tfm <span class="kw">in</span> <span class="va">self</span>.filter_dict.items():</span>
+<span id="cb1-337"><a href="#cb1-337" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> f <span class="kw">in</span> col_names:</span>
+<span id="cb1-338"><a href="#cb1-338" aria-hidden="true" tabindex="-1"></a>                    print_msg(<span class="ss">f'Do </span><span class="sc">{</span>callable_name(tfm)<span class="sc">}</span><span class="ss"> on </span><span class="sc">{</span>f<span class="sc">}</span><span class="ss">'</span>,verbose<span class="op">=</span><span class="va">self</span>.verbose)</span>
+<span id="cb1-339"><a href="#cb1-339" aria-hidden="true" tabindex="-1"></a>                    _func <span class="op">=</span> partial(lambda_batch,</span>
+<span id="cb1-340"><a href="#cb1-340" aria-hidden="true" tabindex="-1"></a>                                    feature<span class="op">=</span>f,</span>
+<span id="cb1-341"><a href="#cb1-341" aria-hidden="true" tabindex="-1"></a>                                    func<span class="op">=</span>tfm,</span>
+<span id="cb1-342"><a href="#cb1-342" aria-hidden="true" tabindex="-1"></a>                                    is_batched<span class="op">=</span><span class="va">self</span>.is_batched)</span>
+<span id="cb1-343"><a href="#cb1-343" aria-hidden="true" tabindex="-1"></a>                    dset <span class="op">=</span> hf_filter_dset(dset,_func,<span class="va">self</span>.is_batched,<span class="va">self</span>.batch_size,<span class="va">self</span>.num_proc)</span>
+<span id="cb1-344"><a href="#cb1-344" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> ddict_rest <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>: <span class="co"># assuming ddict_rest has the column to filter, always</span></span>
+<span id="cb1-345"><a href="#cb1-345" aria-hidden="true" tabindex="-1"></a>                    ddict_rest <span class="op">=</span> hf_filter_dset(ddict_rest,_func,<span class="va">self</span>.is_batched,<span class="va">self</span>.batch_size,<span class="va">self</span>.num_proc)</span>
+<span id="cb1-346"><a href="#cb1-346" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.verboseprint(<span class="st">'Done'</span>)</span>
+<span id="cb1-347"><a href="#cb1-347" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> dset <span class="cf">if</span> ddict_rest <span class="kw">is</span> <span class="va">None</span> <span class="cf">else</span> (dset,ddict_rest)</span>
+<span id="cb1-348"><a href="#cb1-348" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-349"><a href="#cb1-349" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _upsampling(<span class="va">self</span>):</span>
+<span id="cb1-350"><a href="#cb1-350" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(<span class="va">self</span>.upsampling_list):</span>
+<span id="cb1-351"><a href="#cb1-351" aria-hidden="true" tabindex="-1"></a>            print_msg(<span class="st">'Upsampling data'</span>,<span class="dv">20</span>,verbose<span class="op">=</span><span class="va">self</span>.verbose)</span>
+<span id="cb1-352"><a href="#cb1-352" aria-hidden="true" tabindex="-1"></a>            results<span class="op">=</span>[]</span>
+<span id="cb1-353"><a href="#cb1-353" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> f,tfm <span class="kw">in</span> <span class="va">self</span>.upsampling_list:</span>
+<span id="cb1-354"><a href="#cb1-354" aria-hidden="true" tabindex="-1"></a>                print_msg(<span class="ss">f'Do </span><span class="sc">{</span>callable_name(tfm)<span class="sc">}</span><span class="ss"> on </span><span class="sc">{</span>f<span class="sc">}</span><span class="ss">'</span>,verbose<span class="op">=</span><span class="va">self</span>.verbose)</span>
+<span id="cb1-355"><a href="#cb1-355" aria-hidden="true" tabindex="-1"></a>                _func <span class="op">=</span> partial(lambda_batch,</span>
+<span id="cb1-356"><a href="#cb1-356" aria-hidden="true" tabindex="-1"></a>                                feature<span class="op">=</span>f,</span>
+<span id="cb1-357"><a href="#cb1-357" aria-hidden="true" tabindex="-1"></a>                                func<span class="op">=</span>tfm,</span>
+<span id="cb1-358"><a href="#cb1-358" aria-hidden="true" tabindex="-1"></a>                                is_batched<span class="op">=</span><span class="va">self</span>.is_batched)</span>
+<span id="cb1-359"><a href="#cb1-359" aria-hidden="true" tabindex="-1"></a>                new_dset <span class="op">=</span> hf_filter_dset(<span class="va">self</span>.main_ddict[<span class="st">'train'</span>],_func,<span class="va">self</span>.is_batched,<span class="va">self</span>.batch_size,<span class="va">self</span>.num_proc)</span>
+<span id="cb1-360"><a href="#cb1-360" aria-hidden="true" tabindex="-1"></a>                results.append(new_dset)</span>
+<span id="cb1-361"><a href="#cb1-361" aria-hidden="true" tabindex="-1"></a>            <span class="co"># slow concatenation for iterable dataset    </span></span>
+<span id="cb1-362"><a href="#cb1-362" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.main_ddict[<span class="st">'train'</span>] <span class="op">=</span> concatenate_datasets(results<span class="op">+</span>[<span class="va">self</span>.main_ddict[<span class="st">'train'</span>]])</span>
+<span id="cb1-363"><a href="#cb1-363" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.verboseprint(<span class="st">'Done'</span>)</span>
+<span id="cb1-364"><a href="#cb1-364" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb1-365"><a href="#cb1-365" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _do_augmentation(<span class="va">self</span>):</span>
+<span id="cb1-366"><a href="#cb1-366" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-367"><a href="#cb1-367" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(<span class="va">self</span>.aug_tfms):</span>
+<span id="cb1-368"><a href="#cb1-368" aria-hidden="true" tabindex="-1"></a>            print_msg(<span class="st">'Text Augmentation'</span>,<span class="dv">20</span>,verbose<span class="op">=</span><span class="va">self</span>.verbose)</span>
+<span id="cb1-369"><a href="#cb1-369" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-370"><a href="#cb1-370" aria-hidden="true" tabindex="-1"></a>            seed_notorch(<span class="va">self</span>.seed)</span>
+<span id="cb1-371"><a href="#cb1-371" aria-hidden="true" tabindex="-1"></a><span class="co">#             self.main_ddict['train'] = self.main_ddict['train'].with_transform(partial(augmentation_helper,</span></span>
+<span id="cb1-372"><a href="#cb1-372" aria-hidden="true" tabindex="-1"></a><span class="co">#                                                                    text_name=self.main_text,</span></span>
+<span id="cb1-373"><a href="#cb1-373" aria-hidden="true" tabindex="-1"></a><span class="co">#                                                                    func=partial(func_all,functions=self.aug_tfms)))  </span></span>
+<span id="cb1-374"><a href="#cb1-374" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="kw">not</span> <span class="va">self</span>.is_streamed:  </span>
+<span id="cb1-375"><a href="#cb1-375" aria-hidden="true" tabindex="-1"></a>                <span class="cf">for</span> tfm <span class="kw">in</span> <span class="va">self</span>.aug_tfms:</span>
+<span id="cb1-376"><a href="#cb1-376" aria-hidden="true" tabindex="-1"></a>                    print_msg(callable_name(tfm),verbose<span class="op">=</span><span class="va">self</span>.verbose)</span>
+<span id="cb1-377"><a href="#cb1-377" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-378"><a href="#cb1-378" aria-hidden="true" tabindex="-1"></a>                    bs <span class="op">=</span> <span class="va">self</span>.batch_size</span>
+<span id="cb1-379"><a href="#cb1-379" aria-hidden="true" tabindex="-1"></a>                    is_func_batched<span class="op">=</span><span class="va">False</span></span>
+<span id="cb1-380"><a href="#cb1-380" aria-hidden="true" tabindex="-1"></a>                    num_proc <span class="op">=</span> <span class="va">self</span>.num_proc</span>
+<span id="cb1-381"><a href="#cb1-381" aria-hidden="true" tabindex="-1"></a>                    is_batched <span class="op">=</span> <span class="va">self</span>.is_batched</span>
+<span id="cb1-382"><a href="#cb1-382" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">if</span> <span class="bu">hasattr</span>(tfm, <span class="st">"run_on_gpu"</span>) <span class="kw">and</span> <span class="bu">getattr</span>(tfm,<span class="st">'run_on_gpu'</span>)<span class="op">==</span><span class="va">True</span>:</span>
+<span id="cb1-383"><a href="#cb1-383" aria-hidden="true" tabindex="-1"></a>                        bs <span class="op">=</span> <span class="dv">32</span> <span class="cf">if</span> <span class="kw">not</span> <span class="bu">hasattr</span>(tfm, <span class="st">"batch_size"</span>) <span class="cf">else</span> <span class="bu">getattr</span>(tfm,<span class="st">'batch_size'</span>)</span>
+<span id="cb1-384"><a href="#cb1-384" aria-hidden="true" tabindex="-1"></a>                        is_func_batched<span class="op">=</span><span class="va">True</span></span>
+<span id="cb1-385"><a href="#cb1-385" aria-hidden="true" tabindex="-1"></a>                        is_batched<span class="op">=</span><span class="va">True</span></span>
+<span id="cb1-386"><a href="#cb1-386" aria-hidden="true" tabindex="-1"></a>                        num_proc<span class="op">=</span><span class="dv">1</span></span>
+<span id="cb1-387"><a href="#cb1-387" aria-hidden="true" tabindex="-1"></a>                        </span>
+<span id="cb1-388"><a href="#cb1-388" aria-hidden="true" tabindex="-1"></a>                    _func <span class="op">=</span> partial(lambda_map_batch,</span>
+<span id="cb1-389"><a href="#cb1-389" aria-hidden="true" tabindex="-1"></a>                                   feature<span class="op">=</span><span class="va">self</span>.main_text,</span>
+<span id="cb1-390"><a href="#cb1-390" aria-hidden="true" tabindex="-1"></a>                                   func<span class="op">=</span>tfm,</span>
+<span id="cb1-391"><a href="#cb1-391" aria-hidden="true" tabindex="-1"></a>                                   is_batched<span class="op">=</span>is_batched,</span>
+<span id="cb1-392"><a href="#cb1-392" aria-hidden="true" tabindex="-1"></a>                                   is_func_batched<span class="op">=</span>is_func_batched</span>
+<span id="cb1-393"><a href="#cb1-393" aria-hidden="true" tabindex="-1"></a>                                   )</span>
+<span id="cb1-394"><a href="#cb1-394" aria-hidden="true" tabindex="-1"></a>                    <span class="va">self</span>.main_ddict[<span class="st">'train'</span>] <span class="op">=</span> hf_map_dset(<span class="va">self</span>.main_ddict[<span class="st">'train'</span>],_func,</span>
+<span id="cb1-395"><a href="#cb1-395" aria-hidden="true" tabindex="-1"></a>                                                              is_batched<span class="op">=</span>is_batched,</span>
+<span id="cb1-396"><a href="#cb1-396" aria-hidden="true" tabindex="-1"></a>                                                              batch_size<span class="op">=</span>bs,</span>
+<span id="cb1-397"><a href="#cb1-397" aria-hidden="true" tabindex="-1"></a>                                                              num_proc<span class="op">=</span>num_proc</span>
+<span id="cb1-398"><a href="#cb1-398" aria-hidden="true" tabindex="-1"></a>                                                             )</span>
+<span id="cb1-399"><a href="#cb1-399" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-400"><a href="#cb1-400" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>: </span>
+<span id="cb1-401"><a href="#cb1-401" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.main_ddict[<span class="st">'train'</span>] <span class="op">=</span> IterableDataset.from_generator(augmentation_stream_generator,</span>
+<span id="cb1-402"><a href="#cb1-402" aria-hidden="true" tabindex="-1"></a><span class="co">#                                                features = self.main_ddict['train'].features,</span></span>
+<span id="cb1-403"><a href="#cb1-403" aria-hidden="true" tabindex="-1"></a>                                               gen_kwargs<span class="op">=</span>{<span class="st">'dset'</span>: <span class="va">self</span>.main_ddict[<span class="st">'train'</span>],</span>
+<span id="cb1-404"><a href="#cb1-404" aria-hidden="true" tabindex="-1"></a>                                                           <span class="st">'text_name'</span>:<span class="va">self</span>.main_text,</span>
+<span id="cb1-405"><a href="#cb1-405" aria-hidden="true" tabindex="-1"></a>                                                           <span class="st">'func'</span>:partial(func_all,functions<span class="op">=</span><span class="va">self</span>.aug_tfms)</span>
+<span id="cb1-406"><a href="#cb1-406" aria-hidden="true" tabindex="-1"></a>                                                          })</span>
+<span id="cb1-407"><a href="#cb1-407" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.verboseprint(<span class="st">'Done'</span>)</span>
+<span id="cb1-408"><a href="#cb1-408" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-409"><a href="#cb1-409" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _convert_to_iterable(<span class="va">self</span>):</span>
+<span id="cb1-410"><a href="#cb1-410" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (<span class="kw">not</span> <span class="va">self</span>.is_streamed) <span class="kw">and</span> <span class="va">self</span>.convert_training_to_iterable:</span>
+<span id="cb1-411"><a href="#cb1-411" aria-hidden="true" tabindex="-1"></a>            print_msg(<span class="st">'Converting train set to iterable'</span>,<span class="dv">20</span>,verbose<span class="op">=</span><span class="va">self</span>.verbose)</span>
+<span id="cb1-412"><a href="#cb1-412" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.main_ddict[<span class="st">'train'</span>] <span class="op">=</span> <span class="va">self</span>.main_ddict[<span class="st">'train'</span>].to_iterable_dataset(num_shards<span class="op">=</span><span class="va">self</span>.num_shards)</span>
+<span id="cb1-413"><a href="#cb1-413" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.is_streamed<span class="op">=</span><span class="va">True</span></span>
+<span id="cb1-414"><a href="#cb1-414" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.verboseprint(<span class="st">'Done'</span>)</span>
+<span id="cb1-415"><a href="#cb1-415" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-416"><a href="#cb1-416" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-417"><a href="#cb1-417" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _do_train_shuffling(<span class="va">self</span>):</span>
+<span id="cb1-418"><a href="#cb1-418" aria-hidden="true" tabindex="-1"></a>        print_msg(<span class="st">'Shuffling train set'</span>,<span class="dv">20</span>,verbose<span class="op">=</span><span class="va">self</span>.verbose)</span>
+<span id="cb1-419"><a href="#cb1-419" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.is_streamed:</span>
+<span id="cb1-420"><a href="#cb1-420" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.main_ddict[<span class="st">'train'</span>] <span class="op">=</span> <span class="va">self</span>.main_ddict[<span class="st">'train'</span>].shuffle(seed<span class="op">=</span><span class="va">self</span>.seed, buffer_size<span class="op">=</span><span class="va">self</span>.buffer_size)</span>
+<span id="cb1-421"><a href="#cb1-421" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb1-422"><a href="#cb1-422" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.main_ddict[<span class="st">'train'</span>] <span class="op">=</span> <span class="va">self</span>.main_ddict[<span class="st">'train'</span>].shuffle(seed<span class="op">=</span><span class="va">self</span>.seed)</span>
+<span id="cb1-423"><a href="#cb1-423" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.verboseprint(<span class="st">'Done'</span>)</span>
+<span id="cb1-424"><a href="#cb1-424" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-425"><a href="#cb1-425" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> do_all_preprocessing(<span class="va">self</span>,</span>
+<span id="cb1-426"><a href="#cb1-426" aria-hidden="true" tabindex="-1"></a>                             shuffle_trn<span class="op">=</span><span class="va">True</span> <span class="co"># To shuffle the train set before tokenization</span></span>
+<span id="cb1-427"><a href="#cb1-427" aria-hidden="true" tabindex="-1"></a>                            ):</span>
+<span id="cb1-428"><a href="#cb1-428" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>._processed_call:</span>
+<span id="cb1-429"><a href="#cb1-429" aria-hidden="true" tabindex="-1"></a>            warnings.warn(<span class="st">'Your dataset has already been processed. Returning the previous processed DatasetDict...'</span>)</span>
+<span id="cb1-430"><a href="#cb1-430" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">self</span>.main_ddict</span>
+<span id="cb1-431"><a href="#cb1-431" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-432"><a href="#cb1-432" aria-hidden="true" tabindex="-1"></a>        print_msg(<span class="st">'Start Main Text Processing'</span>,<span class="dv">20</span>,verbose<span class="op">=</span><span class="va">self</span>.verbose)</span>
+<span id="cb1-433"><a href="#cb1-433" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-434"><a href="#cb1-434" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Filtering</span></span>
+<span id="cb1-435"><a href="#cb1-435" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.dset,<span class="va">self</span>.ddict_rest <span class="op">=</span> <span class="va">self</span>._do_filtering(<span class="va">self</span>.dset,<span class="va">self</span>.ddict_rest)</span>
+<span id="cb1-436"><a href="#cb1-436" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-437"><a href="#cb1-437" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Process metadatas</span></span>
+<span id="cb1-438"><a href="#cb1-438" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.dset,<span class="va">self</span>.ddict_rest <span class="op">=</span> <span class="va">self</span>._process_metadatas(<span class="va">self</span>.dset,<span class="va">self</span>.ddict_rest)</span>
+<span id="cb1-439"><a href="#cb1-439" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-440"><a href="#cb1-440" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Process labels</span></span>
+<span id="cb1-441"><a href="#cb1-441" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._encode_labels()</span>
+<span id="cb1-442"><a href="#cb1-442" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-443"><a href="#cb1-443" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Content transformation</span></span>
+<span id="cb1-444"><a href="#cb1-444" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.dset,<span class="va">self</span>.ddict_rest <span class="op">=</span> <span class="va">self</span>._do_transformation(<span class="va">self</span>.dset,<span class="va">self</span>.ddict_rest)</span>
+<span id="cb1-445"><a href="#cb1-445" aria-hidden="true" tabindex="-1"></a>         </span>
+<span id="cb1-446"><a href="#cb1-446" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Train Test Split.</span></span>
+<span id="cb1-447"><a href="#cb1-447" aria-hidden="true" tabindex="-1"></a>        <span class="co">### self.main_ddict is created here</span></span>
+<span id="cb1-448"><a href="#cb1-448" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._train_test_split()</span>
+<span id="cb1-449"><a href="#cb1-449" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-450"><a href="#cb1-450" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Dropping unused columns</span></span>
+<span id="cb1-451"><a href="#cb1-451" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._simplify_ddict()</span>
+<span id="cb1-452"><a href="#cb1-452" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-453"><a href="#cb1-453" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Check validation leaking</span></span>
+<span id="cb1-454"><a href="#cb1-454" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._check_validation_leaking()</span>
+<span id="cb1-455"><a href="#cb1-455" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-456"><a href="#cb1-456" aria-hidden="true" tabindex="-1"></a>        <span class="co">### The rest of these functions applies only to the train dataset</span></span>
+<span id="cb1-457"><a href="#cb1-457" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Upsampling</span></span>
+<span id="cb1-458"><a href="#cb1-458" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._upsampling()</span>
+<span id="cb1-459"><a href="#cb1-459" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-460"><a href="#cb1-460" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Augmentation</span></span>
+<span id="cb1-461"><a href="#cb1-461" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._do_augmentation()</span>
+<span id="cb1-462"><a href="#cb1-462" aria-hidden="true" tabindex="-1"></a>           </span>
+<span id="cb1-463"><a href="#cb1-463" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Convert train set to iterable</span></span>
+<span id="cb1-464"><a href="#cb1-464" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._convert_to_iterable()</span>
+<span id="cb1-465"><a href="#cb1-465" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-466"><a href="#cb1-466" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Shuffle train</span></span>
+<span id="cb1-467"><a href="#cb1-467" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> shuffle_trn:</span>
+<span id="cb1-468"><a href="#cb1-468" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>._do_train_shuffling()</span>
+<span id="cb1-469"><a href="#cb1-469" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-470"><a href="#cb1-470" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._processed_call<span class="op">=</span><span class="va">True</span></span>
+<span id="cb1-471"><a href="#cb1-471" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-472"><a href="#cb1-472" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.main_ddict</span>
+<span id="cb1-473"><a href="#cb1-473" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-474"><a href="#cb1-474" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-475"><a href="#cb1-475" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> do_tokenization(<span class="va">self</span>,</span>
+<span id="cb1-476"><a href="#cb1-476" aria-hidden="true" tabindex="-1"></a>                        tokenizer, <span class="co"># Tokenizer (preferably from HuggingFace)</span></span>
+<span id="cb1-477"><a href="#cb1-477" aria-hidden="true" tabindex="-1"></a>                        max_length<span class="op">=</span><span class="va">None</span>, <span class="co"># pad to model's allowed max length (default is max_sequence_length)</span></span>
+<span id="cb1-478"><a href="#cb1-478" aria-hidden="true" tabindex="-1"></a>                        trn_size<span class="op">=</span><span class="va">None</span>, <span class="co"># The number of training data to be tokenized</span></span>
+<span id="cb1-479"><a href="#cb1-479" aria-hidden="true" tabindex="-1"></a>                       ):</span>
+<span id="cb1-480"><a href="#cb1-480" aria-hidden="true" tabindex="-1"></a>        print_msg(<span class="st">'Tokenization'</span>,<span class="dv">20</span>,verbose<span class="op">=</span><span class="va">self</span>.verbose)</span>
+<span id="cb1-481"><a href="#cb1-481" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.tokenizer <span class="op">=</span> tokenizer</span>
+<span id="cb1-482"><a href="#cb1-482" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.max_length <span class="op">=</span> max_length</span>
+<span id="cb1-483"><a href="#cb1-483" aria-hidden="true" tabindex="-1"></a>        tok_func <span class="op">=</span> partial(tokenize_function,tok<span class="op">=</span>tokenizer,max_length<span class="op">=</span>max_length)</span>
+<span id="cb1-484"><a href="#cb1-484" aria-hidden="true" tabindex="-1"></a>        _func <span class="op">=</span> partial(lambda_map_batch,</span>
+<span id="cb1-485"><a href="#cb1-485" aria-hidden="true" tabindex="-1"></a>                        feature<span class="op">=</span><span class="va">self</span>.main_text,</span>
+<span id="cb1-486"><a href="#cb1-486" aria-hidden="true" tabindex="-1"></a>                        func<span class="op">=</span>tok_func,</span>
+<span id="cb1-487"><a href="#cb1-487" aria-hidden="true" tabindex="-1"></a>                        output_feature<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-488"><a href="#cb1-488" aria-hidden="true" tabindex="-1"></a>                        is_batched<span class="op">=</span><span class="va">self</span>.is_batched)</span>
+<span id="cb1-489"><a href="#cb1-489" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-490"><a href="#cb1-490" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> trn_size <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb1-491"><a href="#cb1-491" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.main_ddict[<span class="st">'train'</span>] <span class="op">=</span> <span class="va">self</span>.main_ddict[<span class="st">'train'</span>].take(trn_size)</span>
+<span id="cb1-492"><a href="#cb1-492" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-493"><a href="#cb1-493" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> k <span class="kw">in</span> <span class="va">self</span>.main_ddict.keys():</span>
+<span id="cb1-494"><a href="#cb1-494" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.main_ddict[k] <span class="op">=</span> hf_map_dset(<span class="va">self</span>.main_ddict[k],_func,<span class="va">self</span>.is_batched,<span class="va">self</span>.batch_size,<span class="va">self</span>.num_proc)</span>
+<span id="cb1-495"><a href="#cb1-495" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-496"><a href="#cb1-496" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.verboseprint(<span class="st">'Done'</span>)</span>
+<span id="cb1-497"><a href="#cb1-497" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.main_ddict</span>
+<span id="cb1-498"><a href="#cb1-498" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-499"><a href="#cb1-499" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> process_and_tokenize(<span class="va">self</span>,</span>
+<span id="cb1-500"><a href="#cb1-500" aria-hidden="true" tabindex="-1"></a>                             tokenizer, <span class="co"># Tokenizer (preferably from HuggingFace)</span></span>
+<span id="cb1-501"><a href="#cb1-501" aria-hidden="true" tabindex="-1"></a>                             max_length<span class="op">=</span><span class="va">None</span>, <span class="co"># pad to model's allowed max length (default is max_sequence_length)</span></span>
+<span id="cb1-502"><a href="#cb1-502" aria-hidden="true" tabindex="-1"></a>                             trn_size<span class="op">=</span><span class="va">None</span>, <span class="co"># The number of training data to be tokenized</span></span>
+<span id="cb1-503"><a href="#cb1-503" aria-hidden="true" tabindex="-1"></a>                             shuffle_trn<span class="op">=</span><span class="va">True</span>, <span class="co"># To shuffle the train set before tokenization</span></span>
+<span id="cb1-504"><a href="#cb1-504" aria-hidden="true" tabindex="-1"></a>                            ):</span>
+<span id="cb1-505"><a href="#cb1-505" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""</span></span>
+<span id="cb1-506"><a href="#cb1-506" aria-hidden="true" tabindex="-1"></a><span class="co">        This will perform `do_all_processing` then `do_tokenization`</span></span>
+<span id="cb1-507"><a href="#cb1-507" aria-hidden="true" tabindex="-1"></a><span class="co">        """</span></span>
+<span id="cb1-508"><a href="#cb1-508" aria-hidden="true" tabindex="-1"></a>        _ <span class="op">=</span> <span class="va">self</span>.do_all_preprocessing(shuffle_trn)</span>
+<span id="cb1-509"><a href="#cb1-509" aria-hidden="true" tabindex="-1"></a>        _ <span class="op">=</span> <span class="va">self</span>.do_tokenization(tokenizer,max_length,trn_size)</span>
+<span id="cb1-510"><a href="#cb1-510" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-511"><a href="#cb1-511" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-512"><a href="#cb1-512" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> set_data_collator(<span class="va">self</span>,data_collator):</span>
+<span id="cb1-513"><a href="#cb1-513" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.data_collator <span class="op">=</span> data_collator</span>
+<span id="cb1-514"><a href="#cb1-514" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-515"><a href="#cb1-515" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-516"><a href="#cb1-516" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> prepare_test_dataset_from_csv(<span class="va">self</span>,</span>
+<span id="cb1-517"><a href="#cb1-517" aria-hidden="true" tabindex="-1"></a>                                      file_path, <span class="co"># path to csv file</span></span>
+<span id="cb1-518"><a href="#cb1-518" aria-hidden="true" tabindex="-1"></a>                                      do_filtering<span class="op">=</span><span class="va">False</span> <span class="co"># whether to perform data filtering on this test set</span></span>
+<span id="cb1-519"><a href="#cb1-519" aria-hidden="true" tabindex="-1"></a>                                     ):</span>
+<span id="cb1-520"><a href="#cb1-520" aria-hidden="true" tabindex="-1"></a>        file_path <span class="op">=</span> Path(file_path)</span>
+<span id="cb1-521"><a href="#cb1-521" aria-hidden="true" tabindex="-1"></a>        ds <span class="op">=</span> load_dataset(<span class="bu">str</span>(file_path.parent),</span>
+<span id="cb1-522"><a href="#cb1-522" aria-hidden="true" tabindex="-1"></a>                          data_files<span class="op">=</span>file_path.name,</span>
+<span id="cb1-523"><a href="#cb1-523" aria-hidden="true" tabindex="-1"></a>                          split<span class="op">=</span><span class="st">'train'</span>)</span>
+<span id="cb1-524"><a href="#cb1-524" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.prepare_test_dataset(ds,do_filtering)</span>
+<span id="cb1-525"><a href="#cb1-525" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-526"><a href="#cb1-526" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> prepare_test_dataset_from_df(<span class="va">self</span>,</span>
+<span id="cb1-527"><a href="#cb1-527" aria-hidden="true" tabindex="-1"></a>                                     df, <span class="co"># Pandas Dataframe</span></span>
+<span id="cb1-528"><a href="#cb1-528" aria-hidden="true" tabindex="-1"></a>                                     validate<span class="op">=</span><span class="va">True</span>, <span class="co"># whether to perform input data validation</span></span>
+<span id="cb1-529"><a href="#cb1-529" aria-hidden="true" tabindex="-1"></a>                                     do_filtering<span class="op">=</span><span class="va">False</span> <span class="co"># whether to perform data filtering on this test set </span></span>
+<span id="cb1-530"><a href="#cb1-530" aria-hidden="true" tabindex="-1"></a>                                    ):</span>
+<span id="cb1-531"><a href="#cb1-531" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> validate:</span>
+<span id="cb1-532"><a href="#cb1-532" aria-hidden="true" tabindex="-1"></a>            check_input_validation(df)</span>
+<span id="cb1-533"><a href="#cb1-533" aria-hidden="true" tabindex="-1"></a>        ds <span class="op">=</span> Dataset.from_pandas(df)</span>
+<span id="cb1-534"><a href="#cb1-534" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.prepare_test_dataset(ds,do_filtering)</span>
+<span id="cb1-535"><a href="#cb1-535" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-536"><a href="#cb1-536" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> prepare_test_dataset_from_raws(<span class="va">self</span>,</span>
+<span id="cb1-537"><a href="#cb1-537" aria-hidden="true" tabindex="-1"></a>                                       content, <span class="co"># Either a single sentence, list of sentence or a dictionary with keys are metadata columns and values are list</span></span>
+<span id="cb1-538"><a href="#cb1-538" aria-hidden="true" tabindex="-1"></a>                                      ):</span>
+<span id="cb1-539"><a href="#cb1-539" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(<span class="va">self</span>.metadatas)<span class="op">!=</span><span class="dv">0</span> <span class="kw">and</span> <span class="kw">not</span> <span class="bu">isinstance</span>(content,<span class="bu">dict</span>):</span>
+<span id="cb1-540"><a href="#cb1-540" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="ss">f'There is/are metadatas in the preprocessing step. Please include a dictionary including these keys for metadatas: </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>metadatas<span class="sc">}</span><span class="ss">, and texture content: </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>main_text<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb1-541"><a href="#cb1-541" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-542"><a href="#cb1-542" aria-hidden="true" tabindex="-1"></a>        _dic <span class="op">=</span> {<span class="va">self</span>.main_text:[content]} <span class="cf">if</span> <span class="bu">isinstance</span>(content,<span class="bu">str</span>) <span class="cf">else</span> content</span>
+<span id="cb1-543"><a href="#cb1-543" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> k <span class="kw">in</span> _dic.keys():</span>
+<span id="cb1-544"><a href="#cb1-544" aria-hidden="true" tabindex="-1"></a>            _dic[k] <span class="op">=</span> val2iterable(_dic[k])</span>
+<span id="cb1-545"><a href="#cb1-545" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-546"><a href="#cb1-546" aria-hidden="true" tabindex="-1"></a>        test_dict <span class="op">=</span> Dataset.from_dict(_dic)</span>
+<span id="cb1-547"><a href="#cb1-547" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.prepare_test_dataset(test_dict,do_filtering<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb1-548"><a href="#cb1-548" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-549"><a href="#cb1-549" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> prepare_test_dataset(<span class="va">self</span>,</span>
+<span id="cb1-550"><a href="#cb1-550" aria-hidden="true" tabindex="-1"></a>                             test_dset, <span class="co"># The HuggingFace Dataset as Test set</span></span>
+<span id="cb1-551"><a href="#cb1-551" aria-hidden="true" tabindex="-1"></a>                             do_filtering<span class="op">=</span><span class="va">False</span> <span class="co"># whether to perform data filtering on this test set</span></span>
+<span id="cb1-552"><a href="#cb1-552" aria-hidden="true" tabindex="-1"></a>                            ):</span>
+<span id="cb1-553"><a href="#cb1-553" aria-hidden="true" tabindex="-1"></a>        test_cols <span class="op">=</span> <span class="bu">set</span>(get_dset_col_names(test_dset))</span>
+<span id="cb1-554"><a href="#cb1-554" aria-hidden="true" tabindex="-1"></a>        test_cols <span class="op">=</span> test_cols <span class="op">-</span> <span class="bu">set</span>(<span class="va">self</span>.label_names)</span>
+<span id="cb1-555"><a href="#cb1-555" aria-hidden="true" tabindex="-1"></a>        missing_cols <span class="op">=</span> <span class="bu">set</span>(<span class="va">self</span>.cols_to_keep) <span class="op">-</span> <span class="bu">set</span>(<span class="va">self</span>.label_names) <span class="op">-</span> <span class="bu">set</span>(test_cols)</span>
+<span id="cb1-556"><a href="#cb1-556" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(missing_cols):</span>
+<span id="cb1-557"><a href="#cb1-557" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="ss">f'Test set does not have these columns required for preprocessings: </span><span class="sc">{</span>missing_cols<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb1-558"><a href="#cb1-558" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-559"><a href="#cb1-559" aria-hidden="true" tabindex="-1"></a>        print_msg(<span class="st">'Start Test Set Transformation'</span>,<span class="dv">20</span>,verbose<span class="op">=</span><span class="va">self</span>.verbose)</span>
+<span id="cb1-560"><a href="#cb1-560" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-561"><a href="#cb1-561" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Filtering</span></span>
+<span id="cb1-562"><a href="#cb1-562" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> do_filtering:</span>
+<span id="cb1-563"><a href="#cb1-563" aria-hidden="true" tabindex="-1"></a>            test_dset <span class="op">=</span> <span class="va">self</span>._do_filtering(test_dset)</span>
+<span id="cb1-564"><a href="#cb1-564" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-565"><a href="#cb1-565" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Process metadatas</span></span>
+<span id="cb1-566"><a href="#cb1-566" aria-hidden="true" tabindex="-1"></a>        test_dset <span class="op">=</span> <span class="va">self</span>._process_metadatas(test_dset)</span>
+<span id="cb1-567"><a href="#cb1-567" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-568"><a href="#cb1-568" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Content transformation</span></span>
+<span id="cb1-569"><a href="#cb1-569" aria-hidden="true" tabindex="-1"></a>        test_dset <span class="op">=</span> <span class="va">self</span>._do_transformation(test_dset)</span>
+<span id="cb1-570"><a href="#cb1-570" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-571"><a href="#cb1-571" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Drop unused columns</span></span>
+<span id="cb1-572"><a href="#cb1-572" aria-hidden="true" tabindex="-1"></a>        cols_to_remove <span class="op">=</span> test_cols <span class="op">-</span> <span class="bu">set</span>(<span class="va">self</span>.cols_to_keep)</span>
+<span id="cb1-573"><a href="#cb1-573" aria-hidden="true" tabindex="-1"></a>        test_dset<span class="op">=</span>test_dset.remove_columns(<span class="bu">list</span>(cols_to_remove))</span>
+<span id="cb1-574"><a href="#cb1-574" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-575"><a href="#cb1-575" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Tokenization</span></span>
+<span id="cb1-576"><a href="#cb1-576" aria-hidden="true" tabindex="-1"></a>        print_msg(<span class="st">'Tokenization'</span>,<span class="dv">20</span>,verbose<span class="op">=</span><span class="va">self</span>.verbose)</span>
+<span id="cb1-577"><a href="#cb1-577" aria-hidden="true" tabindex="-1"></a>        _func <span class="op">=</span> partial(lambda_batch,</span>
+<span id="cb1-578"><a href="#cb1-578" aria-hidden="true" tabindex="-1"></a>                        feature<span class="op">=</span><span class="va">self</span>.main_text,</span>
+<span id="cb1-579"><a href="#cb1-579" aria-hidden="true" tabindex="-1"></a>                        func<span class="op">=</span>partial(tokenize_function,tok<span class="op">=</span><span class="va">self</span>.tokenizer,max_length<span class="op">=</span><span class="va">self</span>.max_length),</span>
+<span id="cb1-580"><a href="#cb1-580" aria-hidden="true" tabindex="-1"></a>                        output_feature<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-581"><a href="#cb1-581" aria-hidden="true" tabindex="-1"></a>                        is_batched<span class="op">=</span><span class="va">self</span>.is_batched)</span>
+<span id="cb1-582"><a href="#cb1-582" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-583"><a href="#cb1-583" aria-hidden="true" tabindex="-1"></a>        test_dset <span class="op">=</span> hf_map_dset(test_dset,_func,<span class="va">self</span>.is_batched,<span class="va">self</span>.batch_size,<span class="va">self</span>.num_proc)</span>
+<span id="cb1-584"><a href="#cb1-584" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-585"><a href="#cb1-585" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.verboseprint(<span class="st">'Done'</span>)</span>
+<span id="cb1-586"><a href="#cb1-586" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> test_dset</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+
+
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/anhquan0412\.github\.io\/that-nlp-library");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions"><ul><li><a href="https://github.com/anhquan0412/that-nlp-library/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>
